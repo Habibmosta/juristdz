@@ -146,6 +146,19 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <div className={`pt-6 mt-6 border-t space-y-1 ${theme === 'light' ? 'border-slate-100' : 'border-slate-800/50'}`}>
+            {userStats.role === 'admin' && (
+              <button
+                onClick={() => setMode(AppMode.ADMIN)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                  currentMode === AppMode.ADMIN 
+                    ? 'bg-red-500 text-white shadow-lg' 
+                    : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+                }`}
+              >
+                <Settings size={18} />
+                <span className="font-medium text-sm">{t.menu_admin}</span>
+              </button>
+            )}
             <button onClick={() => setShowShareModal(true)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-500 hover:text-legal-gold transition-colors">
               <Share2 size={16} /> {t.menu_share}
             </button>

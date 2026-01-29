@@ -32,7 +32,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     loadFeedback();
   }, []);
 
-  const handleCopy = (url: string) => {
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(text);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleCopyUrl = (url: string) => {
     // Force l'URL de base pour éviter les liens blob ou session
     const finalUrl = window.location.origin;
     navigator.clipboard.writeText(finalUrl);
@@ -92,7 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {currentUrl}
                       </div>
                       <button 
-                        onClick={() => handleCopy(currentUrl)}
+                        onClick={() => handleCopyUrl(currentUrl)}
                         className="w-full py-4 bg-legal-blue text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
                       >
                           {copiedKey === currentUrl ? <Check size={18} /> : <Share2 size={18} />}
@@ -179,6 +185,128 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                      </div>
                    )) : <div className="p-12 text-center text-slate-400">Aucun feedback d'expert enregistré.</div>}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'keys' && (
+          <div className="space-y-6">
+             <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="p-8 border-b dark:border-slate-800 flex justify-between items-center">
+                   <div>
+                      <h2 className="font-bold text-lg">Générateur de Licences</h2>
+                      <p className="text-sm text-slate-500 mt-1">Créez des codes d'accès pour les avocats</p>
+                   </div>
+                   <button 
+                     onClick={onGenerateKey}
+                     className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all"
+                   >
+                      <Plus size={18} />
+                      Générer une Licence
+                   </button>
+                </div>
+                
+                {licenseKeys.length > 0 ? (
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                           <tr>
+                              <th className="px-8 py-4">Clé de Licence</th>
+                              <th className="px-8 py-4">Plan</th>
+                              <th className="px-8 py-4">Statut</th>
+                              <th className="px-8 py-4">Utilisé par</th>
+                              <th className="px-8 py-4">Date création</th>
+                              <th className="px-8 py-4">Actions</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y dark:divide-slate-800">
+                           {licenseKeys.map(key => (
+                             <tr key={key.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td className="px-8 py-4">
+                                   <div className="flex items-center gap-2">
+                                      <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs font-mono">
+                                         {key.key}
+                                      </code>
+                                   </div>
+                                </td>
+                                <td className="px-8 py-4">
+                                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                                     key.plan === 'pro' ? 'bg-amber-100 text-amber-700' : 
+                                     key.plan === 'cabinet' ? 'bg-purple-100 text-purple-700' : 
+                                     'bg-slate-100 text-slate-600'
+                                   }`}>
+                                      {key.plan.toUpperCase()}
+                                   </span>
+                                </td>
+                                <td className="px-8 py-4">
+                                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                                     key.isUsed ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                   }`}>
+                                      {key.isUsed ? 'UTILISÉE' : 'DISPONIBLE'}
+                                   </span>
+                                </td>
+                                <td className="px-8 py-4">
+                                   <span className="text-sm text-slate-600 dark:text-slate-400">
+                                      {key.usedBy || '-'}
+                                   </span>
+                                </td>
+                                <td className="px-8 py-4">
+                                   <span className="text-sm text-slate-600 dark:text-slate-400">
+                                      {key.createdAt.toLocaleDateString()}
+                                   </span>
+                                </td>
+                                <td className="px-8 py-4">
+                                   <button 
+                                     onClick={() => handleCopy(key.key)}
+                                     className="text-[10px] font-bold text-legal-blue dark:text-legal-gold hover:underline flex items-center gap-1"
+                                   >
+                                      {copiedKey === key.key ? <Check size={12} /> : <Copy size={12} />}
+                                      {copiedKey === key.key ? 'Copié' : 'Copier'}
+                                   </button>
+                                </td>
+                             </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </div>
+                ) : (
+                  <div className="p-12 text-center text-slate-400">
+                     <Key size={48} className="mx-auto mb-4 opacity-30" />
+                     <p className="text-lg font-bold mb-2">Aucune licence générée</p>
+                     <p className="text-sm">Cliquez sur "Générer une Licence" pour créer votre première clé d'accès.</p>
+                  </div>
+                )}
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                   <div className="flex items-center gap-3 mb-4">
+                      <Key className="text-amber-500" size={20} />
+                      <h3 className="font-bold text-slate-800 dark:text-white">Total Licences</h3>
+                   </div>
+                   <div className="text-4xl font-black text-legal-blue dark:text-legal-gold">{licenseKeys.length}</div>
+                   <p className="text-xs text-slate-400 mt-2">Codes générés au total</p>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                   <div className="flex items-center gap-3 mb-4">
+                      <CheckCircle2 className="text-green-500" size={20} />
+                      <h3 className="font-bold text-slate-800 dark:text-white">Utilisées</h3>
+                   </div>
+                   <div className="text-4xl font-black text-legal-blue dark:text-legal-gold">
+                      {licenseKeys.filter(k => k.isUsed).length}
+                   </div>
+                   <p className="text-xs text-slate-400 mt-2">Licences activées</p>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                   <div className="flex items-center gap-3 mb-4">
+                      <AlertTriangle className="text-blue-500" size={20} />
+                      <h3 className="font-bold text-slate-800 dark:text-white">Disponibles</h3>
+                   </div>
+                   <div className="text-4xl font-black text-legal-blue dark:text-legal-gold">
+                      {licenseKeys.filter(k => !k.isUsed).length}
+                   </div>
+                   <p className="text-xs text-slate-400 mt-2">Prêtes à être distribuées</p>
                 </div>
              </div>
           </div>

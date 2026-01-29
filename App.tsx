@@ -25,6 +25,8 @@ const App: React.FC = () => {
   
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Cases State
   const [cases, setCases] = useState<Case[]>([
@@ -63,6 +65,20 @@ const App: React.FC = () => {
   }, [theme]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+  const generateLicenseKey = () => {
+    const newKey: LicenseKey = {
+      key: 'JDZ-' + Math.random().toString(36).substring(2, 15).toUpperCase(),
+      plan: 'pro',
+      isUsed: false,
+      createdAt: new Date(),
+    };
+    setLicenseKeys(prev => [...prev, newKey]);
+  };
+
+  const setUserPlan = (userId: string, isPro: boolean) => {
+    setUserStats(prev => prev ? { ...prev, isPro, plan: isPro ? 'pro' : 'free' } : null);
+  };
 
   if (!isDataLoaded || !userStats) {
     return (
@@ -109,7 +125,14 @@ const App: React.FC = () => {
         {currentMode === AppMode.DRAFTING && <DraftingInterface language={language} />}
         {currentMode === AppMode.ANALYSIS && <AnalysisInterface language={language} />}
         {currentMode === AppMode.ADMIN && (
-          <AdminDashboard language={language} users={[userStats]} licenseKeys={[]} transactions={[]} onGenerateKey={() => {}} onSetUserPlan={() => {}} />
+          <AdminDashboard 
+            language={language} 
+            users={[userStats]} 
+            licenseKeys={licenseKeys} 
+            transactions={transactions} 
+            onGenerateKey={generateLicenseKey} 
+            onSetUserPlan={setUserPlan} 
+          />
         )}
         {currentMode === AppMode.DOCS && <Documentation language={language} />}
       </main>
