@@ -69,6 +69,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
         return;
       }
 
+      console.log(`🌐 Language changed from ${previousLanguage} to ${language}, translating ${messages.length} messages`);
       setIsTranslating(true);
       
       try {
@@ -77,7 +78,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
             // Skip if message is already in target language
             const detectedLang = message.originalLang || translationService.detectLanguage(message.originalText || message.text);
             
+            console.log(`📝 Message: "${(message.originalText || message.text).substring(0, 50)}..." - Detected: ${detectedLang}, Target: ${language}`);
+            
             if (detectedLang === language) {
+              console.log(`✅ Already in target language, using original text`);
               return {
                 ...message,
                 text: message.originalText || message.text,
@@ -86,33 +90,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
             }
 
             // Translate the message
-            const translatedText = await translationService.translateText(
-              message.originalText || message.text,
-              detectedLang,
-              language
-            );
+            try {
+              const translatedText = await translationService.translateText(
+                message.originalText || message.text,
+                detectedLang,
+                language
+              );
 
-            return {
-              ...message,
-              text: translatedText,
-              originalText: message.originalText || message.text,
-              originalLang: detectedLang,
-              isTranslated: true
-            };
+              console.log(`🔄 Translated: "${(message.originalText || message.text).substring(0, 30)}..." -> "${translatedText.substring(0, 30)}..."`);
+
+              return {
+                ...message,
+                text: translatedText,
+                originalText: message.originalText || message.text,
+                originalLang: detectedLang,
+                isTranslated: translatedText !== (message.originalText || message.text)
+              };
+            } catch (error) {
+              console.error('❌ Failed to translate message:', error);
+              return {
+                ...message,
+                originalText: message.originalText || message.text,
+                originalLang: detectedLang,
+                isTranslated: false
+              };
+            }
           })
         );
 
+        console.log(`✨ Translation completed, updating ${translatedMessages.length} messages`);
         setMessages(translatedMessages);
       } catch (error) {
-        console.error('Translation failed:', error);
+        console.error('❌ Translation batch failed:', error);
       } finally {
         setIsTranslating(false);
         setPreviousLanguage(language);
       }
     };
 
-    translateMessages();
-  }, [language, previousLanguage]);
+    // Add a small delay to ensure the effect runs after state updates
+    const timeoutId = setTimeout(translateMessages, 100);
+    return () => clearTimeout(timeoutId);
+  }, [language]); // Only depend on language, not messages.length to avoid infinite loop
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
