@@ -201,6 +201,30 @@ class ApiService {
       return false;
     }
   }
+
+  // Service de traduction
+  async translateText(text: string, fromLang: string, toLang: string): Promise<{
+    success: boolean;
+    translatedText: string;
+    originalText: string;
+    fromLanguage: string;
+    toLanguage: string;
+  }> {
+    return this.request<{
+      success: boolean;
+      translatedText: string;
+      originalText: string;
+      fromLanguage: string;
+      toLanguage: string;
+    }>('/api/translate', {
+      method: 'POST',
+      body: JSON.stringify({
+        text,
+        from: fromLang,
+        to: toLang
+      }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

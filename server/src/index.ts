@@ -35,6 +35,7 @@ import systemRouter from '@/routes/system';
 import monitoringRouter from '@/routes/monitoring';
 import performanceRouter from '@/routes/performance';
 import validationRouter from '@/routes/validation';
+import translationRouter from '@/routes/translation';
 import { 
   apiGatewayMiddleware,
   authRateLimitMiddleware,
@@ -109,6 +110,7 @@ app.use('/api/system', systemRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/performance', performanceRouter);
 app.use('/api/validation', validationRouter);
+app.use('/api', translationRouter);
 
 // Learning routes (initialized after database connection)
 let learningRouter: express.Router;

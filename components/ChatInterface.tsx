@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, Sender, AppMode, Language, UserFeedback } from '../types';
 import { sendMessageToGemini } from '../services/geminiService';
 import { databaseService } from '../services/databaseService';
-import { Send, Bot, User, BookOpen, ExternalLink, RefreshCw, Mic, ThumbsUp, ThumbsDown, MessageSquare, Share2, Check } from 'lucide-react';
+import { translationService } from '../services/translationService';
+import { Send, Bot, User, BookOpen, ExternalLink, RefreshCw, Mic, ThumbsUp, ThumbsDown, MessageSquare, Share2, Check, Languages } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { UI_TRANSLATIONS } from '../constants';
 
@@ -12,15 +13,24 @@ interface ChatInterfaceProps {
   userId: string;
 }
 
+// Extended message interface with translation support
+interface TranslatableMessage extends Message {
+  originalText?: string;
+  originalLang?: Language;
+  isTranslated?: boolean;
+}
+
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
   const t = UI_TRANSLATIONS[language];
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<TranslatableMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [feedbackInput, setFeedbackInput] = useState<{msgId: string, isPositive: boolean} | null>(null);
   const [comment, setComment] = useState('');
   const [copied, setCopied] = useState(false);
+  const [previousLanguage, setPreviousLanguage] = useState<Language>(language);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,16 +38,81 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
     const loadHistory = async () => {
       setIsLoading(true);
       const history = await databaseService.getMessages(userId);
-      setMessages(history.length > 0 ? history : [{
-        id: 'welcome',
-        text: t.chat_welcome,
-        sender: Sender.BOT,
-        timestamp: new Date()
-      }]);
+      const translatableHistory: TranslatableMessage[] = history.length > 0 
+        ? history.map(msg => ({
+            ...msg,
+            originalText: msg.text,
+            originalLang: translationService.detectLanguage(msg.text),
+            isTranslated: false
+          }))
+        : [{
+            id: 'welcome',
+            text: t.chat_welcome,
+            sender: Sender.BOT,
+            timestamp: new Date(),
+            originalText: t.chat_welcome,
+            originalLang: language,
+            isTranslated: false
+          }];
+      
+      setMessages(translatableHistory);
       setIsLoading(false);
     };
     loadHistory();
-  }, [userId, language]);
+  }, [userId]);
+
+  // Auto-translate messages when language changes
+  useEffect(() => {
+    const translateMessages = async () => {
+      if (previousLanguage === language || messages.length === 0) {
+        setPreviousLanguage(language);
+        return;
+      }
+
+      setIsTranslating(true);
+      
+      try {
+        const translatedMessages = await Promise.all(
+          messages.map(async (message) => {
+            // Skip if message is already in target language
+            const detectedLang = message.originalLang || translationService.detectLanguage(message.originalText || message.text);
+            
+            if (detectedLang === language) {
+              return {
+                ...message,
+                text: message.originalText || message.text,
+                isTranslated: false
+              };
+            }
+
+            // Translate the message
+            const translatedText = await translationService.translateText(
+              message.originalText || message.text,
+              detectedLang,
+              language
+            );
+
+            return {
+              ...message,
+              text: translatedText,
+              originalText: message.originalText || message.text,
+              originalLang: detectedLang,
+              isTranslated: true
+            };
+          })
+        );
+
+        setMessages(translatedMessages);
+      } catch (error) {
+        console.error('Translation failed:', error);
+      } finally {
+        setIsTranslating(false);
+        setPreviousLanguage(language);
+      }
+    };
+
+    translateMessages();
+  }, [language, previousLanguage]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -68,14 +143,53 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-    const userMsg: Message = { id: Date.now().toString(), text: input, sender: Sender.USER, timestamp: new Date() };
+    
+    const detectedLang = translationService.detectLanguage(input);
+    const userMsg: TranslatableMessage = { 
+      id: Date.now().toString(), 
+      text: input, 
+      sender: Sender.USER, 
+      timestamp: new Date(),
+      originalText: input,
+      originalLang: detectedLang,
+      isTranslated: false
+    };
+    
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    
     await databaseService.saveMessage(userId, userMsg);
-    const history = messages.map(m => ({ role: m.sender === Sender.USER ? 'user' : 'model', parts: [{ text: m.text }] }));
-    const response = await sendMessageToGemini(userMsg.text, history, AppMode.RESEARCH, language);
-    const botMsg: Message = { id: (Date.now() + 1).toString(), text: response.text, sender: Sender.BOT, timestamp: new Date(), citations: response.citations };
+    
+    const history = messages.map(m => ({ 
+      role: m.sender === Sender.USER ? 'user' : 'model', 
+      parts: [{ text: m.originalText || m.text }] 
+    }));
+    
+    const response = await sendMessageToGemini(userMsg.originalText || userMsg.text, history, AppMode.RESEARCH, detectedLang);
+    
+    const botMsg: TranslatableMessage = { 
+      id: (Date.now() + 1).toString(), 
+      text: response.text, 
+      sender: Sender.BOT, 
+      timestamp: new Date(), 
+      citations: response.citations,
+      originalText: response.text,
+      originalLang: detectedLang,
+      isTranslated: false
+    };
+    
+    // If current UI language is different from detected language, translate the response
+    if (language !== detectedLang) {
+      try {
+        const translatedResponse = await translationService.translateText(response.text, detectedLang, language);
+        botMsg.text = translatedResponse;
+        botMsg.isTranslated = true;
+      } catch (error) {
+        console.error('Failed to translate response:', error);
+      }
+    }
+    
     setMessages(prev => [...prev, botMsg]);
     await databaseService.saveMessage(userId, botMsg);
     setIsLoading(false);
@@ -85,7 +199,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 relative">
       <div className="bg-white dark:bg-slate-900 border-b px-6 py-4 flex justify-between items-center shadow-sm z-10">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 font-serif">{t.chat_header} <span className="text-[10px] text-red-500 ml-2 border border-red-200 px-1 rounded">BÊTA TEST</span></h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 font-serif flex items-center gap-2">
+            {t.chat_header} 
+            <span className="text-[10px] text-red-500 ml-2 border border-red-200 px-1 rounded">BÊTA TEST</span>
+            {isTranslating && (
+              <div className="flex items-center gap-1 text-blue-500">
+                <Languages size={16} className="animate-pulse" />
+                <span className="text-xs">
+                  {language === 'ar' ? 'ترجمة...' : 'Traduction...'}
+                </span>
+              </div>
+            )}
+          </h2>
           <p className="text-sm text-slate-500">{t.chat_subtitle}</p>
         </div>
         <button 
@@ -108,6 +233,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
                 <div className="prose prose-sm dark:prose-invert font-serif" dir="auto">
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
+                
+                {/* Translation indicator */}
+                {msg.isTranslated && (
+                  <div className="mt-2 flex items-center gap-1 text-xs text-blue-500 opacity-70">
+                    <Languages size={12} />
+                    <span>
+                      {language === 'ar' ? 'مترجم تلقائياً' : 'Traduit automatiquement'}
+                    </span>
+                  </div>
+                )}
+                
                 {msg.citations && msg.citations.length > 0 && (
                   <div className="mt-4 pt-3 border-t flex flex-wrap gap-2">
                     {msg.citations.map((c, i) => (
