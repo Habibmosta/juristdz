@@ -18,7 +18,44 @@ export type Language = 'fr' | 'ar';
 
 export type SubscriptionPlan = 'free' | 'pro' | 'cabinet';
 
-export type UserRole = 'user' | 'admin' | 'tester';
+// Updated to match the backend Profession enum
+export enum UserRole {
+  AVOCAT = 'avocat',
+  NOTAIRE = 'notaire', 
+  HUISSIER = 'huissier',
+  MAGISTRAT = 'magistrat',
+  ETUDIANT = 'etudiant',
+  JURISTE_ENTREPRISE = 'juriste_entreprise',
+  ADMIN = 'admin'
+}
+
+// Role-based routing configuration
+export interface RoleRouteConfig {
+  role: UserRole;
+  allowedModes: AppMode[];
+  defaultMode: AppMode;
+  restrictedFeatures?: string[];
+}
+
+// Enhanced user profile for role-based access
+export interface EnhancedUserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  profession: UserRole;
+  registrationNumber?: string;
+  barreauId?: string;
+  organizationName?: string;
+  phoneNumber?: string;
+  languages: string[];
+  specializations: string[];
+  roles: UserRole[];
+  activeRole: UserRole;
+  isActive: boolean;
+  emailVerified: boolean;
+  mfaEnabled: boolean;
+}
 
 export interface Case {
   id: string;

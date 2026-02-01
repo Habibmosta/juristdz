@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: juristdz_postgres
+    environment:
+      POSTGRES_DB: juristdz_db
+      POSTGRES_USER: juristdz_user
+      POSTGRES_PASSWORD: juristdz_password_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/src/database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - juristdz_network
+
+  # Redis pour le cache
+  redis:
+    image: redis:7-alpine
+    container_name: juristdz_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - juristdz_network
+
+  # Application Node.js
+  app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: juristdz_app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://juristdz_user:juristdz_password_2024@postgres:5432/juristdz_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=votre_jwt_secret_très_long_et_sécurisé_2024
+      - ENCRYPTION_KEY=votre_clé_de_chiffrement_32_chars
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - juristdz_network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  juristdz_network:
+    driver: bridge
