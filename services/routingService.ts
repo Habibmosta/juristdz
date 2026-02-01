@@ -1,4 +1,4 @@
-import { AppMode, UserRole, EnhancedUserProfile } from '../types';
+import { AppMode, UserRole, EnhancedUserProfile, Language } from '../types';
 import { 
   canAccessMode, 
   getDefaultMode, 
@@ -6,6 +6,7 @@ import {
   getAllowedModes,
   ROLE_INTERFACE_CONFIG 
 } from '../config/roleRouting';
+import { UI_TRANSLATIONS } from '../constants';
 
 /**
  * Role-based routing service
@@ -16,6 +17,14 @@ export class RoutingService {
   private currentUser: EnhancedUserProfile | null = null;
   private currentMode: AppMode = AppMode.DASHBOARD;
   private navigationHistory: AppMode[] = [];
+  private currentLanguage: Language = 'fr';
+
+  /**
+   * Set the current language for translations
+   */
+  setLanguage(language: Language): void {
+    this.currentLanguage = language;
+  }
 
   /**
    * Set the current user and initialize routing
@@ -98,17 +107,18 @@ export class RoutingService {
   /**
    * Get navigation menu items for current user role
    */
-  getNavigationItems(): NavigationItem[] {
+  getNavigationItems(language?: Language): NavigationItem[] {
     if (!this.currentUser) {
       return [];
     }
 
+    const lang = language || this.currentLanguage;
     const allowedModes = getAllowedModes(this.currentUser.activeRole);
     const interfaceConfig = ROLE_INTERFACE_CONFIG[this.currentUser.activeRole];
 
     return allowedModes.map(mode => ({
       mode,
-      label: this.getModeLabel(mode),
+      label: this.getModeLabel(mode, lang),
       icon: this.getModeIcon(mode),
       isActive: mode === this.currentMode,
       isAccessible: true,
@@ -197,15 +207,17 @@ export class RoutingService {
 
   // Private helper methods
 
-  private getModeLabel(mode: AppMode): string {
+  private getModeLabel(mode: AppMode, language: Language = 'fr'): string {
+    const t = UI_TRANSLATIONS[language];
+    
     const labels: Record<AppMode, string> = {
-      [AppMode.DASHBOARD]: 'Tableau de Bord',
-      [AppMode.RESEARCH]: 'Recherche Juridique',
-      [AppMode.DRAFTING]: 'Rédaction',
-      [AppMode.ANALYSIS]: 'Analyse',
-      [AppMode.CASES]: 'Dossiers',
-      [AppMode.ADMIN]: 'Administration',
-      [AppMode.DOCS]: 'Documentation'
+      [AppMode.DASHBOARD]: t.menu_dashboard,
+      [AppMode.RESEARCH]: t.menu_research,
+      [AppMode.DRAFTING]: t.menu_drafting,
+      [AppMode.ANALYSIS]: t.menu_analysis,
+      [AppMode.CASES]: t.menu_cases,
+      [AppMode.ADMIN]: t.menu_admin,
+      [AppMode.DOCS]: t.menu_docs
     };
 
     return labels[mode] || mode;

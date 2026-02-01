@@ -216,7 +216,7 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
       </div>
 
       {/* Role-specific quick actions */}
-      {getRoleQuickActions(userRole, theme, roleStyles)}
+      {getRoleQuickActions(userRole, theme, roleStyles, language)}
     </nav>
   );
 };
@@ -260,57 +260,68 @@ function getRoleSpecificIndicator(mode: AppMode, role: UserRole): string | null 
 function getRoleQuickActions(
   role: UserRole, 
   theme: 'light' | 'dark',
-  roleStyles: any
+  roleStyles: any,
+  language: Language
 ): React.ReactNode {
+  const isAr = language === 'ar';
+  
   const quickActions: Record<UserRole, React.ReactNode> = {
     [UserRole.AVOCAT]: (
       <div className="mt-6 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Actions Rapides</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+          {isAr ? 'إجراءات سريعة' : 'Actions Rapides'}
+        </p>
         <div className="space-y-1">
           <button className="w-full text-left text-xs text-slate-500 hover:text-legal-blue transition-colors">
-            + Nouveau Dossier
+            {isAr ? '+ ملف جديد' : '+ Nouveau Dossier'}
           </button>
           <button className="w-full text-left text-xs text-slate-500 hover:text-legal-blue transition-colors">
-            + Recherche Express
+            {isAr ? '+ بحث سريع' : '+ Recherche Express'}
           </button>
         </div>
       </div>
     ),
     [UserRole.NOTAIRE]: (
       <div className="mt-6 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Minutier</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+          {isAr ? 'دفتر التوثيق' : 'Minutier'}
+        </p>
         <div className="space-y-1">
           <button className="w-full text-left text-xs text-slate-500 hover:text-amber-600 transition-colors">
-            + Nouvel Acte
+            {isAr ? '+ عقد جديد' : '+ Nouvel Acte'}
           </button>
           <button className="w-full text-left text-xs text-slate-500 hover:text-amber-600 transition-colors">
-            Rechercher Archive
+            {isAr ? 'بحث في الأرشيف' : 'Rechercher Archive'}
           </button>
         </div>
       </div>
     ),
     [UserRole.ETUDIANT]: (
       <div className="mt-6 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-        <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2">Mode Apprentissage</p>
+        <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2">
+          {isAr ? 'وضع التعلم' : 'Mode Apprentissage'}
+        </p>
         <div className="space-y-1">
           <button className="w-full text-left text-xs text-blue-500 hover:text-blue-700 transition-colors">
-            📚 Cours du Jour
+            {isAr ? '📚 درس اليوم' : '📚 Cours du Jour'}
           </button>
           <button className="w-full text-left text-xs text-blue-500 hover:text-blue-700 transition-colors">
-            🎯 Exercices
+            {isAr ? '🎯 تمارين' : '🎯 Exercices'}
           </button>
         </div>
       </div>
     ),
     [UserRole.ADMIN]: (
       <div className="mt-6 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-        <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-2">Système</p>
+        <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-2">
+          {isAr ? 'النظام' : 'Système'}
+        </p>
         <div className="space-y-1">
           <button className="w-full text-left text-xs text-red-500 hover:text-red-700 transition-colors">
-            ⚡ État Serveurs
+            {isAr ? '⚡ حالة الخوادم' : '⚡ État Serveurs'}
           </button>
           <button className="w-full text-left text-xs text-red-500 hover:text-red-700 transition-colors">
-            👥 Utilisateurs Actifs
+            {isAr ? '👥 المستخدمون النشطون' : '👥 Utilisateurs Actifs'}
           </button>
         </div>
       </div>

@@ -61,7 +61,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   // Update navigation items when user role changes
   useEffect(() => {
     updateNavigationItems();
-  }, [user.activeRole, currentMode]);
+  }, [user.activeRole, currentMode, language]);
 
   // Monitor online status
   useEffect(() => {
@@ -78,7 +78,8 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   }, []);
 
   const updateNavigationItems = () => {
-    const items = routingService.getNavigationItems();
+    routingService.setLanguage(language);
+    const items = routingService.getNavigationItems(language);
     setNavigationItems(items);
   };
 
@@ -149,7 +150,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                   isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'
                 }`}></div>
                 <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">
-                  {isOnline ? 'En ligne' : 'Hors-ligne'}
+                  {isOnline ? (isAr ? 'متصل' : 'En ligne') : (isAr ? 'غير متصل' : 'Hors-ligne')}
                 </span>
               </div>
             </div>
@@ -183,7 +184,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
             <button 
               onClick={onThemeToggle}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              title={theme === 'light' ? 'Mode sombre' : 'Mode clair'}
+              title={theme === 'light' ? (isAr ? 'الوضع المظلم' : 'Mode sombre') : (isAr ? 'الوضع المضيء' : 'Mode clair')}
             >
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
