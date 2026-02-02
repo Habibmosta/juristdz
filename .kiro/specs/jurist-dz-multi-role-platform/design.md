@@ -521,9 +521,13 @@ La stratégie de test combine tests unitaires et tests basés sur les propriét�
 *Pour tout* changement de barème officiel détecté, le système doit automatiquement mettre à jour ses tables de calcul et appliquer les nouveaux tarifs aux calculs ultérieurs
 **Valide: Exigences 6.4**
 
-### Propriété 18: Support Multilingue Complet
-*Pour toute* interface ou document, le système doit supporter complètement le français et l'arabe, avec une traduction cohérente de tous les éléments et une terminologie juridique appropriée
-**Valide: Exigences 7.1, 7.2, 7.3, 7.4**
+### Propriété 18: Support Multilingue Complet et Cohérent
+*Pour toute* interface ou document, le système doit supporter complètement le français et l'arabe, avec une traduction cohérente de tous les éléments et une terminologie juridique appropriée, sans mélange de langues ni caractères corrompus
+**Valide: Exigences 7.1, 7.2, 7.3, 7.4, 7.6, 7.7, 7.8, 7.9, 7.10**
+
+### Propriété 18bis: Qualité de Traduction Automatique
+*Pour toute* traduction automatique effectuée, le texte résultant doit être entièrement dans la langue cible, sans fragments de la langue source, caractères cyrilliques, ou encodages défaillants
+**Valide: Exigences 7.6, 7.7, 7.8, 7.9, 7.10**
 
 ### Propriété 19: Mode Apprentissage pour Étudiants
 *Pour tout* étudiant accédant à une fonctionnalité, le système doit fournir des explications pédagogiques appropriées et limiter l'accès aux fonctionnalités professionnelles avancées
@@ -580,3 +584,23 @@ La stratégie de test combine tests unitaires et tests basés sur les propriét�
 ### Propriété 32: Adaptation aux Spécificités Locales
 *Pour tout* utilisateur appartenant à un barreau ou tribunal spécifique, le système doit appliquer les procédures et spécificités particulières à cette juridiction
 **Valide: Exigences 12.3, 12.5**
+
+### Propriété 33: Traduction Complète et Cohérente
+*Pour toute* traduction automatique effectuée, le texte résultant doit être entièrement dans la langue cible, sans aucun fragment de la langue source
+**Valide: Exigences 13.1, 13.2**
+
+### Propriété 34: Élimination des Caractères Corrompus
+*Pour toute* traduction produite, le système doit éliminer tous les caractères corrompus, cyrilliques, ou d'encodage défaillant
+**Valide: Exigences 13.3**
+
+### Propriété 35: Terminologie Juridique Cohérente
+*Pour toute* traduction de contenu juridique, le système doit utiliser une terminologie juridique algérienne appropriée et cohérente
+**Valide: Exigences 13.4**
+
+### Propriété 36: Gestion d'Erreurs de Traduction
+*Pour toute* traduction qui ne peut pas être effectuée correctement, le système doit afficher un message d'erreur clair plutôt qu'un texte corrompu
+**Valide: Exigences 13.5**
+
+### Propriété 37: Validation de Qualité de Traduction
+*Pour toute* traduction avant affichage, le système doit valider sa qualité et sa cohérence linguistique
+**Valide: Exigences 13.6**

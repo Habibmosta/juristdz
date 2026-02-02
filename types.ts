@@ -116,6 +116,7 @@ export interface DocumentTemplate {
   structure_ar: string[];
   inputGuide: string;
   inputGuide_ar: string;
+  roles: string[]; // Rôles autorisés à utiliser ce template
 }
 
 export interface LicenseKey {

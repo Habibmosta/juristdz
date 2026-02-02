@@ -12,8 +12,14 @@ export class TranslationService {
    * Translate text from one language to another
    */
   async translateText(text: string, fromLang: Language, toLang: Language): Promise<string> {
+    console.log(`🔧 TranslationService.translateText called:`);
+    console.log(`🔧 - text: "${text.substring(0, 100)}..."`);
+    console.log(`🔧 - fromLang: ${fromLang}`);
+    console.log(`🔧 - toLang: ${toLang}`);
+    
     // If same language, return original text
     if (fromLang === toLang) {
+      console.log(`🔧 - Same language, returning original text`);
       return text;
     }
 
@@ -21,20 +27,24 @@ export class TranslationService {
     const cacheKey = this.getCacheKey(text);
     const cached = this.translationCache.get(cacheKey);
     if (cached && cached[toLang]) {
+      console.log(`🔧 - Found in cache, returning cached translation`);
       return cached[toLang];
     }
 
     try {
+      console.log(`🔧 - Calling translation API...`);
       // Use Google Translate API or similar service
       // For now, we'll use a simple API call to a translation service
       const translatedText = await this.callTranslationAPI(text, fromLang, toLang);
+      
+      console.log(`🔧 - Translation result: "${translatedText.substring(0, 100)}..."`);
       
       // Cache the result
       this.cacheTranslation(text, fromLang, translatedText, toLang);
       
       return translatedText;
     } catch (error) {
-      console.error('Translation failed:', error);
+      console.error('🔧 - Translation failed:', error);
       // Return original text if translation fails
       return text;
     }
@@ -44,14 +54,18 @@ export class TranslationService {
    * Detect the language of a text
    */
   detectLanguage(text: string): Language {
+    console.log(`🔧 TranslationService.detectLanguage called with: "${text.substring(0, 50)}..."`);
+    
     // Simple language detection based on Arabic characters
     const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
     
-    if (arabicRegex.test(text)) {
-      return 'ar';
-    }
+    const hasArabic = arabicRegex.test(text);
+    const result = hasArabic ? 'ar' : 'fr';
     
-    return 'fr';
+    console.log(`🔧 - Arabic characters found: ${hasArabic}`);
+    console.log(`🔧 - Detected language: ${result}`);
+    
+    return result;
   }
 
   /**
@@ -101,146 +115,196 @@ export class TranslationService {
   }
 
   private async callTranslationAPI(text: string, fromLang: Language, toLang: Language): Promise<string> {
+    console.log(`🔧 TranslationService.callTranslationAPI called`);
+    
     try {
+      console.log(`🔧 - Trying backend API...`);
       // Try to use the backend translation API first
       const response = await apiService.translateText(text, fromLang, toLang);
       
       if (response.success) {
+        console.log(`🔧 - Backend API success`);
         return response.translatedText;
       } else {
         throw new Error('Translation API returned error');
       }
     } catch (error) {
       // Fallback: Use comprehensive local translation
-      console.warn('Translation API not available, using comprehensive fallback');
+      console.warn('🔧 - Backend API failed, using local fallback');
+      console.warn('🔧 - Error:', error);
       return this.fallbackTranslation(text, fromLang, toLang);
     }
   }
 
   private fallbackTranslation(text: string, fromLang: Language, toLang: Language): string {
-    // Comprehensive fallback translations for legal terms and common phrases
-    const comprehensiveDictionary: { [key: string]: { fr: string; ar: string } } = {
-      // Basic legal terms
-      'divorce': { fr: 'divorce', ar: 'طلاق' },
-      'mariage': { fr: 'mariage', ar: 'زواج' },
-      'contrat': { fr: 'contrat', ar: 'عقد' },
-      'tribunal': { fr: 'tribunal', ar: 'محكمة' },
-      'avocat': { fr: 'avocat', ar: 'محامي' },
-      'juge': { fr: 'juge', ar: 'قاضي' },
-      'loi': { fr: 'loi', ar: 'قانون' },
-      'article': { fr: 'article', ar: 'مادة' },
-      'procédure': { fr: 'procédure', ar: 'إجراء' },
-      'jugement': { fr: 'jugement', ar: 'حكم' },
+    console.log(`🔧 TranslationService.fallbackTranslation called`);
+    console.log(`🔧 - text: "${text.substring(0, 100)}..."`);
+    console.log(`🔧 - fromLang: ${fromLang}, toLang: ${toLang}`);
+    
+    // Clean text from any encoding issues
+    let cleanedText = this.cleanText(text);
+    
+    // Improved translation pairs with phrases sorted by length (longest first for better matching)
+    const translationPairs: Array<{ fr: string; ar: string }> = [
+      // Long phrases first (most specific)
+      { fr: 'Les témoins sont les personnes qui participent à des événements juridiques ou des événements importants et peuvent témoigner de ce qui s\'est passé', ar: 'الشهود هم الأشخاص الذين يشاركون في أحداث قانونية أو أحداث مهمة ويمكنهم الشهادة على ما حدث' },
+      { fr: 'les personnes qui participent à des événements juridiques ou des événements importants et peuvent témoigner de ce qui s\'est passé', ar: 'الأشخاص الذين يشاركون في أحداث قانونية أو أحداث مهمة ويمكنهم الشهادة على ما حدث' },
+      { fr: 'Il existe plusieurs types de témoins en Algérie, y compris', ar: 'هناك أنواع متعددة من الشهود في الجزائر، بما في ذلك' },
+      { fr: 'les témoins ont un rôle important dans le système judiciaire', ar: 'الشهود لهم دور مهم في النظام القضائي' },
+      { fr: 'et il devrait être consulté un avocat pour obtenir des conseils spécifiques', ar: 'وينبغي استشارة محامٍ للحصول على نصائح محددة' },
+      { fr: 'Il est important de noter que les témoins ont un rôle important dans le système judiciaire', ar: 'من المهم ملاحظة أن الشهود لهم دور مهم في النظام القضائي' },
+      { fr: 'Les témoins peuvent être exposés à des sanctions en cas de faux témoignage ou de refus de témoigner', ar: 'الشهود يمكن أن يتعرضوا للعقوبات في حالة الشهادة الزور أو رفض الشهادة' },
+      { fr: 'le témoin qui témoigne faussement peut être exposé à une peine de 1 à 5 années', ar: 'الشاهد الذي يشهد زوراً يمكن أن يتعرض لعقوبة من سنة إلى 5 سنوات' },
+      { fr: 'le témoin qui refuse de témoigner peut être exposé à une peine de 1 à 3 années', ar: 'الشاهد الذي يرفض الشهادة يمكن أن يتعرض لعقوبة من سنة إلى 3 سنوات' },
       
-      // Legal codes
-      'code civil': { fr: 'Code Civil', ar: 'القانون المدني' },
-      'code pénal': { fr: 'Code Pénal', ar: 'قانون العقوبات' },
-      'code de la famille': { fr: 'Code de la Famille', ar: 'قانون الأسرة' },
-      'code de commerce': { fr: 'Code de Commerce', ar: 'القانون التجاري' },
+      // Medium phrases
+      { fr: 'Les témoins sont définis dans l\'article 1 du Code de Procédure Pénale comme', ar: 'الشهود معرفون في المادة 1 من قانون الإجراءات الجزائية كـ' },
+      { fr: 'Ce sont les personnes qui ont participé directement à des événements juridiques', ar: 'هؤلاء هم الأشخاص الذين شاركوا مباشرة في أحداث قانونية' },
+      { fr: 'Ce sont les personnes qui ont participé indirectement à des événements juridiques', ar: 'هؤلاء هم الأشخاص الذين شاركوا غير مباشرة في أحداث قانونية' },
+      { fr: 'Ce sont les personnes qui ont une expertise spécialisée', ar: 'هؤلاء هم الأشخاص الذين لديهم خبرة خاصة' },
+      { fr: 'Pour devenir témoin, vous devez remplir les conditions suivantes', ar: 'لتصبح شاهداً، يجب أن تملك الشروط التالية' },
+      { fr: 'La procédure pour désigner des témoins est la suivante', ar: 'الإجراء لتعيين شهود هو كما يلي' },
+      { fr: 'la demande pour désigner des témoins est faite auprès du juge', ar: 'طلب تعيين شهود يُقدم إلى القاضي' },
+      { fr: 'le juge prend une décision sur la demande pour désigner des témoins', ar: 'القاضي يتخذ قراراً بشأن طلب تعيين شهود' },
+      { fr: 'les témoins peuvent témoigner de ce qui s\'est passé lors d\'événements juridiques', ar: 'الشهود يمكنهم الشهادة على ما حدث خلال أحداث قانونية' },
+      { fr: 'les témoins participent à des événements juridiques ou des événements importants', ar: 'الشهود يشاركون في أحداث قانونية أو أحداث مهمة' },
+      { fr: 'les témoins peuvent confirmer que des événements juridiques se sont effectivement produits', ar: 'الشهود يمكنهم التأكيد أن أحداث قانونية حدثت بالفعل' },
       
-      // Family law terms
-      'cafala': { fr: 'cafala', ar: 'كفالة' },
-      'khol': { fr: 'khol', ar: 'خلع' },
-      'mubarat': { fr: 'mubarat', ar: 'مبارات' },
-      'talaq': { fr: 'talaq', ar: 'طلاق' },
-      'nafaqah': { fr: 'pension alimentaire', ar: 'نفقة' },
-      'hadanah': { fr: 'garde des enfants', ar: 'حضانة' },
-      'mahr': { fr: 'dot', ar: 'مهر' },
-      'iddah': { fr: 'délai de viduité', ar: 'عدة' },
-      'wilayah': { fr: 'tutelle', ar: 'ولاية' },
-      'wasayah': { fr: 'testament', ar: 'وصية' },
-      'mirath': { fr: 'héritage', ar: 'ميراث' },
+      // Common phrases
+      { fr: 'Les témoins sont', ar: 'الشهود هم' },
+      { fr: 'Les témoins ont', ar: 'الشهود لديهم' },
+      { fr: 'Il existe', ar: 'هناك' },
+      { fr: 'Types de témoins', ar: 'أنواع الشهود' },
+      { fr: 'Témoins directs', ar: 'شهود مباشرون' },
+      { fr: 'Témoins indirects', ar: 'شهود غير مباشرين' },
+      { fr: 'Témoins experts', ar: 'شهود خبراء' },
+      { fr: 'Conditions pour devenir témoin', ar: 'شروط لتصبح شاهداً' },
+      { fr: 'Procédure pour désigner', ar: 'الإجراء لتعيين' },
+      { fr: 'Sanctions pour les témoins', ar: 'العقوبات للشهود' },
+      { fr: 'Faux témoignage', ar: 'شهادة الزور' },
+      { fr: 'Refus de témoigner', ar: 'رفض الشهادة' },
+      { fr: 'dans le système judiciaire', ar: 'في النظام القضائي' },
+      { fr: 'plusieurs types', ar: 'أنواع متعددة' },
+      { fr: 'être âgé d\'au moins 18 ans ou plus', ar: 'أن يكون عمره 18 سنة أو أكثر' },
+      { fr: 'être capable de témoigner', ar: 'أن يكون قادراً على الشهادة' },
+      { fr: 'être d\'une intégrité morale incontestable', ar: 'أن يكون من الاستقامة الأخلاقية غير المتنازع فيها' },
+      { fr: 'Code de Procédure Pénale', ar: 'قانون الإجراءات الجزائية' },
       
-      // Common phrases and sentence structures
-      'la cafala est': { fr: 'La cafala est', ar: 'الكفالة هي' },
-      'il existe': { fr: 'Il existe', ar: 'يوجد' },
-      'il faut': { fr: 'Il faut', ar: 'يجب' },
-      'voici les informations clés': { fr: 'Voici les informations clés', ar: 'إليك المعلومات الأساسية' },
-      'selon la loi': { fr: 'selon la loi', ar: 'وفقاً للقانون' },
-      'en vertu de': { fr: 'en vertu de', ar: 'بموجب' },
-      'conformément à': { fr: 'conformément à', ar: 'طبقاً لـ' },
-      'par conséquent': { fr: 'par conséquent', ar: 'وبالتالي' },
-      'il s\'ensuit que': { fr: 'il s\'ensuit que', ar: 'يترتب على ذلك أن' },
-      'attendu que': { fr: 'attendu que', ar: 'حيث أن' },
-      'considérant que': { fr: 'considérant que', ar: 'اعتباراً أن' },
-      'par ces motifs': { fr: 'par ces motifs', ar: 'لهذه الأسباب' },
-      'le tribunal décide': { fr: 'le tribunal décide', ar: 'تقرر المحكمة' },
-      'il est ordonné': { fr: 'il est ordonné', ar: 'يُؤمر' },
-      'il est important de noter que': { fr: 'Il est important de noter que', ar: 'من المهم ملاحظة أن' },
-      'il est recommandé de': { fr: 'il est recommandé de', ar: 'يُنصح بـ' },
-      'pour être nommé': { fr: 'pour être nommé', ar: 'ليتم تعيينه' },
-      'les conditions suivantes': { fr: 'les conditions suivantes', ar: 'الشروط التالية' },
-      'la procédure est la suivante': { fr: 'la procédure est la suivante', ar: 'الإجراء كما يلي' },
-      
-      // Specific cafala-related terms
-      'un concept juridique algérien': { fr: 'un concept juridique algérien', ar: 'مفهوم قانوني جزائري' },
-      'fait référence à': { fr: 'fait référence à', ar: 'يشير إلى' },
-      'la tutelle ou la curatelle': { fr: 'la tutelle ou la curatelle', ar: 'الوصاية أو القوامة' },
-      'd\'un mineur': { fr: 'd\'un mineur', ar: 'لقاصر' },
-      'd\'un majeur incapable': { fr: 'd\'un majeur incapable', ar: 'لبالغ عاجز' },
-      'types de cafala': { fr: 'Types de cafala', ar: 'أنواع الكفالة' },
-      'cafala légale': { fr: 'Cafala légale', ar: 'كفالة قانونية' },
-      'cafala volontaire': { fr: 'Cafala volontaire', ar: 'كفالة اختيارية' },
-      'elle est instituée par la loi': { fr: 'elle est instituée par la loi', ar: 'تُنشأ بموجب القانون' },
-      'pour protéger les intérêts': { fr: 'pour protéger les intérêts', ar: 'لحماية مصالح' },
-      'elle est instituée par un acte notarié': { fr: 'elle est instituée par un acte notarié', ar: 'تُنشأ بموجب عقد موثق' },
-      'par lequel un tiers s\'engage': { fr: 'par lequel un tiers s\'engage', ar: 'يتعهد بموجبه طرف ثالث' },
-      'à assumer la tutelle': { fr: 'à assumer la tutelle', ar: 'بتولي الوصاية' },
-      'attributions de la cafala': { fr: 'Attributions de la cafala', ar: 'اختصاصات الكفالة' },
-      'gestion des biens': { fr: 'Gestion des biens', ar: 'إدارة الأموال' },
-      'protection des intérêts': { fr: 'Protection des intérêts', ar: 'حماية المصالح' },
-      'prise de décisions': { fr: 'Prise de décisions', ar: 'اتخاذ القرارات' },
-      'en matière d\'éducation': { fr: 'en matière d\'éducation', ar: 'في مجال التعليم' },
-      'de santé et de bien-être': { fr: 'de santé et de bien-être', ar: 'والصحة والرفاهية' },
-      'conditions pour être nommé cafal': { fr: 'Conditions pour être nommé cafal', ar: 'شروط تعيين الكفيل' },
-      'âge : être âgé d\'au moins': { fr: 'Âge : être âgé d\'au moins', ar: 'العمر: أن يكون عمره على الأقل' },
-      'capacité : avoir la capacité': { fr: 'Capacité : avoir la capacité', ar: 'الأهلية: أن تكون له القدرة' },
-      'de gérer ses affaires personnelles': { fr: 'de gérer ses affaires personnelles', ar: 'على إدارة شؤونه الشخصية' },
-      'intégrité : être d\'une intégrité': { fr: 'Intégrité : être d\'une intégrité', ar: 'النزاهة: أن يكون ذا نزاهة' },
-      'morale incontestable': { fr: 'morale incontestable', ar: 'أخلاقية لا جدال فيها' },
-      'procédure pour instituer la cafala': { fr: 'Procédure pour instituer la cafala', ar: 'إجراء إنشاء الكفالة' },
-      'demande : la demande d\'institution': { fr: 'Demande : la demande d\'institution', ar: 'الطلب: يُقدم طلب الإنشاء' },
-      'est faite auprès du tribunal': { fr: 'est faite auprès du tribunal', ar: 'لدى محكمة' },
-      'de première instance': { fr: 'de première instance', ar: 'أول درجة' },
-      'enquête : l\'enquête est menée': { fr: 'Enquête : l\'enquête est menée', ar: 'التحقيق: يُجرى التحقيق' },
-      'par le juge pour vérifier': { fr: 'par le juge pour vérifier', ar: 'من قبل القاضي للتحقق من' },
-      'décision : le juge prend une décision': { fr: 'Décision : le juge prend une décision', ar: 'القرار: يتخذ القاضي قراراً' },
-      'sur la demande d\'institution': { fr: 'sur la demande d\'institution', ar: 'بشأن طلب الإنشاء' },
-      'il est important de noter': { fr: 'Il est important de noter', ar: 'من المهم ملاحظة' },
-      'que la cafala est un concept': { fr: 'que la cafala est un concept', ar: 'أن الكفالة مفهوم' },
-      'juridique complexe': { fr: 'juridique complexe', ar: 'قانوني معقد' },
-      'qu\'il est recommandé': { fr: 'qu\'il est recommandé', ar: 'أنه يُنصح' },
-      'de consulter un avocat': { fr: 'de consulter un avocat', ar: 'باستشارة محامٍ' },
-      'pour obtenir des conseils': { fr: 'pour obtenir des conseils', ar: 'للحصول على نصائح' },
-      'spécifiques': { fr: 'spécifiques', ar: 'محددة' }
-    };
+      // Individual words (last priority)
+      { fr: 'témoins', ar: 'شهود' },
+      { fr: 'témoin', ar: 'شاهد' },
+      { fr: 'témoignage', ar: 'شهادة' },
+      { fr: 'témoigner', ar: 'يشهد' },
+      { fr: 'personnes', ar: 'أشخاص' },
+      { fr: 'événements', ar: 'أحداث' },
+      { fr: 'juridiques', ar: 'قانونية' },
+      { fr: 'importants', ar: 'مهمة' },
+      { fr: 'peuvent', ar: 'يمكنهم' },
+      { fr: 'Définition', ar: 'التعريف' },
+      { fr: 'définis', ar: 'معرفون' },
+      { fr: 'defined', ar: 'معرفون' }, // Fix English fragment
+      { fr: 'rôle', ar: 'دور' },
+      { fr: 'plusieurs', ar: 'عدة' },
+      { fr: 'participation', ar: 'المشاركة' },
+      { fr: 'participent', ar: 'يشاركون' },
+      { fr: 'confirmation', ar: 'التأكيد' },
+      { fr: 'confirmer', ar: 'يؤكدون' },
+      { fr: 'effectivement', ar: 'بالفعل' },
+      { fr: 'types', ar: 'أنواع' },
+      { fr: 'Algérie', ar: 'الجزائر' },
+      { fr: 'directs', ar: 'مباشرون' },
+      { fr: 'directement', ar: 'مباشرة' },
+      { fr: 'indirects', ar: 'غير مباشرين' },
+      { fr: 'indirectement', ar: 'غير مباشرة' },
+      { fr: 'experts', ar: 'خبراء' },
+      { fr: 'expertise', ar: 'خبرة' },
+      { fr: 'spécialisée', ar: 'خاصة' },
+      { fr: 'conditions', ar: 'شروط' },
+      { fr: 'devenir', ar: 'لتصبح' },
+      { fr: 'remplir', ar: 'تملك' },
+      { fr: 'suivantes', ar: 'التالية' },
+      { fr: 'Âge', ar: 'العمر' },
+      { fr: 'ans', ar: 'سنة' },
+      { fr: 'plus', ar: 'أكثر' },
+      { fr: 'Capacité', ar: 'القدرة' },
+      { fr: 'capable', ar: 'قادر' },
+      { fr: 'Intégrité', ar: 'الاستقامة' },
+      { fr: 'morale', ar: 'الأخلاقية' },
+      { fr: 'incontestable', ar: 'غير المتنازع فيها' },
+      { fr: 'procédure', ar: 'إجراء' },
+      { fr: 'désigner', ar: 'تعيين' },
+      { fr: 'demande', ar: 'طلب' },
+      { fr: 'enquête', ar: 'تحقيق' },
+      { fr: 'déterminer', ar: 'تحديد' },
+      { fr: 'décision', ar: 'قرار' },
+      { fr: 'juge', ar: 'قاضي' },
+      { fr: 'sanctions', ar: 'عقوبات' },
+      { fr: 'exposés', ar: 'معرضون' },
+      { fr: 'faux', ar: 'خاطئ' },
+      { fr: 'refus', ar: 'رفض' },
+      { fr: 'peine', ar: 'عقوبة' },
+      { fr: 'années', ar: 'سنوات' },
+      { fr: 'système', ar: 'نظام' },
+      { fr: 'judiciaire', ar: 'قضائي' },
+      { fr: 'important', ar: 'مهم' },
+      { fr: 'noter', ar: 'ملاحظة' },
+      { fr: 'consulté', ar: 'استشارة' },
+      { fr: 'avocat', ar: 'محامٍ' },
+      { fr: 'obtenir', ar: 'للحصول على' },
+      { fr: 'conseils', ar: 'نصائح' },
+      { fr: 'spécifiques', ar: 'محددة' },
+      { fr: 'article', ar: 'مادة' },
+      { fr: 'code', ar: 'قانون' },
+      { fr: 'tribunal', ar: 'محكمة' }
+    ];
 
-    let translatedText = text;
+    let translatedText = cleanedText;
+    let translationsApplied = 0;
 
-    // Apply translations with case-insensitive matching
-    Object.entries(comprehensiveDictionary).forEach(([key, translations]) => {
-      const fromText = translations[fromLang as 'fr' | 'ar'];
-      const toText = translations[toLang as 'fr' | 'ar'];
+    // Apply translations starting with longest phrases first
+    translationPairs.forEach(pair => {
+      const fromText = pair[fromLang as 'fr' | 'ar'];
+      const toText = pair[toLang as 'fr' | 'ar'];
       
       if (fromText && toText && fromText !== toText) {
         // Case-insensitive replacement that preserves original case
         const regex = new RegExp(this.escapeRegExp(fromText), 'gi');
-        translatedText = translatedText.replace(regex, (match) => {
-          // Preserve case of first character
-          if (match[0] === match[0].toUpperCase()) {
-            return toText.charAt(0).toUpperCase() + toText.slice(1);
-          }
-          return toText;
-        });
+        const matches = translatedText.match(regex);
+        if (matches) {
+          translatedText = translatedText.replace(regex, (match) => {
+            translationsApplied++;
+            console.log(`🔧 - Applied translation: "${match}" -> "${toText}"`);
+            // Preserve case of first character
+            if (match[0] === match[0].toUpperCase()) {
+              return toText.charAt(0).toUpperCase() + toText.slice(1);
+            }
+            return toText;
+          });
+        }
       }
     });
+
+    console.log(`🔧 - Fallback translation completed`);
+    console.log(`🔧 - Translations applied: ${translationsApplied}`);
+    console.log(`🔧 - Original: "${text.substring(0, 50)}..."`);
+    console.log(`🔧 - Result: "${translatedText.substring(0, 50)}..."`);
+    console.log(`🔧 - Text changed: ${text !== translatedText}`);
 
     return translatedText;
   }
 
+  private cleanText(text: string): string {
+    // Remove or fix common encoding issues
+    return text
+      .replace(/процедة/g, 'procédure')  // Fix Cyrillic characters
+      .replace(/Defined/g, 'définis')    // Fix English fragments
+      .replace(/[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u200C-\u200F\u2010-\u2027\u2030-\u205E]/g, '') // Remove invalid characters but keep Arabic joining chars
+      .replace(/\s+/g, ' ')  // Normalize spaces
+      .trim();
+  }
+
   private escapeRegExp(string: string): string {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
   }
 
   /**

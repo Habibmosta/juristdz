@@ -202,13 +202,15 @@ class ApiService {
     }
   }
 
-  // Service de traduction
+  // Service de traduction amélioré
   async translateText(text: string, fromLang: string, toLang: string): Promise<{
     success: boolean;
     translatedText: string;
     originalText: string;
     fromLanguage: string;
     toLanguage: string;
+    quality?: string;
+    confidence?: number;
   }> {
     return this.request<{
       success: boolean;
@@ -216,7 +218,9 @@ class ApiService {
       originalText: string;
       fromLanguage: string;
       toLanguage: string;
-    }>('/api/translate', {
+      quality?: string;
+      confidence?: number;
+    }>('/api/improved-translation/translate', {
       method: 'POST',
       body: JSON.stringify({
         text,

@@ -112,6 +112,11 @@ La transformation de JuristDZ vise à créer une plateforme juridique complète 
 3. THE Plateforme_Juridique SHALL permettre la rédaction de documents dans les deux langues
 4. THE Plateforme_Juridique SHALL maintenir la cohérence terminologique juridique dans chaque langue
 5. WHEN un document est traduit, THE Plateforme_Juridique SHALL préserver le sens juridique exact
+6. THE Plateforme_Juridique SHALL produire des traductions complètes et cohérentes sans mélange de langues
+7. WHEN une traduction automatique est effectuée, THE Plateforme_Juridique SHALL traduire l'intégralité du contenu dans la langue cible
+8. THE Plateforme_Juridique SHALL éviter les caractères corrompus, les fragments de langues étrangères, et les encodages défaillants
+9. THE Plateforme_Juridique SHALL utiliser une terminologie juridique algérienne appropriée dans chaque langue
+10. WHEN la traduction échoue, THE Plateforme_Juridique SHALL afficher un message d'erreur clair plutôt qu'un texte corrompu
 
 ### Exigence 8: Mode Apprentissage pour Étudiants
 
@@ -162,7 +167,20 @@ La transformation de JuristDZ vise à créer une plateforme juridique complète 
 4. THE Plateforme_Juridique SHALL permettre la sauvegarde et restauration sécurisées des données
 5. IF une tentative d'accès non autorisé est détectée, THEN THE Plateforme_Juridique SHALL bloquer l'accès et alerter l'administrateur
 
-### Exigence 12: Intégration avec le Système Juridique Algérien
+### Exigence 13: Qualité et Fiabilité du Système de Traduction
+
+**User Story:** En tant qu'utilisateur, je veux que les traductions automatiques soient de haute qualité et complètement dans la langue cible, afin d'éviter toute confusion ou incompréhension.
+
+#### Critères d'Acceptation
+
+1. WHEN le système effectue une traduction automatique, THE Plateforme_Juridique SHALL produire un texte entièrement dans la langue cible
+2. THE Plateforme_Juridique SHALL éliminer tous les fragments de la langue source dans le texte traduit
+3. THE Plateforme_Juridique SHALL éviter les caractères corrompus, cyrilliques, ou d'encodage défaillant
+4. THE Plateforme_Juridique SHALL utiliser une terminologie juridique algérienne cohérente et appropriée
+5. WHEN une traduction ne peut pas être effectuée correctement, THE Plateforme_Juridique SHALL afficher un message d'erreur clair
+6. THE Plateforme_Juridique SHALL valider la qualité de chaque traduction avant de l'afficher à l'utilisateur
+7. THE Plateforme_Juridique SHALL permettre à l'utilisateur de signaler des problèmes de traduction
+8. THE Plateforme_Juridique SHALL maintenir un journal des erreurs de traduction pour amélioration continue
 
 **User Story:** En tant que professionnel juridique algérien, je veux que la plateforme soit parfaitement adaptée au système juridique local, afin de travailler en conformité avec la législation nationale.
 
@@ -173,3 +191,18 @@ La transformation de JuristDZ vise à créer une plateforme juridique complète 
 3. THE Plateforme_Juridique SHALL adapter les procédures aux spécificités des tribunaux algériens
 4. THE Plateforme_Juridique SHALL calculer les délais selon le calendrier judiciaire algérien
 5. THE Plateforme_Juridique SHALL supporter les spécificités de chaque barreau d'Algérie
+
+### Exigence 13: Qualité et Fiabilité du Système de Traduction
+
+**User Story:** En tant qu'utilisateur, je veux que les traductions automatiques soient de haute qualité et complètement dans la langue cible, afin d'éviter toute confusion ou incompréhension.
+
+#### Critères d'Acceptation
+
+1. WHEN le système effectue une traduction automatique, THE Plateforme_Juridique SHALL produire un texte entièrement dans la langue cible
+2. THE Plateforme_Juridique SHALL éliminer tous les fragments de la langue source dans le texte traduit
+3. THE Plateforme_Juridique SHALL éviter les caractères corrompus, cyrilliques, ou d'encodage défaillant
+4. THE Plateforme_Juridique SHALL utiliser une terminologie juridique algérienne cohérente et appropriée
+5. WHEN une traduction ne peut pas être effectuée correctement, THE Plateforme_Juridique SHALL afficher un message d'erreur clair
+6. THE Plateforme_Juridique SHALL valider la qualité de chaque traduction avant de l'afficher à l'utilisateur
+7. THE Plateforme_Juridique SHALL permettre à l'utilisateur de signaler des problèmes de traduction
+8. THE Plateforme_Juridique SHALL maintenir un journal des erreurs de traduction pour amélioration continue

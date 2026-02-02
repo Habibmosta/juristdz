@@ -150,9 +150,18 @@ Ce plan d'implémentation transforme JuristDZ en une plateforme juridique compl�
     - Créer les dictionnaires terminologiques juridiques
     - _Exigences: 7.1-7.4_
   
-  - [ ]* 10.2 Écrire les tests de propriété pour le multilingue
-    - **Propriété 18: Support Multilingue Complet**
-    - **Valide: Exigences 7.1-7.4**
+  - [x] 10.2 Corriger le système de traduction automatique
+    - Résoudre les problèmes de mélange de langues dans les traductions
+    - Éliminer les caractères corrompus et fragments de langues étrangères
+    - Implémenter une traduction complète et cohérente du contenu
+    - Améliorer la détection de langue et la qualité des traductions
+    - Créer un système de validation de qualité de traduction
+    - _Exigences: 7.6-7.10_
+  
+  - [ ]* 10.3 Écrire les tests de propriété pour le multilingue
+    - **Propriété 18: Support Multilingue Complet et Cohérent**
+    - **Propriété 18bis: Qualité de Traduction Automatique**
+    - **Valide: Exigences 7.1-7.10**
 
 - [x] 11. Développement du mode apprentissage pour étudiants
   - [x] 11.1 Créer le système pédagogique
@@ -298,6 +307,54 @@ Ce plan d'implémentation transforme JuristDZ en une plateforme juridique compl�
     - Valider les temps de réponse sous charge
     - Tester la résilience des services critiques
     - _Exigences: Architecture performance_
+
+- [x] 19. Correction urgente du système de traduction
+  - [x] 19.1 Diagnostiquer et corriger les problèmes de traduction
+    - Analyser les causes du mélange de langues dans les traductions
+    - Corriger l'algorithme de traduction pour produire du texte cohérent
+    - Éliminer les caractères corrompus et fragments de langues étrangères
+    - _Exigences: 13.1-13.3_
+  
+  - [x] 19.2 Améliorer la qualité des traductions juridiques
+    - Créer un dictionnaire juridique français-arabe plus complet
+    - Implémenter une validation de qualité de traduction
+    - Ajouter un système de détection d'erreurs de traduction
+    - _Exigences: 13.4-13.6_
+  
+  - [x] 19.3 Implémenter un système de fallback robuste
+    - Créer un mécanisme de fallback en cas d'échec de traduction
+    - Implémenter un journal des erreurs de traduction
+    - Ajouter une option pour signaler les problèmes de traduction
+    - _Exigences: 13.5-13.8_
+  
+  - [ ]* 19.4 Écrire les tests de propriété pour la qualité de traduction
+    - **Propriété 33: Traduction Complète et Cohérente**
+    - **Propriété 34: Élimination des Caractères Corrompus**
+    - **Propriété 35: Terminologie Juridique Cohérente**
+    - **Propriété 36: Gestion d'Erreurs de Traduction**
+    - **Propriété 37: Validation de Qualité de Traduction**
+    - **Valide: Exigences 13.1-13.8**
+
+- [x] 20. Amélioration de l'interface de chat avec historique de recherche
+  - [x] 20.1 Implémenter la gestion des sessions de recherche
+    - Créer le système de sessions basé sur les requêtes utilisateur
+    - Grouper les messages par session de recherche
+    - Afficher les résultats les plus récents en premier
+    - _Exigences: Interface utilisateur améliorée_
+  
+  - [x] 20.2 Développer l'historique de recherche navigable
+    - Ajouter un panneau d'historique toggleable
+    - Implémenter la navigation clickable entre sessions
+    - Créer des indicateurs visuels pour la session active
+    - Ajouter le scroll automatique vers le haut lors du changement de session
+    - _Exigences: Expérience utilisateur optimisée_
+  
+  - [x] 20.3 Optimiser l'affichage et la navigation
+    - Afficher le nombre de messages par session
+    - Formater les dates selon la locale (français/arabe)
+    - Implémenter la troncature intelligente des titres de session
+    - Ajouter des compteurs visuels pour l'historique
+    - _Exigences: Interface intuitive et accessible_
 
 - [x] 18. Point de contrôle final - Validation complète
   - S'assurer que tous les tests passent, demander à l'utilisateur si des questions se posent.

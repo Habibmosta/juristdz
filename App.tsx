@@ -269,6 +269,7 @@ const App: React.FC = () => {
       {currentMode === AppMode.DRAFTING && (
         <DraftingInterface 
           language={language} 
+          userRole={userProfile.activeRole}
         />
       )}
       {currentMode === AppMode.ANALYSIS && (
