@@ -1,0 +1,95 @@
+/**
+ * FORCE UI SPACING
+ * 
+ * CSS rules to force proper spacing between UI elements
+ * This prevents concatenation at the visual level
+ */
+
+/* Force spacing in navigation elements */
+nav button span,
+.sidebar button span,
+[role="navigation"] button span {
+  word-spacing: 0.2em !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Force spacing in menu items */
+.menu-item,
+[class*="menu"],
+[class*="nav"] {
+  word-spacing: 0.2em !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Force spacing in Arabic text */
+*[lang="ar"],
+*:lang(ar),
+.arabic-text {
+  word-spacing: 0.3em !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* Force spacing in French text */
+*[lang="fr"],
+*:lang(fr),
+.french-text {
+  word-spacing: 0.2em !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Prevent text concatenation in specific UI areas */
+.sidebar,
+nav,
+[role="navigation"],
+.menu,
+.dashboard,
+.header {
+  word-spacing: 0.2em !important;
+}
+
+/* Force spacing between inline elements */
+span + span,
+button + button,
+a + a {
+  margin-left: 0.3em !important;
+}
+
+/* Ensure proper spacing in flex containers */
+.flex span,
+.flex button,
+.flex a {
+  margin-right: 0.2em !important;
+}
+
+/* Force spacing in text content */
+.text-sm,
+.text-xs,
+.font-medium,
+.font-bold {
+  word-spacing: 0.15em !important;
+}
+
+/* Specific fixes for concatenated patterns */
+*:contains("متصلمحامي") {
+  word-spacing: 0.5em !important;
+}
+
+*:contains("TableauBord") {
+  word-spacing: 0.3em !important;
+}
+
+/* Emergency spacing for all text */
+* {
+  word-spacing: 0.1em;
+}
+
+/* Prevent text nodes from sticking together */
+.sidebar * {
+  display: inline-block;
+  margin-right: 0.1em;
+}
+
+/* Force separation in navigation */
+nav * {
+  margin-right: 0.1em !important;
+}

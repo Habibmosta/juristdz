@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bouton de Traduction Direct</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .translate-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .translate-btn:hover {
+            background: #0056b3;
+        }
+        .translate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .language-selector {
+            margin-right: 10px;
+        }
+        .language-selector select {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .messages {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .message {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .message.translated {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .message.user {
+            border-left-color: #6c757d;
+            background: #e9ecef;
+        }
+        .message.bot {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #e9ecef;
+            font-weight: bold;
+        }
+        .mixed-content {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .mixed-content h3 {
+            margin-top: 0;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="mixed-content">
+        <h3>🚨 Problème de mélange de langues détecté !</h3>
+        <p>Voici un exemple du problème que vous rencontrez :</p>
+        <div style="font-family: monospace; background: white; padding: 10px; border-radius: 4px;">
+            متصلمحاميلوحة التحكمبحث قانونيتحريرتحليلملفاتوثائقإجراءات سريعة+ ملف جديد+ بحث سريعarوضع آمن
+        </div>
+        <p><strong>Solution :</strong> Utilisez le bouton "Traduire les messages" ci-dessous pour corriger ce problème.</p>
+    </div>
+
+    <div class="chat-header">
+        <div>
+            <h1>🧪 Test du Bouton de Traduction Direct</h1>
+            <p>Simulation de votre interface ChatInterface</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="language-selector">
+                <label for="language">Langue :</label>
+                <select id="language">
+                    <option value="fr">Français</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
+            
+            <button class="translate-btn" id="translateBtn">
+                🌐 <span id="btnText">Traduire les messages</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="status" id="status">
+        Prêt à traduire
+    </div>
+    
+    <div class="messages" id="messages">
+        <div class="message user" data-id="1" data-original="ayant droits" data-lang="fr">
+            <strong>👤 Utilisateur:</strong><br>
+            <span class="text">ayant droits</span>
+        </div>
+        
+        <div class="message bot" data-id="2" data-original="Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici quelques informations générales sur les droits fondamentaux, civils, pénaux et familiaux selon la législation algérienne." data-lang="fr">
+            <strong>🤖 Assistant:</strong><br>
+            <span class="text">Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici quelques informations générales sur les droits fondamentaux, civils, pénaux et familiaux selon la législation algérienne.</span>
+        </div>
+        
+        <div class="message bot" data-id="3" data-original="Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité selon l'Article 24 de la Constitution algérienne." data-lang="fr">
+            <strong>🤖 Assistant:</strong><br>
+            <span class="text">Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité selon l'Article 24 de la Constitution algérienne.</span>
+        </div>
+    </div>
+
+    <script>
+        // Service de traduction amélioré
+        class ImprovedTranslationService {
+            constructor() {
+                this.translationPairs = {
+                    'fr_to_ar': {
+                        'ayant droits': 'أصحاب الحقوق',
+                        'Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici quelques informations générales sur les droits fondamentaux, civils, pénaux et familiaux selon la législation algérienne.': 'تريد معرفة الحقوق التي تتمتع بها في الجزائر. إليك بعض المعلومات العامة حول الحقوق الأساسية والمدنية والجنائية والعائلية وفقاً للتشريع الجزائري.',
+                        'Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité selon l\'Article 24 de la Constitution algérienne.': 'الحقوق الأساسية تشمل الحق في الحياة والحرية والأمان وفقاً للمادة 24 من الدستور الجزائري.'
+                    },
+                    'ar_to_fr': {
+                        'أصحاب الحقوق': 'ayant droits',
+                        'تريد معرفة الحقوق التي تتمتع بها في الجزائر. إليك بعض المعلومات العامة حول الحقوق الأساسية والمدنية والجنائية والعائلية وفقاً للتشريع الجزائري.': 'Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici quelques informations générales sur les droits fondamentaux, civils, pénaux et familiaux selon la législation algérienne.',
+                        'الحقوق الأساسية تشمل الحق في الحياة والحرية والأمان وفقاً للمادة 24 من الدستور الجزائري.': 'Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité selon l\'Article 24 de la Constitution algérienne.'
+                    }
+                };
+            }
+
+            async translateText(text, fromLang, toLang) {
+                console.log(`🔄 Traduction: "${text}" de ${fromLang} vers ${toLang}`);
+                
+                if (fromLang === toLang) {
+                    return text;
+                }
+
+                const key = `${fromLang}_to_${toLang}`;
+                const translations = this.translationPairs[key];
+                
+                if (translations && translations[text]) {
+                    const result = translations[text];
+                    console.log(`✅ Traduction trouvée: "${result}"`);
+                    return result;
+                }
+                
+                // Traduction de base pour les mots simples
+                if (toLang === 'ar') {
+                    if (text.includes('droit')) return text.replace(/droit/g, 'حق');
+                    if (text.includes('liberté')) return text.replace(/liberté/g, 'حرية');
+                    if (text.includes('Constitution')) return text.replace(/Constitution/g, 'الدستور');
+                }
+                
+                console.log(`⚠️ Pas de traduction spécifique, retour du texte original`);
+                return text;
+            }
+
+            detectLanguage(text) {
+                const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+                return arabicRegex.test(text) ? 'ar' : 'fr';
+            }
+        }
+
+        // Initialisation
+        const translationService = new ImprovedTranslationService();
+        const translateBtn = document.getElementById('translateBtn');
+        const btnText = document.getElementById('btnText');
+        const languageSelect = document.getElementById('language');
+        const statusDiv = document.getElementById('status');
+        const messagesDiv = document.getElementById('messages');
+
+        // Fonction de traduction (identique à celle intégrée dans ChatInterface)
+        async function translateMessages() {
+            const targetLanguage = languageSelect.value;
+            const messages = messagesDiv.querySelectorAll('.message');
+            
+            console.log(`🌐 Début de la traduction vers ${targetLanguage}`);
+            statusDiv.textContent = `Traduction en cours vers ${targetLanguage === 'ar' ? 'l\'arabe' : 'le français'}...`;
+            translateBtn.disabled = true;
+            btnText.textContent = 'Traduction en cours...';
+
+            try {
+                for (let messageEl of messages) {
+                    const originalText = messageEl.dataset.original;
+                    const originalLang = messageEl.dataset.lang;
+                    const textSpan = messageEl.querySelector('.text');
+                    
+                    console.log(`📝 Traitement: "${originalText.substring(0, 50)}..."`);
+                    
+                    if (originalLang === targetLanguage) {
+                        // Même langue, afficher le texte original
+                        textSpan.textContent = originalText;
+                        messageEl.classList.remove('translated');
+                        console.log(`✅ Même langue, texte original affiché`);
+                    } else {
+                        try {
+                            const translatedText = await translationService.translateText(
+                                originalText, 
+                                originalLang, 
+                                targetLanguage
+                            );
+                            
+                            console.log(`✅ Résultat: "${translatedText.substring(0, 50)}..."`);
+                            
+                            textSpan.textContent = translatedText;
+                            
+                            if (translatedText !== originalText) {
+                                messageEl.classList.add('translated');
+                                console.log(`✅ Traduction réussie`);
+                            } else {
+                                messageEl.classList.remove('translated');
+                                console.log(`⚠️ Pas de traduction disponible`);
+                            }
+                        } catch (error) {
+                            console.error('❌ Erreur de traduction:', error);
+                            textSpan.textContent = originalText;
+                            messageEl.classList.remove('translated');
+                        }
+                    }
+                    
+                    // Délai pour simuler la traduction réelle
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
+                statusDiv.textContent = `✅ Traduction terminée vers ${targetLanguage === 'ar' ? 'l\'arabe' : 'le français'}`;
+                console.log(`✨ Traduction terminée avec succès`);
+                
+            } catch (error) {
+                console.error('❌ Erreur de traduction globale:', error);
+                statusDiv.textContent = `❌ Erreur de traduction: ${error.message}`;
+            } finally {
+                translateBtn.disabled = false;
+                btnText.textContent = targetLanguage === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages';
+            }
+        }
+
+        // Event listeners
+        translateBtn.addEventListener('click', translateMessages);
+        
+        languageSelect.addEventListener('change', () => {
+            const lang = languageSelect.value;
+            statusDiv.textContent = `Prêt à traduire vers ${lang === 'ar' ? 'l\'arabe' : 'le français'}`;
+            btnText.textContent = lang === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages';
+        });
+
+        console.log('🚀 Test du bouton de traduction direct initialisé');
+        console.log('📋 Instructions:');
+        console.log('1. Sélectionnez la langue cible');
+        console.log('2. Cliquez sur "Traduire les messages"');
+        console.log('3. Observez la traduction des messages');
+    </script>
+</body>
+</html>

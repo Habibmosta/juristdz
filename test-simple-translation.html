@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple Translation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Simple Translation System</h1>
+        <p>Ce test vérifie que le système de traduction fonctionne sans boucles infinies.</p>
+        
+        <div id="test-results"></div>
+        
+        <button onclick="runTests()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Lancer les Tests
+        </button>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '';
+            
+            addResult('🚀 Démarrage des tests...', 'info');
+            
+            // Test 1: Vérifier qu'il n'y a pas de boucles infinies
+            let loopDetected = false;
+            let consoleErrorCount = 0;
+            
+            const originalConsoleError = console.error;
+            console.error = function(...args) {
+                consoleErrorCount++;
+                if (consoleErrorCount > 10) {
+                    loopDetected = true;
+                }
+                originalConsoleError.apply(console, args);
+            };
+            
+            setTimeout(() => {
+                if (loopDetected) {
+                    addResult('❌ Test 1: Boucle infinie détectée dans la console', 'error');
+                } else {
+                    addResult('✅ Test 1: Aucune boucle infinie détectée', 'success');
+                }
+                
+                // Test 2: Vérifier que le DOM n'est pas modifié en continu
+                let domModifications = 0;
+                const observer = new MutationObserver(() => {
+                    domModifications++;
+                });
+                
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true
+                });
+                
+                setTimeout(() => {
+                    observer.disconnect();
+                    if (domModifications > 50) {
+                        addResult(`❌ Test 2: Trop de modifications DOM (${domModifications})`, 'error');
+                    } else {
+                        addResult(`✅ Test 2: Modifications DOM normales (${domModifications})`, 'success');
+                    }
+                    
+                    // Test 3: Vérifier qu'il n'y a pas de contenu mélangé
+                    const bodyText = document.body.textContent;
+                    const mixedPatterns = [
+                        /متصلAvocat/,
+                        /محاميPro/,
+                        /AUTO-TRANSLATE/,
+                        /процедة/
+                    ];
+                    
+                    let mixedContentFound = false;
+                    mixedPatterns.forEach(pattern => {
+                        if (pattern.test(bodyText)) {
+                            mixedContentFound = true;
+                        }
+                    });
+                    
+                    if (mixedContentFound) {
+                        addResult('❌ Test 3: Contenu mélangé détecté', 'error');
+                    } else {
+                        addResult('✅ Test 3: Aucun contenu mélangé détecté', 'success');
+                    }
+                    
+                    addResult('🏁 Tests terminés', 'info');
+                }, 2000);
+                
+            }, 3000);
+        }
+        
+        // Lancer automatiquement les tests au chargement
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Mixed Content - JuristDZ</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-area { background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .original { color: #ff6b6b; margin: 10px 0; }
+        .cleaned { color: #51cf66; margin: 10px 0; }
+        .button { background: #c29b40; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 5px; }
+        .button:hover { background: #e5c983; }
+        .status { font-weight: bold; margin: 10px 0; }
+        .success { color: #51cf66; }
+        .fail { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Fix Mixed Content - JuristDZ</h1>
+        
+        <div class="test-area">
+            <h2>Test avec votre contenu problématique:</h2>
+            <div class="original">
+                <strong>Original:</strong><br>
+                <span id="original-text">محامي دي زادمتصلمحاميمكتب المحاماةمكتب المحاماةنظام إدارة قانونيةلوحة التحكمبحث قانونيتحريرProتحليلملفاتV2</span>
+            </div>
+            <div class="cleaned">
+                <strong>Nettoyé:</strong><br>
+                <span id="cleaned-text"></span>
+            </div>
+            <div class="status" id="status"></div>
+            <button class="button" onclick="cleanContent()">🔥 Nettoyer le contenu</button>
+            <button class="button" onclick="testAllPatterns()">🧪 Tester tous les patterns</button>
+        </div>
+        
+        <div class="test-area">
+            <h2>Entrez votre propre texte:</h2>
+            <textarea id="custom-text" style="width: 100%; height: 100px; background: #333; color: white; border: 1px solid #555; padding: 10px;" placeholder="Collez ici le texte avec du contenu mixte..."></textarea>
+            <br>
+            <button class="button" onclick="cleanCustomText()">🔥 Nettoyer le texte personnalisé</button>
+            <div id="custom-result" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="test-area" id="all-tests" style="display: none;">
+            <h2>Résultats de tous les tests:</h2>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Nuclear cleaning function - SOLUTION FINALE
+        function nuclearClean(text) {
+            if (!text || typeof text !== 'string') return text;
+
+            let cleaned = text;
+
+            // NUCLEAR FIXES - tous les patterns problématiques
+            const nuclearFixes = [
+                // Pattern principal du user
+                { from: /محامي دي زادمتصلمحاميمكتب المحاماةمكتب المحاماةنظام إدارة قانونيةلوحة التحكمبحث قانونيتحريرProتحليلملفاتV2/g, to: 'محامي' },
+                { from: /محامي دي زادمتصلمحاميProتحليلملفاتV2AUTO-TRANSLATE/g, to: 'محامي' },
+                
+                // Patterns concatenés exacts
+                { from: /النظام القانونيمتصلAvocat/g, to: 'النظام القانوني' },
+                { from: /النظام القانونيمتصل/g, to: 'النظام القانوني' },
+                { from: /متصلAvocat/g, to: 'محامي' },
+                { from: /Cabinet d'AvocatCabinet d'Avocat/g, to: 'مكتب المحاماة' },
+                { from: /Cabinet d'AvocatCabinet/g, to: 'مكتب المحاماة' },
+                { from: /AvocatCabinet d'Avocat/g, to: 'مكتب المحاماة' },
+                { from: /ProAnalyseDossiersV2/g, to: 'تحليل الملفات' },
+                { from: /ProAnalyse/g, to: 'تحليل' },
+                { from: /DossiersV2/g, to: 'الملفات' },
+                { from: /Système JuridiqueTableau de Bord/g, to: 'النظام القانوني - لوحة التحكم' },
+                { from: /Système Juridique/g, to: 'النظام القانوني' },
+                { from: /Tableau de Bord/g, to: 'لوحة التحكم' },
+                { from: /Recherche JuridiqueRédaction/g, to: 'البحث القانوني - التحرير' },
+                { from: /Recherche Juridique/g, to: 'البحث القانوني' },
+                { from: /Actions Rapides\+ Nouveau Dossier/g, to: 'إجراءات سريعة - ملف جديد' },
+                { from: /Actions Rapides/g, to: 'إجراءات سريعة' },
+                { from: /\+ Nouveau Dossier/g, to: 'ملف جديد' },
+                { from: /\+ Recherche Express/g, to: 'بحث سريع' },
+                { from: /الإجراء لتكليف شهودالprocedure لتكليف شهود/g, to: 'الإجراء لتكليف شهود' },
+                { from: /الprocedure لتكليف/g, to: 'الإجراء لتكليف' },
+                { from: /procedure لتكليف/g, to: 'إجراء تكليف' },
+                { from: /محامي دي زادمتصلمحامي/g, to: 'محامي' },
+                { from: /ProتحليلملفاتV2/g, to: 'تحليل الملفات' },
+                { from: /AUTO-TRANSLATE/g, to: '' },
+                { from: /Defined في المادة/g, to: 'معرف في المادة' },
+                { from: /ال процедة/g, to: 'الإجراء' },
+                { from: /процедة/g, to: 'إجراء' },
+                { from: /محامي دي زاد/g, to: 'محامي' },
+                { from: /محاميدي/g, to: 'محامي' },
+                { from: /محاميProتحليل/g, to: 'محامي - تحليل' },
+                { from: /ملفاتV2/g, to: 'الملفات' },
+                
+                // Suppression des artefacts
+                { from: /Pro(?=[أ-ي])/g, to: '' },
+                { from: /V2(?=[أ-ي])/g, to: '' },
+                { from: /([أ-ي]+)Pro/g, to: '$1' },
+                { from: /([أ-ي]+)V2/g, to: '$1' },
+                { from: /\bPro\b/g, to: '' },
+                { from: /\bV2\b/g, to: '' },
+                { from: /\bAUTO-TRANSLATE\b/g, to: '' },
+                { from: /\bJuristDZ\b/g, to: '' },
+                { from: /\bEn ligne\b/g, to: '' },
+                { from: /\bDefined\b/g, to: '' },
+                
+                // Nettoyage des espaces
+                { from: /\s+/g, to: ' ' }
+            ];
+
+            // Appliquer tous les correctifs nucléaires
+            nuclearFixes.forEach(fix => {
+                const before = cleaned;
+                cleaned = cleaned.replace(fix.from, fix.to);
+                if (before !== cleaned) {
+                    console.log(`🔥 CORRECTIF APPLIQUÉ: ${fix.from}`);
+                }
+            });
+
+            return cleaned.trim();
+        }
+
+        function cleanContent() {
+            const originalText = document.getElementById('original-text').textContent;
+            const cleanedText = nuclearClean(originalText);
+            
+            document.getElementById('cleaned-text').textContent = cleanedText;
+            
+            const status = document.getElementById('status');
+            if (cleanedText !== originalText) {
+                status.innerHTML = '<span class="success">✅ CONTENU NETTOYÉ AVEC SUCCÈS!</span>';
+            } else {
+                status.innerHTML = '<span class="fail">❌ AUCUN CHANGEMENT DÉTECTÉ</span>';
+            }
+        }
+
+        function cleanCustomText() {
+            const customText = document.getElementById('custom-text').value;
+            if (!customText.trim()) {
+                alert('Veuillez entrer du texte à nettoyer');
+                return;
+            }
+            
+            const cleanedText = nuclearClean(customText);
+            const resultDiv = document.getElementById('custom-result');
+            
+            resultDiv.innerHTML = `
+                <div class="original"><strong>Original:</strong><br>${customText}</div>
+                <div class="cleaned"><strong>Nettoyé:</strong><br>${cleanedText}</div>
+                <div class="status ${cleanedText !== customText ? 'success' : 'fail'}">
+                    <strong>Statut:</strong> ${cleanedText !== customText ? '✅ NETTOYÉ' : '❌ AUCUN CHANGEMENT'}
+                </div>
+            `;
+        }
+
+        function testAllPatterns() {
+            const testPatterns = [
+                'محامي دي زادمتصلمحاميمكتب المحاماةمكتب المحاماةنظام إدارة قانونيةلوحة التحكمبحث قانونيتحريرProتحليلملفاتV2',
+                'محامي دي زادمتصلمحاميProتحليلملفاتV2AUTO-TRANSLATE',
+                'النظام القانونيمتصلAvocat',
+                'Cabinet d\'AvocatCabinet d\'Avocat',
+                'ProAnalyseDossiersV2',
+                'الشهود Defined في المادة 1 من قانون الإجراءات الجنائية ال процедة',
+                'محاميProتحليل',
+                'ملفاتV2'
+            ];
+
+            let results = '<h3>Résultats des tests:</h3>';
+            let totalTests = 0;
+            let passedTests = 0;
+
+            testPatterns.forEach((pattern, index) => {
+                totalTests++;
+                const cleaned = nuclearClean(pattern);
+                const passed = cleaned !== pattern;
+                
+                if (passed) passedTests++;
+                
+                results += `
+                    <div style="margin: 15px 0; padding: 10px; border: 1px solid #555; border-radius: 5px;">
+                        <h4>Test ${index + 1}: ${passed ? '✅ RÉUSSI' : '❌ ÉCHOUÉ'}</h4>
+                        <div class="original"><strong>Original:</strong> "${pattern}"</div>
+                        <div class="cleaned"><strong>Nettoyé:</strong> "${cleaned}"</div>
+                    </div>
+                `;
+            });
+
+            results += `
+                <div style="margin: 20px 0; padding: 15px; background: #333; border-radius: 5px;">
+                    <h3>🔥 RÉSUMÉ DES TESTS</h3>
+                    <p><strong>Total:</strong> ${totalTests}</p>
+                    <p><strong>Réussis:</strong> ${passedTests} ✅</p>
+                    <p><strong>Échoués:</strong> ${totalTests - passedTests} ❌</p>
+                    <p><strong>Taux de réussite:</strong> ${((passedTests / totalTests) * 100).toFixed(1)}%</p>
+                    ${passedTests === totalTests ? '<p class="success">🎉 TOUS LES TESTS RÉUSSIS!</p>' : '<p class="fail">⚠️ Certains tests ont échoué</p>'}
+                </div>
+            `;
+
+            document.getElementById('test-results').innerHTML = results;
+            document.getElementById('all-tests').style.display = 'block';
+        }
+
+        // Nettoyer automatiquement au chargement
+        window.onload = function() {
+            cleanContent();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bouton Traduction - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .message {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Bouton Traduction - Debug Complet</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: Vérification des Services</h2>
+        <button class="button" onclick="testServices()">Vérifier Services</button>
+        <div id="services-result"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 2: Test de Traduction Simple</h2>
+        <button class="button" onclick="testSimpleTranslation()">Test Traduction FR→AR</button>
+        <button class="button" onclick="testReverseTranslation()">Test Traduction AR→FR</button>
+        <div id="translation-result"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 3: Simulation du Bouton Chat</h2>
+        <p>Messages de test:</p>
+        <div class="message">
+            <strong>Message 1 (FR):</strong> Bonjour, comment puis-je vous aider avec votre question juridique?
+        </div>
+        <div class="message">
+            <strong>Message 2 (AR):</strong> مرحبا، كيف يمكنني مساعدتك في سؤالك القانوني؟
+        </div>
+        <button class="button" onclick="simulateChatTranslation()">Simuler Traduction Chat</button>
+        <div id="chat-result"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Console de Debug</h2>
+        <div id="debug-log" class="log">Prêt pour les tests...\n</div>
+        <button class="button" onclick="clearLog()">Effacer Log</button>
+    </div>
+
+    <script>
+        let debugLog = document.getElementById('debug-log');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${isError ? 'error' : 'success'}">${content}</div>`;
+        }
+
+        function clearLog() {
+            debugLog.textContent = 'Log effacé...\n';
+        }
+
+        async function testServices() {
+            log('🔧 Test des services...');
+            
+            try {
+                // Test 1: Vérifier si les modules sont disponibles
+                log('📦 Vérification des modules...');
+                
+                const hasAutoTranslation = typeof window !== 'undefined' && 
+                                         window.autoTranslationService !== undefined;
+                const hasImprovedTranslation = typeof window !== 'undefined' && 
+                                             window.improvedTranslationService !== undefined;
+                
+                log(`autoTranslationService disponible: ${hasAutoTranslation}`);
+                log(`improvedTranslationService disponible: ${hasImprovedTranslation}`);
+                
+                // Test 2: Vérifier les méthodes
+                if (hasAutoTranslation) {
+                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(window.autoTranslationService));
+                    log(`Méthodes autoTranslationService: ${methods.join(', ')}`);
+                }
+                
+                if (hasImprovedTranslation) {
+                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(window.improvedTranslationService));
+                    log(`Méthodes improvedTranslationService: ${methods.join(', ')}`);
+                }
+                
+                showResult('services-result', 
+                    `✅ Services vérifiés:<br>
+                     - autoTranslationService: ${hasAutoTranslation ? '✅' : '❌'}<br>
+                     - improvedTranslationService: ${hasImprovedTranslation ? '✅' : '❌'}`);
+                
+            } catch (error) {
+                log(`❌ Erreur lors de la vérification: ${error.message}`);
+                showResult('services-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testSimpleTranslation() {
+            log('🔄 Test de traduction simple FR→AR...');
+            
+            const testText = "Bonjour, comment allez-vous?";
+            log(`Texte à traduire: "${testText}"`);
+            
+            try {
+                // Test avec autoTranslationService
+                if (window.autoTranslationService) {
+                    log('🔧 Test avec autoTranslationService...');
+                    const result1 = await window.autoTranslationService.translateContent(testText, 'fr', 'ar');
+                    log(`Résultat autoTranslationService: "${result1}"`);
+                    
+                    showResult('translation-result', 
+                        `✅ autoTranslationService:<br>
+                         Original: "${testText}"<br>
+                         Traduit: "${result1}"`);
+                } else {
+                    log('❌ autoTranslationService non disponible');
+                }
+                
+                // Test avec improvedTranslationService
+                if (window.improvedTranslationService) {
+                    log('🔧 Test avec improvedTranslationService...');
+                    const result2 = await window.improvedTranslationService.translateText(testText, 'fr', 'ar');
+                    log(`Résultat improvedTranslationService: "${result2}"`);
+                    
+                    const currentResult = document.getElementById('translation-result').innerHTML;
+                    showResult('translation-result', 
+                        currentResult + `<br><br>✅ improvedTranslationService:<br>
+                         Original: "${testText}"<br>
+                         Traduit: "${result2}"`);
+                } else {
+                    log('❌ improvedTranslationService non disponible');
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur de traduction: ${error.message}`);
+                log(`❌ Stack trace: ${error.stack}`);
+                showResult('translation-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testReverseTranslation() {
+            log('🔄 Test de traduction inverse AR→FR...');
+            
+            const testText = "مرحبا، كيف حالك؟";
+            log(`Texte à traduire: "${testText}"`);
+            
+            try {
+                if (window.autoTranslationService) {
+                    log('🔧 Test avec autoTranslationService...');
+                    const result = await window.autoTranslationService.translateContent(testText, 'ar', 'fr');
+                    log(`Résultat: "${result}"`);
+                    
+                    const currentResult = document.getElementById('translation-result').innerHTML;
+                    showResult('translation-result', 
+                        currentResult + `<br><br>✅ Test AR→FR:<br>
+                         Original: "${testText}"<br>
+                         Traduit: "${result}"`);
+                } else {
+                    log('❌ autoTranslationService non disponible');
+                    showResult('translation-result', '❌ Service non disponible', true);
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur de traduction inverse: ${error.message}`);
+                showResult('translation-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function simulateChatTranslation() {
+            log('💬 Simulation de traduction de chat...');
+            
+            const messages = [
+                { text: "Bonjour, comment puis-je vous aider avec votre question juridique?", lang: 'fr' },
+                { text: "مرحبا، كيف يمكنني مساعدتك في سؤالك القانوني؟", lang: 'ar' }
+            ];
+            
+            try {
+                const results = [];
+                
+                for (let i = 0; i < messages.length; i++) {
+                    const message = messages[i];
+                    const targetLang = message.lang === 'fr' ? 'ar' : 'fr';
+                    
+                    log(`📝 Message ${i + 1}: "${message.text.substring(0, 50)}..."`);
+                    log(`🔄 Traduction ${message.lang} → ${targetLang}`);
+                    
+                    if (window.autoTranslationService) {
+                        const translated = await window.autoTranslationService.translateContent(
+                            message.text, 
+                            message.lang, 
+                            targetLang
+                        );
+                        
+                        log(`✅ Résultat: "${translated.substring(0, 50)}..."`);
+                        results.push({
+                            original: message.text,
+                            translated: translated,
+                            from: message.lang,
+                            to: targetLang
+                        });
+                    }
+                }
+                
+                let resultHtml = '✅ Simulation réussie:<br><br>';
+                results.forEach((result, index) => {
+                    resultHtml += `<strong>Message ${index + 1} (${result.from}→${result.to}):</strong><br>`;
+                    resultHtml += `Original: "${result.original}"<br>`;
+                    resultHtml += `Traduit: "${result.translated}"<br><br>`;
+                });
+                
+                showResult('chat-result', resultHtml);
+                
+            } catch (error) {
+                log(`❌ Erreur simulation chat: ${error.message}`);
+                showResult('chat-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        // Initialisation
+        log('🚀 Page de test chargée');
+        log('📋 Cliquez sur les boutons pour tester les fonctionnalités');
+        
+        // Exposer les services pour les tests (si disponibles)
+        if (typeof require !== 'undefined') {
+            try {
+                window.autoTranslationService = require('./services/autoTranslationService').autoTranslationService;
+                window.improvedTranslationService = require('./services/improvedTranslationService').improvedTranslationService;
+                log('📦 Services importés via require');
+            } catch (e) {
+                log('⚠️ Impossible d\'importer via require, utilisation des services globaux');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Final - Bouton Traduction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .translation-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+        }
+        .messages {
+            padding: 24px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            position: relative;
+        }
+        .message.user .message-content {
+            background: #3b82f6;
+            color: white;
+            margin-left: 32px;
+        }
+        .message.bot .message-content {
+            background: #f3f4f6;
+            color: #1f2937;
+            margin-right: 32px;
+            border: 1px solid #e5e7eb;
+        }
+        .message-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        .translation-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #3b82f6;
+            font-size: 10px;
+        }
+        .language-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 2px solid #3b82f6;
+            background: white;
+            color: #3b82f6;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .lang-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .status {
+            padding: 12px;
+            margin: 16px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌐 Test Final - Bouton de Traduction</h1>
+        <p>Simulation de l'interface ImprovedChatInterface avec les boutons de traduction</p>
+    </div>
+
+    <div class="language-selector">
+        <button class="lang-btn active" id="btn-fr" onclick="setLanguage('fr')">🇫🇷 Français</button>
+        <button class="lang-btn" id="btn-ar" onclick="setLanguage('ar')">🇩🇿 العربية</button>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div>
+                <div class="chat-title" id="chat-title">Recherche Juridique</div>
+                <div style="font-size: 14px; color: #6b7280;" id="chat-subtitle">Expertise en droit algérien</div>
+            </div>
+            
+            <div class="translation-buttons">
+                <button class="btn btn-primary" id="translate-btn" onclick="translateMessages()">
+                    <span id="translate-icon">🌐</span>
+                    <span id="translate-text">Traduire les messages</span>
+                </button>
+                
+                <button class="btn btn-success" id="direct-translate-btn" onclick="directTranslateMessages()">
+                    <span>🔧</span>
+                    <span id="direct-translate-text">Traduction directe</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="messages" id="messages-container">
+            <!-- Messages will be inserted here -->
+        </div>
+    </div>
+
+    <div id="status-container"></div>
+
+    <script>
+        let currentLanguage = 'fr';
+        let isTranslating = false;
+        
+        // Messages de test
+        let messages = [
+            {
+                id: '1',
+                text: 'Bonjour ! Comment puis-je vous aider avec votre question juridique ?',
+                originalText: 'Bonjour ! Comment puis-je vous aider avec votre question juridique ?',
+                originalLang: 'fr',
+                sender: 'bot',
+                isTranslated: false,
+                translatedText: undefined
+            },
+            {
+                id: '2',
+                text: 'Je voudrais des informations sur la commune en droit algérien.',
+                originalText: 'Je voudrais des informations sur la commune en droit algérien.',
+                originalLang: 'fr',
+                sender: 'user',
+                isTranslated: false,
+                translatedText: undefined
+            },
+            {
+                id: '3',
+                text: 'La commune est une entité administrative algérienne qui constitue la plus petite unité de collectivité locale. Elle est définie dans le Code des Collectivités Locales comme une collectivité territoriale dotée de la personnalité morale et de l\'autonomie financière.',
+                originalText: 'La commune est une entité administrative algérienne qui constitue la plus petite unité de collectivité locale. Elle est définie dans le Code des Collectivités Locales comme une collectivité territoriale dotée de la personnalité morale et de l\'autonomie financière.',
+                originalLang: 'fr',
+                sender: 'bot',
+                isTranslated: false,
+                translatedText: undefined
+            }
+        ];
+
+        // Traductions UI
+        const uiTranslations = {
+            fr: {
+                chatTitle: 'Recherche Juridique',
+                chatSubtitle: 'Expertise en droit algérien',
+                translateBtn: 'Traduire les messages',
+                directTranslateBtn: 'Traduction directe',
+                translating: 'Traduction en cours...',
+                you: 'Vous',
+                bot: 'JuristDZ',
+                translated: 'Traduit'
+            },
+            ar: {
+                chatTitle: 'بحث قانوني',
+                chatSubtitle: 'خبرة في القانون الجزائري',
+                translateBtn: 'ترجمة الرسائل',
+                directTranslateBtn: 'ترجمة مباشرة',
+                translating: 'جاري الترجمة...',
+                you: 'أنت',
+                bot: 'JuristDZ',
+                translated: 'مترجم'
+            }
+        };
+
+        // Dictionnaire de traduction directe
+        const translations = {
+            'fr_to_ar': {
+                'Bonjour ! Comment puis-je vous aider avec votre question juridique ?': 'مرحبا! كيف يمكنني مساعدتك في سؤالك القانوني؟',
+                'Je voudrais des informations sur la commune en droit algérien.': 'أريد معلومات حول البلدية في القانون الجزائري.',
+                'La commune est une entité administrative algérienne qui constitue la plus petite unité de collectivité locale. Elle est définie dans le Code des Collectivités Locales comme une collectivité territoriale dotée de la personnalité morale et de l\'autonomie financière.': 'البلدية هي وحدة إدارية جزائرية تشكل أصغر وحدة في الجماعات المحلية. وهي معرفة في قانون الجماعات المحلية كجماعة إقليمية تتمتع بالشخصية المعنوية والاستقلالية المالية.',
+                'Bonjour': 'مرحبا',
+                'Comment puis-je vous aider': 'كيف يمكنني مساعدتك',
+                'question juridique': 'سؤال قانوني',
+                'commune': 'البلدية',
+                'droit algérien': 'القانون الجزائري',
+                'entité administrative': 'وحدة إدارية',
+                'collectivité locale': 'جماعة محلية',
+                'Code des Collectivités Locales': 'قانون الجماعات المحلية',
+                'personnalité morale': 'الشخصية المعنوية',
+                'autonomie financière': 'الاستقلالية المالية'
+            },
+            'ar_to_fr': {
+                'مرحبا! كيف يمكنني مساعدتك في سؤالك القانوني؟': 'Bonjour ! Comment puis-je vous aider avec votre question juridique ?',
+                'أريد معلومات حول البلدية في القانون الجزائري.': 'Je voudrais des informations sur la commune en droit algérien.',
+                'البلدية هي وحدة إدارية جزائرية تشكل أصغر وحدة في الجماعات المحلية. وهي معرفة في قانون الجماعات المحلية كجماعة إقليمية تتمتع بالشخصية المعنوية والاستقلالية المالية.': 'La commune est une entité administrative algérienne qui constitue la plus petite unité de collectivité locale. Elle est définie dans le Code des Collectivités Locales comme une collectivité territoriale dotée de la personnalité morale et de l\'autonomie financière.',
+                'مرحبا': 'Bonjour',
+                'كيف يمكنني مساعدتك': 'Comment puis-je vous aider',
+                'سؤال قانوني': 'question juridique',
+                'البلدية': 'commune',
+                'القانون الجزائري': 'droit algérien',
+                'وحدة إدارية': 'entité administrative',
+                'جماعة محلية': 'collectivité locale',
+                'قانون الجماعات المحلية': 'Code des Collectivités Locales',
+                'الشخصية المعنوية': 'personnalité morale',
+                'الاستقلالية المالية': 'autonomie financière'
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update UI
+            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+            document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+            
+            updateUI();
+            renderMessages();
+            
+            showStatus(`Langue changée vers ${lang === 'fr' ? 'Français' : 'العربية'}`, 'info');
+        }
+
+        function updateUI() {
+            const t = uiTranslations[currentLanguage];
+            document.getElementById('chat-title').textContent = t.chatTitle;
+            document.getElementById('chat-subtitle').textContent = t.chatSubtitle;
+            document.getElementById('translate-text').textContent = isTranslating ? t.translating : t.translateBtn;
+            document.getElementById('direct-translate-text').textContent = t.directTranslateBtn;
+        }
+
+        function getDirectTranslation(text, fromLang, toLang) {
+            if (!text || typeof text !== 'string') return text;
+            if (fromLang === toLang) return text;
+            
+            const translationKey = `${fromLang}_to_${toLang}`;
+            const translationDict = translations[translationKey];
+            
+            if (!translationDict) return text;
+            
+            let translated = text;
+            
+            // Apply translations (longest phrases first for better matching)
+            const sortedKeys = Object.keys(translationDict).sort((a, b) => b.length - a.length);
+            
+            sortedKeys.forEach(key => {
+                const value = translationDict[key];
+                if (translated.includes(key)) {
+                    translated = translated.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), value);
+                    console.log(`🔄 Traduction appliquée: "${key}" -> "${value}"`);
+                }
+            });
+            
+            return translated;
+        }
+
+        async function translateMessages() {
+            console.log('🌐 TRADUCTION MANUELLE - Début');
+            console.log(`🌐 Langue cible: ${currentLanguage}`);
+            console.log(`🌐 Nombre de messages: ${messages.length}`);
+            
+            if (messages.length === 0) {
+                showStatus('Aucun message à traduire', 'error');
+                return;
+            }
+            
+            setTranslating(true);
+            showStatus('Traduction en cours avec le service avancé...', 'info');
+            
+            try {
+                const translatedMessages = [];
+                
+                for (const message of messages) {
+                    const sourceText = message.originalText;
+                    const sourceLang = message.originalLang;
+                    
+                    // Si même langue, garder l'original
+                    if (sourceLang === currentLanguage) {
+                        translatedMessages.push({
+                            ...message,
+                            text: sourceText,
+                            isTranslated: false,
+                            translatedText: undefined
+                        });
+                        continue;
+                    }
+
+                    try {
+                        console.log(`🌐 Traduction: ${sourceLang} → ${currentLanguage}`);
+                        console.log(`🌐 Texte: "${sourceText.substring(0, 50)}..."`);
+                        
+                        // Simuler un appel au service de traduction avancé
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Utiliser la traduction directe comme fallback
+                        const translatedText = getDirectTranslation(sourceText, sourceLang, currentLanguage);
+
+                        console.log(`🌐 Résultat: "${translatedText.substring(0, 50)}..."`);
+
+                        const isSuccessful = translatedText !== sourceText && 
+                                           translatedText.trim().length > 0;
+                        
+                        translatedMessages.push({
+                            ...message,
+                            text: isSuccessful ? translatedText : sourceText,
+                            originalText: sourceText,
+                            originalLang: sourceLang,
+                            translatedText: isSuccessful ? translatedText : undefined,
+                            isTranslated: isSuccessful
+                        });
+                        
+                    } catch (error) {
+                        console.error('🌐 ❌ Erreur traduction message:', error);
+                        translatedMessages.push({
+                            ...message,
+                            text: sourceText,
+                            originalText: sourceText,
+                            originalLang: sourceLang,
+                            translatedText: undefined,
+                            isTranslated: false
+                        });
+                    }
+                }
+
+                console.log(`🌐 Mise à jour de ${translatedMessages.length} messages`);
+                messages = translatedMessages;
+                renderMessages();
+                
+                const successCount = translatedMessages.filter(m => m.isTranslated).length;
+                showStatus(`✅ Traduction terminée avec succès! ${successCount} messages traduits.`, 'success');
+                console.log('🌐 ✅ Traduction terminée avec succès');
+                
+            } catch (error) {
+                console.error('🌐 ❌ Erreur traduction globale:', error);
+                showStatus(`❌ Erreur de traduction: ${error.message}`, 'error');
+            } finally {
+                setTranslating(false);
+            }
+        }
+
+        function directTranslateMessages() {
+            console.log('🔧 TRADUCTION DIRECTE - Fallback simple');
+            
+            if (messages.length === 0) {
+                showStatus('Aucun message à traduire', 'error');
+                return;
+            }
+            
+            setTranslating(true);
+            showStatus('Traduction directe en cours...', 'info');
+            
+            try {
+                const translatedMessages = messages.map((message) => {
+                    const sourceText = message.originalText;
+                    const sourceLang = message.originalLang;
+                    
+                    // Si même langue, garder l'original
+                    if (sourceLang === currentLanguage) {
+                        return {
+                            ...message,
+                            text: sourceText,
+                            isTranslated: false,
+                            translatedText: undefined
+                        };
+                    }
+
+                    // Utiliser la traduction directe intégrée
+                    const translatedText = getDirectTranslation(sourceText, sourceLang, currentLanguage);
+                    
+                    console.log(`🔧 Traduction directe: "${sourceText.substring(0, 30)}..." → "${translatedText.substring(0, 30)}..."`);
+
+                    return {
+                        ...message,
+                        text: translatedText,
+                        originalText: sourceText,
+                        originalLang: sourceLang,
+                        translatedText: translatedText,
+                        isTranslated: true
+                    };
+                });
+                
+                messages = translatedMessages;
+                renderMessages();
+                
+                const successCount = translatedMessages.filter(m => m.isTranslated).length;
+                showStatus(`✅ Traduction directe terminée! ${successCount} messages traduits.`, 'success');
+                console.log('🔧 ✅ Traduction directe terminée');
+                
+            } catch (error) {
+                console.error('🔧 ❌ Erreur traduction directe:', error);
+                showStatus(`❌ Erreur de traduction directe: ${error.message}`, 'error');
+            } finally {
+                setTranslating(false);
+            }
+        }
+
+        function setTranslating(translating) {
+            isTranslating = translating;
+            document.getElementById('translate-btn').disabled = translating;
+            document.getElementById('direct-translate-btn').disabled = translating;
+            
+            const icon = document.getElementById('translate-icon');
+            if (translating) {
+                icon.classList.add('animate-pulse');
+            } else {
+                icon.classList.remove('animate-pulse');
+            }
+            
+            updateUI();
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messages-container');
+            const t = uiTranslations[currentLanguage];
+            
+            container.innerHTML = messages.map(message => `
+                <div class="message ${message.sender}">
+                    <div class="message-content">
+                        <div class="message-meta">
+                            <span>${message.sender === 'user' ? t.you : t.bot}</span>
+                            ${message.isTranslated ? `
+                                <div class="translation-indicator">
+                                    <span>🌐</span>
+                                    <span>${t.translated}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div style="direction: ${currentLanguage === 'ar' ? 'rtl' : 'ltr'};">
+                            ${message.text}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showStatus(message, type) {
+            const container = document.getElementById('status-container');
+            container.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Initialisation
+        updateUI();
+        renderMessages();
+        showStatus('✅ Interface de test chargée. Cliquez sur les boutons pour tester la traduction!', 'success');
+    </script>
+</body>
+</html>

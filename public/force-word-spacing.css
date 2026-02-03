@@ -1,0 +1,98 @@
+/**
+ * FORCE WORD SPACING CSS
+ * 
+ * CSS rules to force proper word spacing in the interface
+ */
+
+/* Force word spacing in all text elements */
+* {
+  word-spacing: 0.2em !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Specific fixes for navigation elements */
+nav, .sidebar, [role="navigation"] {
+  word-spacing: 0.3em !important;
+}
+
+/* Force spacing in buttons */
+button {
+  word-spacing: 0.25em !important;
+  white-space: pre-wrap !important;
+}
+
+/* Force spacing in Arabic text */
+[lang="ar"], .arabic-text, *:lang(ar) {
+  word-spacing: 0.4em !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* Force spacing in French text */
+[lang="fr"], .french-text, *:lang(fr) {
+  word-spacing: 0.3em !important;
+}
+
+/* Prevent text concatenation */
+.no-concat {
+  display: inline-block !important;
+  margin-right: 0.5em !important;
+}
+
+/* Force breaks between different script types */
+.mixed-script {
+  word-break: break-all !important;
+  word-spacing: 0.5em !important;
+}
+
+/* Emergency spacing for problematic elements */
+.emergency-spacing {
+  word-spacing: 1em !important;
+  letter-spacing: 0.2em !important;
+  white-space: pre-wrap !important;
+}
+
+/* Sidebar specific fixes */
+.sidebar * {
+  word-spacing: 0.4em !important;
+}
+
+/* Menu items */
+.menu-item, [class*="menu"] {
+  word-spacing: 0.3em !important;
+  padding: 0.2em !important;
+}
+
+/* Chat interface fixes */
+.chat-interface *, .chat-message * {
+  word-spacing: 0.2em !important;
+}
+
+/* Translation output fixes */
+.translation-output, .translated-text {
+  word-spacing: 0.3em !important;
+  line-height: 1.6 !important;
+}
+
+/* Force visible separation */
+.force-separation::after {
+  content: " | " !important;
+  color: rgba(0,0,0,0.3) !important;
+  font-weight: normal !important;
+}
+
+/* Hide translation artifacts */
+[class*="translate"], [id*="translate"] {
+  display: none !important;
+}
+
+/* Clean up mixed content */
+.mixed-content {
+  display: none !important;
+}
+
+/* Emergency visibility for debugging */
+.debug-spacing {
+  background: rgba(255,0,0,0.1) !important;
+  border: 1px solid red !important;
+  word-spacing: 2em !important;
+}

@@ -1,0 +1,79 @@
+{
+  "task": "13.1 Test specific user-reported mixed content",
+  "timestamp": "2026-02-02T15:12:37.325Z",
+  "requirements": [
+    "1.1",
+    "1.2",
+    "2.1",
+    "3.1",
+    "3.2"
+  ],
+  "unitTests": {
+    "totalTests": 12,
+    "passedTests": 10,
+    "failedTests": 2,
+    "testDetails": [
+      {
+        "test": "User-reported string 1",
+        "input": "محامي دي زادمتصلمحاميProتحليلملفاتV2AUTO-TRANSLATE",
+        "output": "",
+        "passed": false,
+        "processingTime": 2,
+        "confidence": 0.6,
+        "removedElements": 1
+      },
+      {
+        "test": "User-reported string 2",
+        "input": "الشهود Defined في المادة 1 من قانون الإجراءات الجنائية ال процедة",
+        "output": "",
+        "passed": false,
+        "processingTime": 1,
+        "confidence": 0.6,
+        "removedElements": 1
+      },
+      {
+        "test": "User-reported string 3",
+        "input": "Les témoins sont Pro V2 الشهود AUTO-TRANSLATE",
+        "output": "Les témoins sont الشهود",
+        "passed": true,
+        "processingTime": 1,
+        "confidence": 0.6,
+        "removedElements": 4
+      },
+      {
+        "test": "User-reported string 4",
+        "input": "Defined محامي процедة JuristDZ",
+        "output": "محامي",
+        "passed": true,
+        "processingTime": 0,
+        "confidence": 0.6,
+        "removedElements": 4
+      },
+      {
+        "test": "User-reported string 5",
+        "input": "محامي Pro تحليل ملفات V2 AUTO-TRANSLATE",
+        "output": "محامي تحليل ملفات",
+        "passed": true,
+        "processingTime": 0,
+        "confidence": 0.6,
+        "removedElements": 5
+      },
+      {
+        "test": "User-reported string 6",
+        "input": "JuristDZ Pro V2 محامي متصل تحليل ملفات",
+        "output": "محاميمتصل تحليل ملفات",
+        "passed": true,
+        "processingTime": 1,
+        "confidence": 0.6,
+        "removedElements": 6
+      }
+    ]
+  },
+  "propertyTests": {
+    "propertyTests": 9,
+    "propertyPassed": 9,
+    "propertyFailed": 0
+  },
+  "overallSuccessRate": 90.47619047619048,
+  "status": "MOSTLY_SUCCESSFUL"
+}

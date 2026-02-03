@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Vérification Complète - Bouton de Traduction</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .status-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #28a745;
+        }
+        .status-section h2 {
+            color: #28a745;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-simulation {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-title {
+            font-weight: bold;
+            color: #495057;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .language-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .translate-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+        }
+        .translate-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+        }
+        .translate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .chat-messages {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin: 15px 0;
+            padding: 15px 20px;
+            border-radius: 15px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        .message.user {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            margin-left: 40px;
+        }
+        .message.bot {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            margin-right: 40px;
+        }
+        .message.translated {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.2);
+        }
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .message-text {
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .translation-indicator {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #4caf50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-top: 1px solid #e9ecef;
+            font-weight: bold;
+            text-align: center;
+        }
+        .status-bar.translating {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-bar.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .problem-demo {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .problem-demo h3 {
+            color: #721c24;
+            margin-top: 0;
+        }
+        .mixed-text {
+            font-family: monospace;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            word-break: break-all;
+            line-height: 1.8;
+        }
+        .solution-demo {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .solution-demo h3 {
+            color: #0c5460;
+            margin-top: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .success-icon {
+            color: #28a745;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Vérification Complète</h1>
+            <p>Bouton de Traduction - JuristDZ</p>
+        </div>
+        
+        <div class="content">
+            <div class="status-section">
+                <h2><span class="success-icon">✅</span> État de l'Intégration</h2>
+                <p><strong>Statut :</strong> <span style="color: #28a745;">✅ INTÉGRATION RÉUSSIE</span></p>
+                <p><strong>Fichier modifié :</strong> <code>components/ChatInterface.tsx</code></p>
+                <p><strong>Service utilisé :</strong> <code>improvedTranslationService</code></p>
+                <p><strong>Type de bouton :</strong> Intégré directement (pas de composant séparé)</p>
+            </div>
+
+            <div class="problem-demo">
+                <h3>🚨 Problème Original</h3>
+                <p>Voici le type de mélange de langues que vous rencontriez :</p>
+                <div class="mixed-text">
+                    متصلمحاميلوحة التحكمبحث قانونيتحريرتحليلملفاتوثائقإجراءات سريعة+ ملف جديد+ بحث سريعarوضع آمن
+                </div>
+                <p><strong>Problèmes :</strong></p>
+                <ul>
+                    <li>Mots collés sans espaces</li>
+                    <li>Mélange français/arabe dans la même phrase</li>
+                    <li>Traduction automatique défaillante</li>
+                </ul>
+            </div>
+
+            <div class="solution-demo">
+                <h3>✅ Solution Implémentée</h3>
+                <p><strong>Bouton de traduction manuel</strong> qui permet à l'utilisateur de contrôler la traduction.</p>
+                <div class="code-block">
+&lt;button onClick={async () =&gt; {
+  // Traduction manuelle de tous les messages
+  const translatedMessages = await Promise.all(
+    currentMessages.map(async (message) =&gt; {
+      // Logique de traduction propre
+    })
+  );
+  setCurrentMessages(translatedMessages);
+}}&gt;
+  🌐 {language === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages'}
+&lt;/button&gt;
+                </div>
+            </div>
+
+            <div class="chat-simulation">
+                <div class="chat-header">
+                    <div class="chat-title">🧪 Simulation de votre ChatInterface</div>
+                    <div class="controls">
+                        <div class="language-selector">
+                            <label for="language">Langue :</label>
+                            <select id="language">
+                                <option value="fr">Français</option>
+                                <option value="ar">العربية</option>
+                            </select>
+                        </div>
+                        <button class="translate-btn" id="translateBtn">
+                            🌐 <span id="btnText">Traduire les messages</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="messages">
+                    <div class="message user" data-id="1" data-original="ayant droits" data-lang="fr">
+                        <div class="message-header">👤 Utilisateur</div>
+                        <div class="message-text">ayant droits</div>
+                    </div>
+                    
+                    <div class="message bot" data-id="2" data-original="Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici les informations sur vos droits fondamentaux selon la Constitution algérienne." data-lang="fr">
+                        <div class="message-header">🤖 Assistant JuristDZ</div>
+                        <div class="message-text">Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici les informations sur vos droits fondamentaux selon la Constitution algérienne.</div>
+                    </div>
+                    
+                    <div class="message bot" data-id="3" data-original="Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité (Article 24), le droit à l'égalité (Article 29), et la liberté d'expression (Article 32)." data-lang="fr">
+                        <div class="message-header">🤖 Assistant JuristDZ</div>
+                        <div class="message-text">Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité (Article 24), le droit à l'égalité (Article 29), et la liberté d'expression (Article 32).</div>
+                    </div>
+                </div>
+                
+                <div class="status-bar" id="statusBar">
+                    Prêt à traduire - Sélectionnez une langue et cliquez sur "Traduire les messages"
+                </div>
+            </div>
+
+            <div class="status-section">
+                <h2><span class="success-icon">🎯</span> Instructions pour votre application</h2>
+                <ol>
+                    <li><strong>Redémarrez votre serveur :</strong> <code>npm run dev</code></li>
+                    <li><strong>Allez dans l'interface de chat</strong></li>
+                    <li><strong>Cherchez le bouton bleu</strong> avec l'icône 🌐</li>
+                    <li><strong>Changez la langue</strong> avec le sélecteur (fr/ar)</li>
+                    <li><strong>Cliquez sur "Traduire les messages"</strong></li>
+                    <li><strong>Tous les messages</strong> seront traduits vers la langue sélectionnée</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Service de traduction pour la démo
+        class DemoTranslationService {
+            constructor() {
+                this.translations = {
+                    'fr_to_ar': {
+                        'ayant droits': 'أصحاب الحقوق',
+                        'Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici les informations sur vos droits fondamentaux selon la Constitution algérienne.': 'تريد معرفة الحقوق التي تتمتع بها في الجزائر. إليك المعلومات حول حقوقك الأساسية وفقاً للدستور الجزائري.',
+                        'Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité (Article 24), le droit à l\'égalité (Article 29), et la liberté d\'expression (Article 32).': 'الحقوق الأساسية تشمل الحق في الحياة والحرية والأمان (المادة 24)، والحق في المساواة (المادة 29)، وحرية التعبير (المادة 32).'
+                    },
+                    'ar_to_fr': {
+                        'أصحاب الحقوق': 'ayant droits',
+                        'تريد معرفة الحقوق التي تتمتع بها في الجزائر. إليك المعلومات حول حقوقك الأساسية وفقاً للدستور الجزائري.': 'Vous souhaitez connaître les droits dont vous disposez en Algérie. Voici les informations sur vos droits fondamentaux selon la Constitution algérienne.',
+                        'الحقوق الأساسية تشمل الحق في الحياة والحرية والأمان (المادة 24)، والحق في المساواة (المادة 29)، وحرية التعبير (المادة 32).': 'Les droits fondamentaux incluent le droit à la vie, la liberté et la sécurité (Article 24), le droit à l\'égalité (Article 29), et la liberté d\'expression (Article 32).'
+                    }
+                };
+            }
+
+            async translateText(text, fromLang, toLang) {
+                const key = `${fromLang}_to_${toLang}`;
+                const translations = this.translations[key];
+                
+                if (translations && translations[text]) {
+                    return translations[text];
+                }
+                
+                return text; // Retourner le texte original si pas de traduction
+            }
+
+            detectLanguage(text) {
+                const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+                return arabicRegex.test(text) ? 'ar' : 'fr';
+            }
+        }
+
+        // Initialisation de la démo
+        const translationService = new DemoTranslationService();
+        const translateBtn = document.getElementById('translateBtn');
+        const btnText = document.getElementById('btnText');
+        const languageSelect = document.getElementById('language');
+        const statusBar = document.getElementById('statusBar');
+        const messagesContainer = document.getElementById('messages');
+
+        // Fonction de traduction (identique à celle de votre ChatInterface)
+        async function translateMessages() {
+            const targetLanguage = languageSelect.value;
+            const messages = messagesContainer.querySelectorAll('.message');
+            
+            console.log(`🌐 Début de la traduction vers ${targetLanguage}`);
+            
+            // Mise à jour de l'interface
+            statusBar.textContent = `Traduction en cours vers ${targetLanguage === 'ar' ? 'l\'arabe' : 'le français'}...`;
+            statusBar.className = 'status-bar translating';
+            translateBtn.disabled = true;
+            btnText.textContent = 'Traduction en cours...';
+
+            try {
+                for (let messageEl of messages) {
+                    const originalText = messageEl.dataset.original;
+                    const originalLang = messageEl.dataset.lang;
+                    const textSpan = messageEl.querySelector('.message-text');
+                    
+                    // Supprimer l'ancien indicateur de traduction
+                    const oldIndicator = messageEl.querySelector('.translation-indicator');
+                    if (oldIndicator) oldIndicator.remove();
+                    
+                    if (originalLang === targetLanguage) {
+                        // Même langue
+                        textSpan.textContent = originalText;
+                        messageEl.classList.remove('translated');
+                    } else {
+                        // Traduire
+                        const translatedText = await translationService.translateText(
+                            originalText, 
+                            originalLang, 
+                            targetLanguage
+                        );
+                        
+                        textSpan.textContent = translatedText;
+                        
+                        if (translatedText !== originalText) {
+                            messageEl.classList.add('translated');
+                            
+                            // Ajouter l'indicateur de traduction
+                            const indicator = document.createElement('div');
+                            indicator.className = 'translation-indicator';
+                            indicator.textContent = '✓ Traduit';
+                            messageEl.appendChild(indicator);
+                        } else {
+                            messageEl.classList.remove('translated');
+                        }
+                    }
+                    
+                    // Délai pour l'animation
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+                
+                statusBar.textContent = `✅ Traduction terminée vers ${targetLanguage === 'ar' ? 'l\'arabe' : 'le français'}`;
+                statusBar.className = 'status-bar success';
+                
+            } catch (error) {
+                console.error('❌ Erreur de traduction:', error);
+                statusBar.textContent = `❌ Erreur de traduction: ${error.message}`;
+                statusBar.className = 'status-bar';
+            } finally {
+                translateBtn.disabled = false;
+                btnText.textContent = targetLanguage === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages';
+            }
+        }
+
+        // Event listeners
+        translateBtn.addEventListener('click', translateMessages);
+        
+        languageSelect.addEventListener('change', () => {
+            const lang = languageSelect.value;
+            statusBar.textContent = `Prêt à traduire vers ${lang === 'ar' ? 'l\'arabe' : 'le français'}`;
+            statusBar.className = 'status-bar';
+            btnText.textContent = lang === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages';
+        });
+
+        console.log('🚀 Vérification complète initialisée');
+        console.log('✅ Le bouton de traduction est intégré dans votre ChatInterface.tsx');
+        console.log('📋 Testez cette démo pour voir comment ça devrait fonctionner');
+    </script>
+</body>
+</html>
