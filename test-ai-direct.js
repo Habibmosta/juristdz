@@ -2,7 +2,7 @@
 async function testGroqAPI() {
   console.log('🧪 Test direct de l\'API Groq...');
   
-  const groqApiKey = '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';
+  const groqApiKey = 'YOUR_GROQ_API_KEY_HERE';
   const testMessage = "Qu'est-ce que l'article 87 du code civil algérien ?";
   
   try {

@@ -2,7 +2,7 @@
 async function testYourGroqKey() {
   console.log('🧪 Test de votre clé Groq API...');
   
-  const groqApiKey = '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';
+  const groqApiKey = 'YOUR_GROQ_API_KEY_HERE';
   const testMessage = "Bonjour, pouvez-vous m'aider avec le droit algérien ?";
   
   try {

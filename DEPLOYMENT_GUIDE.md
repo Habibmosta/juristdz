@@ -34,10 +34,10 @@ Configurez les variables d'environnement sur Vercel :
 ```bash
 # Variables essentielles pour le frontend
 vercel env add VITE_GEMINI_API_KEY
-# Entrez: AIzaSyDo5SPf1lh_7SU812VwweSHyoqCD1ViOGk
+# Entrez: YOUR_GEMINI_API_KEY_HERE
 
 vercel env add VITE_GROQ_API_KEY  
-# Entrez: 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
+# Entrez: YOUR_GROQ_API_KEY_HERE
 
 vercel env add NODE_ENV
 # Entrez: production
