@@ -121,26 +121,26 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
       {/* Current Role Display */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 ${
+        className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 ${
           currentConfig.borderColor
         } ${currentConfig.bgColor} hover:shadow-lg group`}
       >
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-xl bg-white/50 dark:bg-black/20 ${currentConfig.textColor}`}>
-            <CurrentIcon className="w-5 h-5" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-white/50 dark:bg-black/20 ${currentConfig.textColor}`}>
+            <CurrentIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div className="text-left">
-            <p className={`font-bold text-sm ${currentConfig.textColor}`}>
+          <div className="text-left min-w-0 flex-1">
+            <p className={`font-bold text-xs sm:text-sm ${currentConfig.textColor} truncate`}>
               {currentConfig.label}
             </p>
-            <p className="text-xs opacity-70">
+            <p className="text-[10px] sm:text-xs opacity-70 truncate">
               {currentConfig.description}
             </p>
           </div>
         </div>
         
         <ChevronDown 
-          className={`w-4 h-4 transition-transform duration-200 ${
+          className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-200 flex-shrink-0 ${
             isOpen ? 'rotate-180' : ''
           } ${currentConfig.textColor}`} 
         />
@@ -156,14 +156,14 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
           />
           
           {/* Dropdown */}
-          <div className={`absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border shadow-2xl overflow-hidden ${
+          <div className={`absolute top-full left-0 right-0 mt-2 z-50 rounded-xl sm:rounded-2xl border shadow-2xl overflow-hidden ${
             theme === 'light' 
               ? 'bg-white border-slate-200' 
               : 'bg-slate-900 border-slate-700'
           }`}>
             <div className="p-2">
-              <div className="p-3 border-b border-slate-200 dark:border-slate-700">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <div className="p-2 sm:p-3 border-b border-slate-200 dark:border-slate-700">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {isAr ? 'تبديل الدور' : 'Changer de Rôle'}
                 </p>
               </div>
@@ -179,7 +179,7 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
                       key={role}
                       onClick={() => handleRoleSwitch(role)}
                       disabled={isCurrentRole}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group ${
+                      className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-200 group ${
                         isCurrentRole
                           ? `${config.bgColor} ${config.textColor} cursor-default`
                           : theme === 'light'
@@ -187,27 +187,27 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
                             : 'hover:bg-slate-800 text-slate-300'
                       }`}
                     >
-                      <div className={`p-2 rounded-lg ${
+                      <div className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg ${
                         isCurrentRole 
                           ? 'bg-white/50 dark:bg-black/20' 
                           : 'bg-slate-100 dark:bg-slate-700 group-hover:bg-slate-200 dark:group-hover:bg-slate-600'
                       } ${isCurrentRole ? config.textColor : ''}`}>
-                        <RoleIcon className="w-4 h-4" />
+                        <RoleIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                       
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-sm">
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-medium text-xs sm:text-sm truncate">
                           {config.label}
                         </p>
-                        <p className="text-xs opacity-70">
+                        <p className="text-[10px] sm:text-xs opacity-70 truncate">
                           {config.description}
                         </p>
                       </div>
                       
                       {isCurrentRole ? (
-                        <Check className="w-4 h-4 text-green-500" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                       ) : (
-                        <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       )}
                     </button>
                   );
@@ -215,8 +215,8 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
               </div>
               
               {/* Footer */}
-              <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+              <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 text-center">
                   {isAr 
                     ? 'سيتم إعادة توجيهك إلى الواجهة المناسبة' 
                     : 'Vous serez redirigé vers l\'interface appropriée'

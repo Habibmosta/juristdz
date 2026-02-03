@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Groq depuis le navigateur</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; font-size: 16px; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Test de votre clé Groq depuis le navigateur</h1>
+    <button onclick="testGroqFromBrowser()">Tester Groq API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testGroqFromBrowser() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🧪 Test en cours depuis le navigateur...';
+            resultDiv.className = '';
+            
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            { role: 'user', content: 'Test simple depuis le navigateur' }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 100,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <h3>✅ SUCCÈS depuis le navigateur !</h3>
+                        <p><strong>Réponse:</strong> ${data.choices[0].message.content}</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                    `;
+                    resultDiv.className = 'success';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `
+                        <h3>❌ Erreur HTTP depuis le navigateur</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                    resultDiv.className = 'error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>❌ Erreur réseau/CORS depuis le navigateur</h3>
+                    <p><strong>Erreur:</strong> ${error.message}</p>
+                    <p><strong>Cause probable:</strong> Problème CORS - les navigateurs bloquent les requêtes cross-origin vers l'API Groq</p>
+                    <p><strong>Solution:</strong> Utiliser un proxy ou un serveur backend</p>
+                `;
+                resultDiv.className = 'error';
+                console.error('Erreur détaillée:', error);
+            }
+        }
+    </script>
+</body>
+</html>

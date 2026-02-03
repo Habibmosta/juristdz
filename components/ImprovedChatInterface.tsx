@@ -16,6 +16,14 @@ interface AutoTranslatableMessage extends Message {
   originalLang: Language;
   translatedText?: string;
   isTranslated: boolean;
+  searchTopic?: string; // Nouveau: sujet de recherche extrait
+}
+
+interface ConversationThread {
+  id: string;
+  topic: string;
+  messages: AutoTranslatableMessage[];
+  timestamp: Date;
 }
 
 const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
@@ -26,10 +34,196 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
   const [isTranslating, setIsTranslating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [conversationThreads, setConversationThreads] = useState<ConversationThread[]>([]);
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState<Language>(language);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const componentId = `chat-${userId}`;
+
+  const extractSearchTopic = (userMessage: string): string => {
+    // Nettoyer le message
+    const cleaned = userMessage.trim().toLowerCase();
+    
+    console.log(`🔍 Extraction sujet pour: "${cleaned.substring(0, 100)}..."`);
+    
+    // Mots-clés juridiques algériens pour identifier le sujet (français + arabe)
+    const legalTopics = {
+      // === FRANÇAIS ===
+      'registre de commerce': 'Registre de Commerce',
+      'commerce': 'Droit Commercial',
+      'société': 'Droit des Sociétés',
+      'contrat': 'Droit des Contrats',
+      'mariage': 'Droit de la Famille - Mariage',
+      'divorce': 'Droit de la Famille - Divorce',
+      'famille': 'Droit de la Famille',
+      'héritage': 'Droit des Successions',
+      'succession': 'Droit des Successions',
+      'propriété': 'Droit de la Propriété',
+      'bail': 'Droit Immobilier',
+      'travail': 'Droit du Travail',
+      'employé': 'Droit du Travail',
+      'salaire': 'Droit du Travail',
+      'pénal': 'Droit Pénal',
+      'crime': 'Droit Pénal',
+      'tribunal': 'Procédure Judiciaire',
+      'juge': 'Procédure Judiciaire',
+      'avocat': 'Profession d\'Avocat',
+      'notaire': 'Actes Notariés',
+      'huissier': 'Exécution des Jugements',
+      'constitution': 'Droit Constitutionnel',
+      'administrative': 'Droit Administratif',
+      'fiscal': 'Droit Fiscal',
+      'douane': 'Droit Douanier',
+      'droits': 'Droits Fondamentaux',
+      'droit': 'Question Juridique',
+      'loi': 'Législation',
+      'code': 'Code Juridique',
+      'juridique': 'Question Juridique',
+      'légal': 'Question Légale',
+      'procédure': 'Procédure Juridique',
+      'algérie': 'Droit Algérien',
+      'algérien': 'Droit Algérien',
+      'comment': 'Conseil Juridique',
+      'puis-je': 'Conseil Juridique',
+      'que faire': 'Conseil Juridique',
+      'quels sont': 'Information Juridique',
+      'quelles sont': 'Information Juridique',
+      
+      // === ARABE ===
+      // Droit de la famille
+      'زواج': 'قانون الأسرة - الزواج',
+      'طلاق': 'قانون الأسرة - الطلاق',
+      'أسرة': 'قانون الأسرة',
+      'عائلة': 'قانون الأسرة',
+      'ميراث': 'قانون المواريث',
+      'وراثة': 'قانون المواريث',
+      'حضانة': 'قانون الأسرة - الحضانة',
+      'نفقة': 'قانون الأسرة - النفقة',
+      
+      // Droit commercial
+      'تجارة': 'القانون التجاري',
+      'تاجر': 'القانون التجاري',
+      'سجل تجاري': 'السجل التجاري',
+      'شركة': 'قانون الشركات',
+      'عقد': 'قانون العقود',
+      'بيع': 'قانون البيع',
+      'شراء': 'قانون الشراء',
+      
+      // Droit du travail
+      'عمل': 'قانون العمل',
+      'عامل': 'قانون العمل',
+      'موظف': 'قانون العمل',
+      'راتب': 'قانون العمل',
+      'أجر': 'قانون العمل',
+      'إجازة': 'قانون العمل',
+      'تقاعد': 'قانون التقاعد',
+      
+      // Droit pénal
+      'جريمة': 'القانون الجنائي',
+      'جنحة': 'القانون الجنائي',
+      'مخالفة': 'القانون الجنائي',
+      'عقوبة': 'القانون الجنائي',
+      'سجن': 'القانون الجنائي',
+      'غرامة': 'القانون الجنائي',
+      
+      // Procédures judiciaires
+      'محكمة': 'الإجراءات القضائية',
+      'قاضي': 'الإجراءات القضائية',
+      'دعوى': 'الإجراءات القضائية',
+      'حكم': 'الإجراءات القضائية',
+      'استئناف': 'الإجراءات القضائية',
+      'تنفيذ': 'تنفيذ الأحكام',
+      
+      // Professions juridiques
+      'محامي': 'مهنة المحاماة',
+      'موثق': 'الأعمال التوثيقية',
+      'كاتب ضبط': 'الإجراءات القضائية',
+      'محضر قضائي': 'تنفيذ الأحكام',
+      
+      // Droit immobilier
+      'عقار': 'القانون العقاري',
+      'ملكية': 'قانون الملكية',
+      'إيجار': 'قانون الإيجار',
+      'كراء': 'قانون الإيجار',
+      'بناء': 'قانون البناء',
+      'أرض': 'القانون العقاري',
+      
+      // Droit administratif
+      'إدارة': 'القانون الإداري',
+      'بلدية': 'القانون الإداري',
+      'ولاية': 'القانون الإداري',
+      'وزارة': 'القانون الإداري',
+      'موظف عمومي': 'قانون الوظيفة العمومية',
+      
+      // Termes généraux
+      'حقوق': 'الحقوق الأساسية',
+      'حق': 'سؤال قانوني',
+      'قانون': 'سؤال قانوني',
+      'قانوني': 'سؤال قانوني',
+      'شرعي': 'سؤال قانوني',
+      'نظام': 'النظام القانوني',
+      'دستور': 'القانون الدستوري',
+      'جزائر': 'القانون الجزائري',
+      'جزائري': 'القانون الجزائري',
+      
+      // Questions courantes en arabe
+      'كيف': 'استشارة قانونية',
+      'ماذا': 'استشارة قانونية',
+      'هل يمكن': 'استشارة قانونية',
+      'ما هي': 'معلومات قانونية',
+      'أريد': 'طلب قانوني'
+    };
+    
+    // Chercher le sujet le plus pertinent
+    for (const [keyword, topic] of Object.entries(legalTopics)) {
+      if (cleaned.includes(keyword)) {
+        console.log(`🔍 Sujet trouvé: "${topic}" (mot-clé: "${keyword}")`);
+        return topic;
+      }
+    }
+    
+    // Si aucun mot-clé spécifique, extraire les premiers mots significatifs
+    const words = cleaned.split(' ').filter(word => 
+      word.length > 3 && 
+      !['comment', 'quelle', 'quels', 'quelles', 'dans', 'pour', 'avec', 'sans', 'selon', 'vous', 'votre', 'cette', 'cette', 'كيف', 'ماذا', 'هذا', 'هذه', 'التي', 'الذي'].includes(word)
+    );
+    
+    if (words.length > 0) {
+      const extractedTopic = words.slice(0, 3).map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+      console.log(`🔍 Sujet extrait des mots: "${extractedTopic}"`);
+      return extractedTopic;
+    }
+    
+    console.log(`🔍 Sujet par défaut: "Question Juridique"`);
+    return 'Question Juridique';
+  };
+
+  const createNewThread = (userMessage: AutoTranslatableMessage): ConversationThread => {
+    const topic = extractSearchTopic(userMessage.text);
+    const threadId = `thread-${Date.now()}`;
+    
+    return {
+      id: threadId,
+      topic,
+      messages: [userMessage],
+      timestamp: new Date()
+    };
+  };
+
+  const addMessageToCurrentThread = (message: AutoTranslatableMessage) => {
+    if (currentThreadId) {
+      setConversationThreads(prev => 
+        prev.map(thread => 
+          thread.id === currentThreadId 
+            ? { ...thread, messages: [...thread.messages, message] }
+            : thread
+        )
+      );
+    }
+  };
 
   const detectLanguage = (text: string): Language => {
     if (!text || typeof text !== 'string') return 'fr';
@@ -334,7 +528,168 @@ ${cleanedText}`;
     }
   }, []);
 
-  const loadMessages = useCallback(async () => {
+  const loadConversationThreads = useCallback(async () => {
+    try {
+      console.log(`📚 CHARGEMENT DES THREADS - Début pour utilisateur: ${userId}`);
+      const history = await databaseService.getMessages(userId);
+      
+      console.log(`📚 Messages trouvés dans l'historique: ${history.length}`);
+      
+      if (history.length === 0) {
+        console.log(`📚 Aucun message dans l'historique`);
+        setConversationThreads([]);
+        return;
+      }
+      
+      // Grouper les messages par threads basés sur les sujets
+      const threads: ConversationThread[] = [];
+      let currentThread: ConversationThread | null = null;
+      
+      // Trier les messages par timestamp
+      const sortedHistory = history.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      
+      console.log(`📚 Messages triés: ${sortedHistory.length}`);
+      
+      sortedHistory.forEach((msg, index) => {
+        console.log(`📚 Traitement message ${index + 1}/${sortedHistory.length}: ${msg.sender} - "${msg.text.substring(0, 50)}..."`);
+        
+        const cleanedText = cleanUIContent(msg.text);
+        if (!cleanedText || cleanedText.length < 10) {
+          console.log(`📚 Message ignoré (trop court ou contaminé): "${msg.text.substring(0, 30)}..."`);
+          return;
+        }
+        
+        const autoTranslatableMsg: AutoTranslatableMessage = {
+          ...msg,
+          text: cleanedText,
+          originalText: cleanedText,
+          originalLang: detectLanguage(cleanedText),
+          isTranslated: false
+        };
+        
+        // Si c'est un message utilisateur, créer un nouveau thread
+        if (msg.sender === Sender.USER) {
+          const topic = extractSearchTopic(cleanedText);
+          console.log(`📚 Nouveau thread détecté: "${topic}" pour message: "${cleanedText.substring(0, 50)}..."`);
+          
+          currentThread = {
+            id: `thread-${msg.timestamp}-${Date.now()}`,
+            topic,
+            messages: [autoTranslatableMsg],
+            timestamp: new Date(msg.timestamp)
+          };
+          threads.push(currentThread);
+        } else if (currentThread) {
+          // Si c'est une réponse bot, l'ajouter au thread actuel
+          console.log(`📚 Ajout réponse bot au thread: "${currentThread.topic}"`);
+          currentThread.messages.push(autoTranslatableMsg);
+        } else {
+          // Si pas de thread actuel et que c'est une réponse bot, essayer d'extraire un sujet quand même
+          const topic = extractSearchTopic(cleanedText);
+          console.log(`📚 Création thread pour réponse bot orpheline avec sujet: "${topic}"`);
+          currentThread = {
+            id: `thread-bot-${msg.timestamp}-${Date.now()}`,
+            topic: topic !== 'Question Juridique' ? topic : 'Réponse Système',
+            messages: [autoTranslatableMsg],
+            timestamp: new Date(msg.timestamp)
+          };
+          threads.push(currentThread);
+        }
+      });
+      
+      // Trier les threads par timestamp (plus récent en premier)
+      threads.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      
+      console.log(`📚 ✅ Threads créés: ${threads.length}`);
+      threads.forEach((thread, index) => {
+        console.log(`📚 Thread ${index + 1}: "${thread.topic}" (${thread.messages.length} messages)`);
+      });
+      
+      setConversationThreads(threads);
+      
+    } catch (error) {
+      console.error('📚 ❌ Erreur chargement threads:', error);
+      setConversationThreads([]);
+    }
+  }, [userId]);
+
+  const getLocalizedPreview = async (text: string, targetLanguage: Language): Promise<string> => {
+    // Si le texte est déjà dans la bonne langue, le retourner
+    const textLanguage = detectLanguage(text);
+    if (textLanguage === targetLanguage) {
+      return text.substring(0, 120) + (text.length > 120 ? '...' : '');
+    }
+    
+    // Si l'interface est en arabe mais le texte est en français
+    if (targetLanguage === 'ar' && textLanguage === 'fr') {
+      // Créer un aperçu générique en arabe
+      if (text.toLowerCase().includes('droit')) {
+        return 'سؤال قانوني حول الحقوق والقوانين الجزائرية...';
+      }
+      if (text.toLowerCase().includes('famille')) {
+        return 'استفسار حول قانون الأسرة والأحوال الشخصية...';
+      }
+      if (text.toLowerCase().includes('travail')) {
+        return 'سؤال حول قانون العمل والعلاقات المهنية...';
+      }
+      return 'محادثة قانونية - اضغط للعرض والترجمة';
+    }
+    
+    // Si l'interface est en français mais le texte est en arabe
+    if (targetLanguage === 'fr' && textLanguage === 'ar') {
+      return 'Conversation juridique - cliquez pour voir et traduire';
+    }
+    
+    return text.substring(0, 120) + (text.length > 120 ? '...' : '');
+  };
+
+  const formatTopicForDisplay = (topic: string, displayLanguage: Language): string => {
+    // Si le sujet est déjà dans la bonne langue, le retourner tel quel
+    if (displayLanguage === 'ar' && /[\u0600-\u06FF]/.test(topic)) {
+      return topic; // Déjà en arabe
+    }
+    if (displayLanguage === 'fr' && !/[\u0600-\u06FF]/.test(topic)) {
+      return topic; // Déjà en français
+    }
+    
+    // Traductions des sujets courants
+    const topicTranslations: Record<string, { fr: string; ar: string }> = {
+      'Droit de la Famille': { fr: 'Droit de la Famille', ar: 'قانون الأسرة' },
+      'Droit de la Famille - Mariage': { fr: 'Droit de la Famille - Mariage', ar: 'قانون الأسرة - الزواج' },
+      'Droit de la Famille - Divorce': { fr: 'Droit de la Famille - Divorce', ar: 'قانون الأسرة - الطلاق' },
+      'Droit Commercial': { fr: 'Droit Commercial', ar: 'القانون التجاري' },
+      'Registre de Commerce': { fr: 'Registre de Commerce', ar: 'السجل التجاري' },
+      'Droit des Contrats': { fr: 'Droit des Contrats', ar: 'قانون العقود' },
+      'Droit du Travail': { fr: 'Droit du Travail', ar: 'قانون العمل' },
+      'Droit Pénal': { fr: 'Droit Pénal', ar: 'القانون الجنائي' },
+      'Procédure Judiciaire': { fr: 'Procédure Judiciaire', ar: 'الإجراءات القضائية' },
+      'Droits Fondamentaux': { fr: 'Droits Fondamentaux', ar: 'الحقوق الأساسية' },
+      'Question Juridique': { fr: 'Question Juridique', ar: 'سؤال قانوني' },
+      'Conseil Juridique': { fr: 'Conseil Juridique', ar: 'استشارة قانونية' },
+      'Réponse Système': { fr: 'Réponse Système', ar: 'رد النظام' }
+    };
+    
+    // Chercher une traduction
+    for (const [key, translations] of Object.entries(topicTranslations)) {
+      if (topic === key || topic === translations.fr || topic === translations.ar) {
+        return translations[displayLanguage];
+      }
+    }
+    
+    // Si pas de traduction trouvée, retourner le sujet original
+    return topic;
+  };
+
+  const selectThread = (thread: ConversationThread) => {
+    console.log(`📖 Selecting thread: ${thread.topic}`);
+    setMessages(thread.messages);
+    setCurrentThreadId(thread.id);
+    setShowHistory(false); // Fermer le panneau des sujets
+  };
+
+  const loadMessages = useCallback(async (initialLoad = false) => {
     setIsLoading(true);
     try {
       const history = await databaseService.getMessages(userId);
@@ -403,14 +758,16 @@ ${cleanedText}`;
         // DÉSACTIVÉ: Traduction automatique pour éviter la duplication
         // const translatedMessages = await handleAutoTranslation(language, autoTranslatableMessages);
         setMessages(autoTranslatableMessages);
-      } else {
+      } else if (initialLoad) {
+        // Ne créer le message de bienvenue que lors du chargement initial
+        const currentTranslations = UI_TRANSLATIONS[currentLanguage];
         const welcomeMessage: AutoTranslatableMessage = {
           id: 'welcome',
-          text: t.chat_welcome,
+          text: currentTranslations.chat_welcome,
           sender: Sender.BOT,
           timestamp: new Date(),
-          originalText: t.chat_welcome,
-          originalLang: language,
+          originalText: currentTranslations.chat_welcome,
+          originalLang: currentLanguage,
           isTranslated: false
         };
         setMessages([welcomeMessage]);
@@ -420,11 +777,13 @@ ${cleanedText}`;
     } finally {
       setIsLoading(false);
     }
-  }, [userId, language, t.chat_welcome]);
+  }, [userId, currentLanguage]); // Supprimé language et t.chat_welcome des dépendances
 
   useEffect(() => {
-    loadMessages();
-  }, [loadMessages]);
+    // Charger les messages seulement au montage initial du composant
+    loadMessages(true);
+    loadConversationThreads();
+  }, [userId]); // Supprimé loadMessages et loadConversationThreads des dépendances
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -432,14 +791,31 @@ ${cleanedText}`;
 
   useEffect(() => {
     if (currentLanguage !== language) {
-      console.log(`🔄 Language changed from ${currentLanguage} to ${language} - AUTOMATIC TRANSLATION DISABLED`);
+      console.log(`🔄 Language changed from ${currentLanguage} to ${language} - PRESERVING CURRENT CONVERSATION`);
       
-      // DÉSACTIVÉ: Traduction automatique pour éviter la duplication
-      // L'utilisateur doit maintenant cliquer sur le bouton de traduction manuellement
-      
+      // NOUVEAU: Préserver la conversation actuelle lors du changement de langue
+      // Ne pas recharger les messages, juste mettre à jour la langue courante
       setCurrentLanguage(language);
+      
+      // Mettre à jour le message de bienvenue s'il n'y a qu'un seul message (le message de bienvenue)
+      if (messages.length === 1 && messages[0].id === 'welcome') {
+        const newTranslations = UI_TRANSLATIONS[language];
+        const updatedWelcomeMessage: AutoTranslatableMessage = {
+          id: 'welcome',
+          text: newTranslations.chat_welcome,
+          sender: Sender.BOT,
+          timestamp: new Date(),
+          originalText: newTranslations.chat_welcome,
+          originalLang: language,
+          isTranslated: false
+        };
+        setMessages([updatedWelcomeMessage]);
+      }
+      
+      // Optionnel: Traduire automatiquement les messages actuels si l'utilisateur le souhaite
+      // Cette fonctionnalité est maintenant disponible via le bouton de traduction manuel
     }
-  }, [language]);
+  }, [language, messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -454,6 +830,15 @@ ${cleanedText}`;
       originalLang: detectedLang,
       isTranslated: false
     };
+    
+    // Créer un nouveau thread ou ajouter au thread actuel
+    if (!currentThreadId || messages.length === 0) {
+      const newThread = createNewThread(userMsg);
+      setConversationThreads(prev => [...prev, newThread]);
+      setCurrentThreadId(newThread.id);
+    } else {
+      addMessageToCurrentThread(userMsg);
+    }
     
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -480,8 +865,14 @@ ${cleanedText}`;
         isTranslated: false
       };
       
+      // Ajouter la réponse au thread actuel
+      addMessageToCurrentThread(botMsg);
+      
       setMessages(prev => [...prev, botMsg]);
       await databaseService.saveMessage(userId, botMsg);
+      
+      // Recharger les threads de conversation après avoir ajouté un nouveau message
+      await loadConversationThreads();
     } catch (error) {
       console.error('Failed to get AI response:', error);
     } finally {
@@ -497,257 +888,558 @@ ${cleanedText}`;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
-      <div className="bg-white dark:bg-slate-900 border-b px-6 py-4 flex justify-between items-center shadow-sm">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 font-serif flex items-center gap-2">
-            {t.chat_header}
-            {isTranslating && (
-              <div className="flex items-center gap-1 text-blue-500">
-                <Languages size={16} className="animate-pulse" />
-                <span className="text-xs">
-                  {language === 'ar' ? 'ترجمة تلقائية...' : 'Traduction automatique...'}
-                </span>
-              </div>
-            )}
-          </h2>
-          <p className="text-sm text-slate-500">{t.chat_subtitle}</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Bouton de réinitialisation complète */}
-          <button 
-            onClick={async () => {
-              console.log('🔄 RÉINITIALISATION COMPLÈTE');
-              
-              // Supprimer tous les messages de la base de données
-              try {
-                await databaseService.clearMessages(userId);
-                console.log('🔄 Messages supprimés de la base de données');
-              } catch (error) {
-                console.error('🔄 Erreur suppression DB:', error);
-              }
-              
-              // Réinitialiser l'état local
-              setMessages([]);
-              
-              // Recharger les messages (qui seront vides)
-              await loadMessages();
-              
-              console.log('🔄 ✅ Réinitialisation complète terminée');
-            }}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition-all"
-          >
-            🔄
-            {language === 'ar' ? 'إعادة تعيين' : 'Reset'}
-          </button>
+      {/* RESPONSIVE Header */}
+      <div className="bg-white dark:bg-slate-900 border-b px-3 sm:px-6 py-3 sm:py-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 font-serif flex items-center gap-2 truncate">
+              {t.chat_header}
+              {isTranslating && (
+                <div className="flex items-center gap-1 text-blue-500">
+                  <Languages size={16} className="animate-pulse" />
+                  <span className="text-xs hidden sm:inline">
+                    {language === 'ar' ? 'ترجمة تلقائية...' : 'Traduction automatique...'}
+                  </span>
+                </div>
+              )}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 truncate">{t.chat_subtitle}</p>
+          </div>
           
-          {/* Bouton de nettoyage de base de données */}
-          <button 
-            onClick={async () => {
-              console.log('🚨 NETTOYAGE DE BASE DE DONNÉES - Début');
-              
-              try {
-                // Import dynamique du service de nettoyage
-                const { emergencyDatabaseCleaner } = await import('../services/emergencyDatabaseCleaner');
-                
-                // Analyser d'abord la contamination
-                const analysis = await emergencyDatabaseCleaner.analyzeContamination(userId);
-                console.log(`🚨 Analyse: ${analysis.contaminatedMessages}/${analysis.totalMessages} messages contaminés`);
-                
-                if (analysis.contaminatedMessages > 0) {
-                  // Nettoyer la base de données
-                  const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
-                  console.log(`🚨 Nettoyage terminé: ${result.contaminatedMessages} supprimés, ${result.cleanedMessages} conservés`);
-                  
-                  // Recharger les messages
+          {/* RESPONSIVE Action Buttons */}
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-0">
+            {/* Mobile: Compact buttons */}
+            <div className="flex sm:hidden items-center gap-1">
+              <button 
+                onClick={async () => {
+                  await databaseService.clearMessages(userId);
+                  setMessages([]);
                   await loadMessages();
+                }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition-all"
+                title={language === 'ar' ? 'إعادة تعيين' : 'Reset'}
+              >
+                🔄
+              </button>
+              
+              <button 
+                onClick={async () => {
+                  try {
+                    const { emergencyDatabaseCleaner } = await import('../services/emergencyDatabaseCleaner');
+                    const analysis = await emergencyDatabaseCleaner.analyzeContamination(userId);
+                    if (analysis.contaminatedMessages > 0) {
+                      const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
+                      await loadMessages();
+                      alert(`${result.contaminatedMessages} messages supprimés`);
+                    } else {
+                      alert('Aucun message contaminé');
+                    }
+                  } catch (error) {
+                    alert('Erreur nettoyage');
+                  }
+                }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
+                title={language === 'ar' ? 'تنظيف' : 'Nettoyer'}
+              >
+                🗄️
+              </button>
+              
+              <button 
+                onClick={async () => await loadConversationThreads()}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-all"
+                title={language === 'ar' ? 'إعادة تحميل' : 'Recharger'}
+              >
+                📚
+              </button>
+              
+              <button 
+                onClick={async () => {
+                  if (messages.length === 0) return;
+                  setIsTranslating(true);
+                  try {
+                    const translatedMessages = await Promise.all(
+                      messages.map(async (message) => {
+                        if (message.originalLang === language) {
+                          return { ...message, text: message.originalText, isTranslated: false };
+                        }
+                        try {
+                          const translatedText = await getDirectTranslation(message.originalText, message.originalLang, language);
+                          return { ...message, text: translatedText, translatedText, isTranslated: true };
+                        } catch (error) {
+                          return { ...message, text: message.originalText, isTranslated: false };
+                        }
+                      })
+                    );
+                    setMessages(translatedMessages);
+                  } catch (error) {
+                    console.error('Translation error:', error);
+                  } finally {
+                    setIsTranslating(false);
+                  }
+                }}
+                disabled={isTranslating || messages.length === 0}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all disabled:opacity-50"
+                title={language === 'ar' ? 'ترجمة' : 'Traduire'}
+              >
+                <Languages size={14} className={isTranslating ? 'animate-pulse' : ''} />
+              </button>
+              
+              <button 
+                onClick={() => setShowHistory(!showHistory)}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  showHistory ? 'bg-legal-blue text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title={language === 'ar' ? 'المواضيع' : 'Sujets'}
+              >
+                <History size={14} />
+                {showHistory ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+              </button>
+              
+              <button 
+                onClick={handleCopyLink}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  copied ? 'bg-green-500 text-white' : 'bg-legal-blue text-white hover:opacity-90'
+                }`}
+                title={copied ? (language === 'ar' ? 'تم النسخ' : 'Copié') : (language === 'ar' ? 'نسخ' : 'Copier')}
+              >
+                {copied ? <Check size={14} /> : <Share2 size={14} />}
+              </button>
+            </div>
+
+            {/* Desktop: Full buttons */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button 
+                onClick={async () => {
+                  console.log('🔄 RÉINITIALISATION COMPLÈTE');
+                  try {
+                    await databaseService.clearMessages(userId);
+                    console.log('🔄 Messages supprimés de la base de données');
+                  } catch (error) {
+                    console.error('🔄 Erreur suppression DB:', error);
+                  }
+                  setMessages([]);
+                  await loadMessages();
+                  console.log('🔄 ✅ Réinitialisation complète terminée');
+                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition-all"
+              >
+                🔄
+                {language === 'ar' ? 'إعادة تعيين' : 'Reset'}
+              </button>
+              
+              <button 
+                onClick={async () => {
+                  console.log('🚨 NETTOYAGE DE BASE DE DONNÉES - Début');
+                  try {
+                    const { emergencyDatabaseCleaner } = await import('../services/emergencyDatabaseCleaner');
+                    const analysis = await emergencyDatabaseCleaner.analyzeContamination(userId);
+                    console.log(`🚨 Analyse: ${analysis.contaminatedMessages}/${analysis.totalMessages} messages contaminés`);
+                    
+                    if (analysis.contaminatedMessages > 0) {
+                      const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
+                      console.log(`🚨 Nettoyage terminé: ${result.contaminatedMessages} supprimés, ${result.cleanedMessages} conservés`);
+                      await loadMessages();
+                      alert(`Nettoyage terminé!\n${result.contaminatedMessages} messages contaminés supprimés\n${result.cleanedMessages} messages propres conservés`);
+                    } else {
+                      console.log('🚨 Aucune contamination détectée');
+                      alert('Aucun message contaminé trouvé dans votre historique.');
+                    }
+                  } catch (error) {
+                    console.error('🚨 Erreur nettoyage DB:', error);
+                    alert('Erreur lors du nettoyage de la base de données.');
+                  }
+                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
+              >
+                🗄️
+                {language === 'ar' ? 'تنظيف قاعدة البيانات' : 'Nettoyer DB'}
+              </button>
+              
+              <button 
+                onClick={async () => {
+                  console.log('🔍 RECHARGEMENT FORCÉ DES THREADS');
+                  await loadConversationThreads();
+                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-all"
+              >
+                📚
+                {language === 'ar' ? 'إعادة تحميل المواضيع' : 'Recharger sujets'}
+              </button>
+              
+              <button 
+                onClick={async () => {
+                  console.log('🔧 TRADUCTION GRATUITE VIA GEMINI - Début');
+                  console.log(`🔧 Langue cible: ${language}`);
+                  console.log(`🔧 Nombre de messages: ${messages.length}`);
                   
-                  alert(`Nettoyage terminé!\n${result.contaminatedMessages} messages contaminés supprimés\n${result.cleanedMessages} messages propres conservés`);
-                } else {
-                  console.log('🚨 Aucune contamination détectée');
-                  alert('Aucun message contaminé trouvé dans votre historique.');
-                }
-                
-              } catch (error) {
-                console.error('🚨 Erreur nettoyage DB:', error);
-                alert('Erreur lors du nettoyage de la base de données.');
-              }
-            }}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
-          >
-            🗄️
-            {language === 'ar' ? 'تنظيف قاعدة البيانات' : 'Nettoyer DB'}
-          </button>
-          
-          {/* Bouton de traduction avec Gemini AI */}
-          <button 
-            onClick={async () => {
-              console.log('🔧 TRADUCTION GRATUITE VIA GEMINI - Début');
-              console.log(`🔧 Langue cible: ${language}`);
-              console.log(`🔧 Nombre de messages: ${messages.length}`);
-              
-              if (messages.length === 0) {
-                console.log('🔧 Aucun message à traduire');
-                return;
-              }
-              
-              setIsTranslating(true);
-              
-              try {
-                const translatedMessages = await Promise.all(
-                  messages.map(async (message) => {
-                    // Si même langue, garder l'original
-                    if (message.originalLang === language) {
-                      return {
-                        ...message,
-                        text: message.originalText,
-                        isTranslated: false,
-                        translatedText: undefined
-                      };
-                    }
+                  if (messages.length === 0) {
+                    console.log('🔧 Aucun message à traduire');
+                    return;
+                  }
+                  
+                  setIsTranslating(true);
+                  
+                  try {
+                    const translatedMessages = await Promise.all(
+                      messages.map(async (message) => {
+                        if (message.originalLang === language) {
+                          return {
+                            ...message,
+                            text: message.originalText,
+                            isTranslated: false,
+                            translatedText: undefined
+                          };
+                        }
 
-                    // Différente langue - appliquer la traduction via Gemini
-                    try {
-                      const translatedText = await getDirectTranslation(message.originalText, message.originalLang, language);
-                      
-                      console.log(`🔧 Message traduit: "${message.originalText.substring(0, 30)}..." → "${translatedText.substring(0, 30)}..."`);
+                        try {
+                          const translatedText = await getDirectTranslation(message.originalText, message.originalLang, language);
+                          console.log(`🔧 Message traduit: "${message.originalText.substring(0, 30)}..." → "${translatedText.substring(0, 30)}..."`);
 
-                      return {
-                        ...message,
-                        text: translatedText,
-                        originalText: message.originalText,
-                        originalLang: message.originalLang,
-                        translatedText: translatedText,
-                        isTranslated: true
-                      };
-                    } catch (error) {
-                      console.error(`🔧 Erreur traduction message ${message.id}:`, error);
-                      // En cas d'erreur, garder l'original
-                      return {
-                        ...message,
-                        text: message.originalText,
-                        isTranslated: false,
-                        translatedText: undefined
-                      };
-                    }
-                  })
-                );
-                
-                setMessages(translatedMessages);
-                console.log('🔧 ✅ Traduction via Gemini terminée');
-                
-              } catch (error) {
-                console.error('🔧 ❌ Erreur traduction globale:', error);
-              } finally {
-                setIsTranslating(false);
-              }
-            }}
-            disabled={isTranslating || messages.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Languages size={16} className={isTranslating ? 'animate-pulse' : ''} />
-            {isTranslating ? (
-              language === 'ar' ? 'جاري الترجمة...' : 'Traduction en cours...'
-            ) : (
-              language === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages'
-            )}
-          </button>
-          
-          <button 
-            onClick={() => setShowHistory(!showHistory)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-              showHistory ? 'bg-legal-blue text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <History size={14} />
-            {showHistory ? (
-              <>
-                <ChevronUp size={12} />
-                {language === 'ar' ? 'إخفاء السجل' : 'Masquer historique'}
-              </>
-            ) : (
-              <>
-                <ChevronDown size={12} />
-                {language === 'ar' ? 'عرض السجل' : 'Afficher historique'}
-              </>
-            )}
-          </button>
-          
-          <button 
-            onClick={handleCopyLink}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              copied ? 'bg-green-500 text-white' : 'bg-legal-blue text-white hover:opacity-90'
-            }`}
-          >
-            {copied ? <Check size={14} /> : <Share2 size={14} />}
-            {copied ? (language === 'ar' ? 'تم النسخ' : 'Copié !') : (language === 'ar' ? 'نسخ رابط' : 'Copier lien')}
-          </button>
+                          return {
+                            ...message,
+                            text: translatedText,
+                            originalText: message.originalText,
+                            originalLang: message.originalLang,
+                            translatedText: translatedText,
+                            isTranslated: true
+                          };
+                        } catch (error) {
+                          console.error(`🔧 Erreur traduction message ${message.id}:`, error);
+                          return {
+                            ...message,
+                            text: message.originalText,
+                            isTranslated: false,
+                            translatedText: undefined
+                          };
+                        }
+                      })
+                    );
+                    
+                    setMessages(translatedMessages);
+                    console.log('🔧 ✅ Traduction via Gemini terminée');
+                    
+                  } catch (error) {
+                    console.error('🔧 ❌ Erreur traduction globale:', error);
+                  } finally {
+                    setIsTranslating(false);
+                  }
+                }}
+                disabled={isTranslating || messages.length === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Languages size={16} className={isTranslating ? 'animate-pulse' : ''} />
+                {isTranslating ? (
+                  language === 'ar' ? 'جاري الترجمة...' : 'Traduction en cours...'
+                ) : (
+                  language === 'ar' ? 'ترجمة الرسائل' : 'Traduire les messages'
+                )}
+              </button>
+              
+              <button 
+                onClick={() => {
+                  console.log(`🔍 Topics toggle clicked: ${showHistory} -> ${!showHistory}`);
+                  console.log(`🔍 Conversation threads: ${conversationThreads.length}`);
+                  setShowHistory(!showHistory);
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  showHistory ? 'bg-legal-blue text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <History size={14} />
+                {showHistory ? (
+                  <>
+                    <ChevronUp size={12} />
+                    {language === 'ar' ? 'إخفاء المواضيع' : 'Masquer sujets'}
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={12} />
+                    {language === 'ar' ? 'مواضيع البحث' : 'Sujets de recherche'}
+                  </>
+                )}
+              </button>
+              
+              <button 
+                onClick={handleCopyLink}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  copied ? 'bg-green-500 text-white' : 'bg-legal-blue text-white hover:opacity-90'
+                }`}
+              >
+                {copied ? <Check size={14} /> : <Share2 size={14} />}
+                {copied ? (language === 'ar' ? 'تم النسخ' : 'Copié !') : (language === 'ar' ? 'نسخ رابط' : 'Copier lien')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.map((message) => (
-          <div key={message.id} className={`flex gap-4 ${message.sender === Sender.USER ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-3xl ${message.sender === Sender.USER ? 'order-2' : 'order-1'}`}>
-              <div className={`flex items-center gap-2 mb-2 ${message.sender === Sender.USER ? 'justify-end' : 'justify-start'}`}>
-                <div className={`p-2 rounded-full ${message.sender === Sender.USER ? 'bg-legal-blue' : 'bg-legal-gold'}`}>
-                  {message.sender === Sender.USER ? (
-                    <User size={16} className="text-white" />
-                  ) : (
-                    <Bot size={16} className="text-white" />
-                  )}
-                </div>
-                <span className="text-xs text-slate-500 font-medium">
-                  {message.sender === Sender.USER ? (language === 'ar' ? 'أنت' : 'Vous') : 'JuristDZ'}
+      {/* RESPONSIVE Messages Area */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
+        {showHistory ? (
+          // RESPONSIVE History Interface
+          <div className="space-y-3 sm:space-y-4">
+            <div className="text-center py-3 sm:py-4">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded-full text-xs sm:text-sm text-blue-800 dark:text-blue-200 font-medium">
+                <History size={16} />
+                <span>
+                  {language === 'ar' 
+                    ? `📚 مواضيع البحث (${conversationThreads.length} موضوع)`
+                    : `📚 Sujets de recherche (${conversationThreads.length} sujets)`
+                  }
                 </span>
-                {message.isTranslated && (
-                  <div className="flex items-center gap-1 text-blue-500">
-                    <Languages size={12} />
-                    <span className="text-[10px]">
-                      {language === 'ar' ? 'مترجم' : 'Traduit'}
-                    </span>
-                  </div>
-                )}
               </div>
               
-              <div 
-                className={`p-4 rounded-2xl shadow-sm ${
-                  message.sender === Sender.USER 
-                    ? 'bg-legal-blue text-white ml-8' 
-                    : 'bg-white dark:bg-slate-800 border mr-8'
-                }`} 
-                dir={language === 'ar' ? 'rtl' : 'ltr'}
-              >
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown>{message.text}</ReactMarkdown>
-                </div>
-                
-                {message.citations && message.citations.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <p className="text-xs font-bold mb-2 text-slate-500">Sources :</p>
-                    <div className="space-y-1">
-                      {message.citations.map((citation, idx) => (
-                        <a 
-                          key={idx} 
-                          href={citation.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="block text-xs text-blue-600 hover:underline"
-                        >
-                          {citation.title}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              {/* Debug info - hidden on mobile */}
+              <div className="mt-2 text-xs text-slate-500 hidden sm:block">
+                {language === 'ar' 
+                  ? `الرسائل الحالية: ${messages.length} | المواضيع المحملة: ${conversationThreads.length} | معرف المستخدم: ${userId.substring(0, 8)}...`
+                  : `Messages actuels: ${messages.length} | Threads chargés: ${conversationThreads.length} | User ID: ${userId.substring(0, 8)}...`
+                }
               </div>
             </div>
+            
+            {conversationThreads.length === 0 ? (
+              <div className="text-center py-6 sm:py-8">
+                <div className="text-slate-500 dark:text-slate-400 space-y-2">
+                  <div className="text-base sm:text-lg">
+                    {language === 'ar' 
+                      ? '🔍 لا توجد مواضيع بحث بعد'
+                      : '🔍 Aucun sujet de recherche encore'
+                    }
+                  </div>
+                  <div className="text-sm">
+                    {language === 'ar' 
+                      ? 'ابدأ محادثة جديدة لإنشاء أول موضوع!'
+                      : 'Commencez une nouvelle conversation!'
+                    }
+                  </div>
+                  <div className="text-xs text-slate-400 mt-4">
+                    {language === 'ar' 
+                      ? `المحادثة الحالية: ${messages.length} رسالة`
+                      : `Conversation actuelle: ${messages.length} messages`
+                    }
+                  </div>
+                  
+                  {messages.length > 0 && (
+                    <div className="space-y-2 mt-4">
+                      <button
+                        onClick={async () => {
+                          console.log('🔄 Création thread à partir conversation actuelle');
+                          await loadConversationThreads();
+                        }}
+                        className="px-3 sm:px-4 py-2 bg-legal-blue text-white rounded-lg text-xs sm:text-sm hover:opacity-90 transition-all"
+                      >
+                        {language === 'ar' 
+                          ? 'إنشاء موضوع من المحادثة'
+                          : 'Créer un sujet'
+                        }
+                      </button>
+                      
+                      <button
+                        onClick={async () => {
+                          console.log('🔄 Régénération intelligente des sujets');
+                          const userMessages = messages.filter(m => m.sender === Sender.USER);
+                          if (userMessages.length > 0) {
+                            const firstUserMsg = userMessages[0];
+                            const topic = extractSearchTopic(firstUserMsg.text);
+                            
+                            const newThread: ConversationThread = {
+                              id: `thread-manual-${Date.now()}`,
+                              topic,
+                              messages: messages,
+                              timestamp: new Date()
+                            };
+                            
+                            setConversationThreads([newThread]);
+                            console.log(`🔄 Thread manuel créé: "${topic}"`);
+                          }
+                        }}
+                        className="px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg text-xs sm:text-sm hover:opacity-90 transition-all"
+                      >
+                        {language === 'ar' 
+                          ? 'تحليل ذكي للموضوع'
+                          : 'Analyse intelligente'
+                        }
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages.length > 0 && (
+                  <div className="mb-3 sm:mb-4">
+                    <button
+                      onClick={() => setShowHistory(false)}
+                      className="w-full bg-legal-gold text-white p-3 sm:p-4 rounded-xl font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                    >
+                      <ChevronDown size={16} className="rotate-90" />
+                      {language === 'ar' 
+                        ? 'العودة إلى المحادثة الحالية'
+                        : 'Retour à la conversation actuelle'
+                      }
+                    </button>
+                  </div>
+                )}
+                
+                <div className="grid gap-2 sm:gap-3">
+                {conversationThreads.map((thread) => (
+                  <div 
+                    key={thread.id}
+                    onClick={() => selectThread(thread)}
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 sm:p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 sm:w-3 sm:h-3 bg-legal-gold rounded-full flex-shrink-0"></div>
+                          <h3 className="font-semibold text-sm sm:text-base text-slate-800 dark:text-slate-200 truncate">
+                            {formatTopicForDisplay(thread.topic, language)}
+                          </h3>
+                        </div>
+                        
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-2">
+                          {thread.messages.length > 0 && (
+                            <div className="line-clamp-2" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                              {(() => {
+                                const messageText = thread.messages[0].text;
+                                const messageLanguage = detectLanguage(messageText);
+                                
+                                if (messageLanguage === language) {
+                                  return messageText.substring(0, 100) + (messageText.length > 100 ? '...' : '');
+                                }
+                                
+                                if (language === 'ar' && messageLanguage === 'fr') {
+                                  if (messageText.toLowerCase().includes('droit')) {
+                                    return 'سؤال قانوني حول الحقوق والقوانين الجزائرية...';
+                                  }
+                                  if (messageText.toLowerCase().includes('famille')) {
+                                    return 'استفسار حول قانون الأسرة والأحوال الشخصية...';
+                                  }
+                                  if (messageText.toLowerCase().includes('travail')) {
+                                    return 'سؤال حول قانون العمل والعلاقات المهنية...';
+                                  }
+                                  return 'محادثة قانونية - اضغط للعرض والترجمة';
+                                }
+                                
+                                if (language === 'fr' && messageLanguage === 'ar') {
+                                  return 'Conversation juridique - cliquez pour voir et traduire';
+                                }
+                                
+                                return messageText.substring(0, 100) + (messageText.length > 100 ? '...' : '');
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-3 sm:gap-4 text-xs text-slate-500">
+                          <span className="flex items-center gap-1">
+                            💬 {thread.messages.length} {language === 'ar' ? 'رسالة' : 'messages'}
+                          </span>
+                          <span className="hidden sm:inline">
+                            {new Date(thread.timestamp).toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-shrink-0">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-legal-blue rounded-full flex items-center justify-center">
+                          <ChevronDown size={12} sm:size={14} className="text-white rotate-[-90deg]" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              </>
+            )}
           </div>
-        ))}
+        ) : (
+          // RESPONSIVE Messages Interface
+          <>
+            {messages.length > 5 && (
+              <div className="text-center py-3 sm:py-4">
+                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-full text-xs sm:text-sm text-green-800 dark:text-green-200 font-medium">
+                  <History size={16} />
+                  <span>
+                    {language === 'ar' 
+                      ? `✅ المحادثة الحالية (${messages.length} رسالة)`
+                      : `✅ Conversation actuelle (${messages.length} messages)`
+                    }
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {messages.map((message) => (
+              <div key={message.id} className={`flex gap-2 sm:gap-4 ${message.sender === Sender.USER ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] sm:max-w-3xl ${message.sender === Sender.USER ? 'order-2' : 'order-1'}`}>
+                  <div className={`flex items-center gap-2 mb-2 ${message.sender === Sender.USER ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-full ${message.sender === Sender.USER ? 'bg-legal-blue' : 'bg-legal-gold'}`}>
+                      {message.sender === Sender.USER ? (
+                        <User size={16} className="text-white" />
+                      ) : (
+                        <Bot size={16} className="text-white" />
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-500 font-medium">
+                      {message.sender === Sender.USER ? (language === 'ar' ? 'أنت' : 'Vous') : 'JuristDZ'}
+                    </span>
+                    {message.isTranslated && (
+                      <div className="flex items-center gap-1 text-blue-500">
+                        <Languages size={12} />
+                        <span className="text-[10px] hidden sm:inline">
+                          {language === 'ar' ? 'مترجم' : 'Traduit'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div 
+                    className={`p-3 sm:p-4 rounded-2xl shadow-sm ${
+                      message.sender === Sender.USER 
+                        ? 'bg-legal-blue text-white ml-4 sm:ml-8' 
+                        : 'bg-white dark:bg-slate-800 border mr-4 sm:mr-8'
+                    }`} 
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    <div className="prose prose-sm max-w-none text-sm sm:text-base">
+                      <ReactMarkdown>{message.text}</ReactMarkdown>
+                    </div>
+                    
+                    {message.citations && message.citations.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <p className="text-xs font-bold mb-2 text-slate-500">Sources :</p>
+                        <div className="space-y-1">
+                          {message.citations.map((citation, idx) => (
+                            <a 
+                              key={idx} 
+                              href={citation.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="block text-xs text-blue-600 hover:underline truncate"
+                            >
+                              {citation.title}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-2 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border mr-8">
+            <div className="flex items-center gap-2 p-3 sm:p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border mr-4 sm:mr-8">
               <div className="w-2 h-2 bg-legal-gold rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-legal-gold rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
               <div className="w-2 h-2 bg-legal-gold rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -761,25 +1453,28 @@ ${cleanedText}`;
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border-t p-6">
-        <div className="flex gap-4 max-w-4xl mx-auto">
+      {/* RESPONSIVE Input Area */}
+      <div className="bg-white dark:bg-slate-900 border-t p-3 sm:p-6">
+        <div className="flex gap-2 sm:gap-4 max-w-4xl mx-auto">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             placeholder={language === 'ar' ? 'اطرح سؤالاً قانونياً...' : 'Posez votre question juridique...'}
-            className="flex-1 p-4 border rounded-2xl outline-none focus:ring-2 focus:ring-legal-gold dark:bg-slate-800 dark:border-slate-700"
+            className="flex-1 p-3 sm:p-4 border rounded-xl sm:rounded-2xl outline-none focus:ring-2 focus:ring-legal-gold dark:bg-slate-800 dark:border-slate-700 text-sm sm:text-base"
             disabled={isLoading}
             dir={language === 'ar' ? 'rtl' : 'ltr'}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="px-6 py-4 bg-legal-blue text-white rounded-2xl font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 sm:px-6 py-3 sm:py-4 bg-legal-blue text-white rounded-xl sm:rounded-2xl font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Send size={18} />
-            {language === 'ar' ? 'إرسال' : 'Envoyer'}
+            <span className="hidden sm:inline">
+              {language === 'ar' ? 'إرسال' : 'Envoyer'}
+            </span>
           </button>
         </div>
       </div>

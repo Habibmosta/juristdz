@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API depuis le navigateur</title>
+</head>
+<body>
+    <h1>Test API Groq depuis le navigateur</h1>
+    <button onclick="testAPI()">Tester l'API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🧪 Test en cours...';
+            
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            { role: 'user', content: 'Test simple' }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 100,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ Succès: ${data.choices[0].message.content}`;
+                } else {
+                    resultDiv.innerHTML = `❌ Erreur HTTP: ${response.status}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+                console.error('Erreur détaillée:', error);
+            }
+        }
+    </script>
+</body>
+</html>

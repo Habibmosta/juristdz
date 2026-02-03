@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Animation de chargement */
+@keyframes gold-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(194, 155, 64, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(194, 155, 64, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(194, 155, 64, 0); }
+}
+.pulse-gold { animation: gold-pulse 2s infinite; }
+
+/* RESPONSIVE UTILITIES */
+/* Mobile-first responsive design utilities */
+.mobile-only {
+  @apply block sm:hidden;
+}
+
+.desktop-only {
+  @apply hidden sm:block;
+}
+
+.tablet-up {
+  @apply hidden md:block;
+}
+
+/* Touch-friendly mobile interactions */
+@media (max-width: 640px) {
+  button, .clickable {
+    min-height: 44px; /* iOS recommended touch target */
+    min-width: 44px;
+  }
+  
+  /* Larger tap targets for mobile */
+  .mobile-tap-target {
+    padding: 12px;
+    margin: 4px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px;
+  }
+}
+
+/* Responsive text sizing */
+.responsive-text {
+  @apply text-sm sm:text-base lg:text-lg;
+}
+
+.responsive-heading {
+  @apply text-lg sm:text-xl lg:text-2xl;
+}
+
+/* Mobile-optimized spacing */
+.mobile-spacing {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.mobile-gap {
+  @apply gap-2 sm:gap-3 lg:gap-4;
+}
+
+/* FORCE UI SPACING - PREVENT CONCATENATION */
+nav button span,
+.sidebar button span,
+[role="navigation"] button span {
+  word-spacing: 0.2em !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Force spacing in Arabic text */
+*[lang="ar"],
+*:lang(ar) {
+  word-spacing: 0.3em !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* Force spacing in French text */
+*[lang="fr"],
+*:lang(fr) {
+  word-spacing: 0.2em !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Prevent text concatenation in UI areas */
+.sidebar,
+nav,
+[role="navigation"] {
+  word-spacing: 0.2em !important;
+}
+
+/* Emergency spacing for all text */
+* {
+  word-spacing: 0.1em;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  /* Improve mobile scrolling */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Mobile-friendly modal positioning */
+  .mobile-modal {
+    margin: 16px;
+    max-height: calc(100vh - 32px);
+  }
+  
+  /* Responsive grid adjustments */
+  .mobile-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  /* Mobile typography adjustments */
+  .mobile-text {
+    line-height: 1.5;
+    word-break: break-word;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tablet-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tablet-spacing {
+    padding: 20px;
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 1025px) {
+  .desktop-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .desktop-spacing {
+    padding: 24px;
+  }
+  
+  /* Enhanced hover effects for desktop */
+  .desktop-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* RTL support improvements */
+[dir="rtl"] {
+  .rtl-flip {
+    transform: scaleX(-1);
+  }
+  
+  .rtl-margin-left {
+    margin-right: auto;
+    margin-left: 0;
+  }
+  
+  .rtl-margin-right {
+    margin-left: auto;
+    margin-right: 0;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .high-contrast {
+    border: 2px solid;
+    background: white;
+    color: black;
+  }
+  
+  .dark .high-contrast {
+    background: black;
+    color: white;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-full-width {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
