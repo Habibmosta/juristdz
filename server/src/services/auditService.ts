@@ -528,28 +528,10 @@ export class AuditService {
   }
 
   private startMetricsCollection(): void {
-    // Collecter les métriques toutes les 5 minutes
-    setInterval(async () => {
-      try {
-        // Obtenir la liste des tenants actifs
-        const tenantsQuery = 'SELECT DISTINCT tenant_id FROM security_audit_logs WHERE timestamp >= $1';
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-        const tenantsResult = await this.db.query(tenantsQuery, [oneHourAgo]);
-
-        for (const row of tenantsResult.rows) {
-          const metrics = await this.getCurrentMetrics(row.tenant_id);
-          this.metricsBuffer.push(metrics);
-        }
-
-        // Garder seulement les 100 dernières métriques par tenant
-        if (this.metricsBuffer.length > 1000) {
-          this.metricsBuffer.splice(0, this.metricsBuffer.length - 1000);
-        }
-
-      } catch (error) {
-        logger.error('Erreur lors de la collecte des métriques:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+    // Désactiver temporairement la collecte de métriques pour éviter les erreurs de base de données
+    // TODO: Réactiver après la création des tables manquantes
+    
+    logger.info('Metrics collection disabled temporarily');
   }
 
   private async analyzeEventForThreats(event: AuditEvent): Promise<void> {

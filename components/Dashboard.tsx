@@ -98,7 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
              <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-6">
                    <div className="px-3 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-white/30">
-                      {getRoleDisplayName(userRole, isAr)} - Édition Professionnelle V2.0
+                      {getRoleDisplayName(userRole, isAr)} - {isAr ? 'إصدار مهني' : 'Édition Professionnelle'} V2.0
                    </div>
                 </div>
                 <h1 className="text-4xl md:text-6xl font-bold font-serif mb-4 leading-tight">{t.dash_welcome}</h1>
@@ -107,7 +107,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
                 <div className="flex flex-wrap gap-4">
                    <div className="flex items-center gap-3 px-5 py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-2xl border border-white/20 backdrop-blur-md cursor-help">
                       <div className="w-2 h-2 rounded-full bg-white"></div>
-                      <span className="text-sm font-bold">{user.credits} Crédits Juridiques</span>
+                      <span className="text-sm font-bold">{user.credits} {isAr ? 'رصيد قانوني' : 'Crédits Juridiques'}</span>
                    </div>
                    <div className="flex items-center gap-3 px-5 py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-2xl border border-white/20 backdrop-blur-md uppercase tracking-wider">
                       <Star size={16} className="text-white" />
@@ -189,13 +189,18 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
                 <ShieldAlert size={24} />
              </div>
              <div className="flex-1 text-center md:text-left">
-                <h4 className="font-bold text-amber-900 dark:text-amber-200 text-sm mb-1">Environnement de Pré-production</h4>
+                <h4 className="font-bold text-amber-900 dark:text-amber-200 text-sm mb-1">
+                  {isAr ? 'بيئة ما قبل الإنتاج' : 'Environnement de Pré-production'}
+                </h4>
                 <p className="text-amber-700 dark:text-amber-300 text-xs">
-                   Ce lien est un accès temporaire pour validation métier. Pour une installation permanente au cabinet, veuillez contacter le support technique.
+                   {isAr 
+                     ? 'هذا الرابط مؤقت للتحقق المهني. للتثبيت الدائم في المكتب، يرجى الاتصال بالدعم التقني.'
+                     : 'Ce lien est un accès temporaire pour validation métier. Pour une installation permanente au cabinet, veuillez contacter le support technique.'
+                   }
                 </p>
              </div>
              <button className="px-6 py-2 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700 rounded-xl text-[10px] font-black uppercase text-amber-700 dark:text-amber-200 hover:bg-amber-100 transition-colors">
-                En savoir plus
+                {isAr ? 'معرفة المزيد' : 'En savoir plus'}
              </button>
           </div>
 

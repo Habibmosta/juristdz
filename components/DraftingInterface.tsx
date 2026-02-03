@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessageToGemini } from '../services/geminiService';
+import { autoTranslationService } from '../services/autoTranslationService';
 import { 
   TEMPLATES, 
   NOTAIRE_TEMPLATES, 
@@ -11,7 +12,7 @@ import {
   UI_TRANSLATIONS 
 } from '../constants';
 import { AppMode, Language, Citation, UserRole } from '../types';
-import { FileText, Download, CheckCircle, List, ChevronRight, PenTool, Layout, Eye, ExternalLink, Printer, Mic, MicOff, Share2, Check, Edit3, Save, Scale, Settings } from 'lucide-react';
+import { FileText, Download, CheckCircle, List, ChevronRight, PenTool, Layout, Eye, ExternalLink, Printer, Mic, MicOff, Share2, Check, Edit3, Save, Scale, Settings, Languages } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import StructuredLegalForm from './StructuredLegalForm';
 
@@ -50,11 +51,72 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(availableTemplates[0]?.id || '');
   const [details, setDetails] = useState('');
   const [generatedDoc, setGeneratedDoc] = useState('');
+  const [originalDoc, setOriginalDoc] = useState(''); // Store original document
+  const [originalDocLang, setOriginalDocLang] = useState<Language>('fr'); // Store original language
+  const [isDocTranslated, setIsDocTranslated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [mobileTab, setMobileTab] = useState<'config' | 'preview'>('config');
   const [useStructuredForm, setUseStructuredForm] = useState(true);
   const [structuredFormData, setStructuredFormData] = useState<any>({});
+
+  const componentId = `drafting-${userRole}`;
+
+  // Register for automatic translation
+  useEffect(() => {
+    console.log(`🔧 DraftingInterface: Registering for auto translation`);
+    autoTranslationService.registerComponent(componentId, handleAutoTranslation);
+    
+    return () => {
+      autoTranslationService.unregisterComponent(componentId);
+    };
+  }, []);
+
+  const handleAutoTranslation = async (newLanguage: Language) => {
+    console.log(`🔧 DraftingInterface: Auto translation triggered for ${newLanguage}`);
+    
+    if (!generatedDoc || !originalDoc) {
+      console.log(`🔧 DraftingInterface: No document to translate`);
+      return;
+    }
+
+    // If the original language matches the target language, show original document
+    if (originalDocLang === newLanguage) {
+      setGeneratedDoc(originalDoc);
+      setIsDocTranslated(false);
+      return;
+    }
+
+    setIsTranslating(true);
+
+    try {
+      const translatedDoc = await autoTranslationService.translateContent(
+        originalDoc,
+        originalDocLang,
+        newLanguage
+      );
+
+      const isSuccessfulTranslation = translatedDoc !== originalDoc && 
+                                    translatedDoc.trim().length > 0;
+
+      if (isSuccessfulTranslation) {
+        setGeneratedDoc(translatedDoc);
+        setIsDocTranslated(true);
+        console.log(`🔧 DraftingInterface: Document translated successfully`);
+      } else {
+        setGeneratedDoc(originalDoc);
+        setIsDocTranslated(false);
+        console.log(`🔧 DraftingInterface: Translation failed, showing original`);
+      }
+    } catch (error) {
+      console.error('🔧 DraftingInterface: Auto translation failed:', error);
+      setGeneratedDoc(originalDoc);
+      setIsDocTranslated(false);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const selectedTemplate = availableTemplates.find(t => t.id === selectedTemplateId) || availableTemplates[0];
 
@@ -166,7 +228,13 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
     setMobileTab('preview');
     setIsGenerating(true);
     const response = await sendMessageToGemini(prompt, [], AppMode.DRAFTING, language);
+    
+    // Store both original and current document
+    setOriginalDoc(response.text);
+    setOriginalDocLang(language);
     setGeneratedDoc(response.text);
+    setIsDocTranslated(false);
+    
     setIsGenerating(false);
   };
 
@@ -191,7 +259,17 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
       {/* Configuration Sidebar */}
       <div className={`w-full md:w-80 bg-white dark:bg-slate-900 border-e dark:border-slate-800 flex flex-col h-full overflow-y-auto ${mobileTab === 'config' ? 'flex' : 'hidden md:flex'}`}>
          <div className="p-6 border-b dark:border-slate-800">
-            <h2 className="text-xl font-bold font-serif mb-1">{t.draft_title}</h2>
+            <h2 className="text-xl font-bold font-serif mb-1 flex items-center gap-2">
+              {t.draft_title}
+              {isTranslating && (
+                <div className="flex items-center gap-1 text-blue-500">
+                  <Languages size={16} className="animate-pulse" />
+                  <span className="text-xs">
+                    {language === 'ar' ? 'ترجمة...' : 'Traduction...'}
+                  </span>
+                </div>
+              )}
+            </h2>
             <p className="text-xs text-slate-500">{t.draft_subtitle}</p>
          </div>
          
@@ -291,7 +369,15 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
                      <button onClick={() => setIsEditing(false)} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isEditing ? 'bg-legal-gold text-white shadow-md' : 'text-slate-500'}`}>{t.draft_preview_mode}</button>
                      <button onClick={() => setIsEditing(true)} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isEditing ? 'bg-legal-gold text-white shadow-md' : 'text-slate-500'}`}>{t.draft_edit_mode}</button>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                     {isDocTranslated && (
+                       <div className="flex items-center gap-1 text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg">
+                         <Languages size={12} />
+                         <span className="text-xs font-bold">
+                           {language === 'ar' ? 'مترجم' : 'Traduit'}
+                         </span>
+                       </div>
+                     )}
                      <button onClick={handlePrint} className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-legal-gold"><Printer size={20} /></button>
                      <button onClick={() => navigator.clipboard.writeText(generatedDoc)} className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-legal-gold"><Download size={20} /></button>
                   </div>

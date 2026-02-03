@@ -347,11 +347,19 @@ export class ApiGatewayService {
     if (!this.config.enableMetrics) return;
 
     setInterval(() => {
-      const metrics = this.getMetrics();
-      monitoringService.recordMetric('api_gateway_requests_total', metrics.summary.totalRequests);
-      monitoringService.recordMetric('api_gateway_errors_total', metrics.summary.totalErrors);
-      monitoringService.recordMetric('api_gateway_error_rate', metrics.summary.errorRate);
-      monitoringService.recordMetric('api_gateway_cache_size', metrics.cache.size);
+      try {
+        const metrics = this.getMetrics();
+        // Vérifier si monitoringService.recordMetric existe avant de l'utiliser
+        if (monitoringService && typeof monitoringService.recordMetric === 'function') {
+          monitoringService.recordMetric('api_gateway_requests_total', metrics.summary.totalRequests);
+          monitoringService.recordMetric('api_gateway_errors_total', metrics.summary.totalErrors);
+          monitoringService.recordMetric('api_gateway_error_rate', metrics.summary.errorRate);
+          monitoringService.recordMetric('api_gateway_cache_size', metrics.cache.size);
+        }
+      } catch (error) {
+        // Ignorer silencieusement les erreurs de métriques
+        console.warn('Metrics reporting failed:', error);
+      }
     }, 30000); // Reporter toutes les 30 secondes
   }
 

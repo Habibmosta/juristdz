@@ -16,17 +16,11 @@ export class NotificationScheduler {
     }
 
     this.isRunning = true;
-    const intervalMs = intervalMinutes * 60 * 1000;
-
-    logger.info(`Starting notification scheduler with ${intervalMinutes} minute intervals`);
-
-    // Run immediately on start
-    this.processNotifications();
-
-    // Schedule recurring processing
-    this.intervalId = setInterval(() => {
-      this.processNotifications();
-    }, intervalMs);
+    
+    // Désactiver temporairement le scheduler pour éviter les erreurs de base de données
+    // TODO: Réactiver après la création des tables manquantes
+    
+    logger.info(`Starting notification scheduler with ${intervalMinutes} minute intervals (disabled)`);
   }
 
   /**

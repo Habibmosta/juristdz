@@ -67,11 +67,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="overflow-hidden">
             <h1 className={`font-bold text-xl tracking-tight truncate leading-tight ${
               theme === 'light' ? 'text-slate-900' : 'text-white'
-            }`}>{t.sidebar_title}</h1>
+            }`}>{isAr ? 'محامي دي زاد' : 'JuristDZ'}</h1>
             <div className="flex items-center gap-1.5 mt-0.5">
                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
                <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">
-                  {isOnline ? 'Serveur Actif' : 'Hors-ligne'}
+                  {isOnline ? (isAr ? 'متصل' : 'En ligne') : (isAr ? 'غير متصل' : 'Hors ligne')}
                </span>
             </div>
           </div>
@@ -95,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
              <p className={`text-[10px] font-bold uppercase tracking-widest ${
                theme === 'light' ? 'text-slate-400' : 'text-slate-500'
              }`}>
-               {isAr ? 'المساحة المهنية' : 'Suite Métier (V2)'}
+               {isAr ? 'المساحة المهنية' : 'Suite Métier'}
              </p>
           </div>
 
@@ -129,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({
              <p className={`text-[10px] font-bold uppercase tracking-widest ${
                theme === 'light' ? 'text-slate-400' : 'text-slate-500'
              }`}>
-               {isAr ? 'مساعدة ذكية' : 'Assistant (V1)'}
+               {isAr ? 'مساعد ذكي' : 'Assistant IA'}
              </p>
           </div>
 
@@ -166,7 +166,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                <button onClick={toggleTheme} title="Changer de thème" className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors">
                   {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
                </button>
-               <button onClick={() => setLanguage(language === 'fr' ? 'ar' : 'fr')} className="px-2 py-1 text-[10px] font-bold border rounded-lg hover:border-legal-gold text-slate-500 transition-colors uppercase">
+               <button 
+                 onClick={() => {
+                   const newLanguage = language === 'fr' ? 'ar' : 'fr';
+                   console.log(`🔧 Sidebar language switch: ${language} -> ${newLanguage}`);
+                   setLanguage(newLanguage);
+                 }} 
+                 className="px-2 py-1 text-[10px] font-bold border rounded-lg hover:border-legal-gold text-slate-500 transition-colors uppercase"
+               >
                   {language}
                </button>
             </div>
@@ -177,9 +184,13 @@ const Sidebar: React.FC<SidebarProps> = ({
            <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'}`}>
               <div className="flex items-center gap-2 mb-2">
                  <Zap size={14} className="text-legal-gold" />
-                 <span className="text-[10px] font-bold text-slate-500">CABINET VIRTUEL</span>
+                 <span className="text-[10px] font-bold text-slate-500">
+                   {isAr ? 'مكتب افتراضي' : 'CABINET VIRTUEL'}
+                 </span>
               </div>
-              <p className="text-[9px] text-slate-400 leading-tight">Cette version béta est réservée aux tests métiers. Les données sont locales.</p>
+              <p className="text-[9px] text-slate-400 leading-tight">
+                {isAr ? 'هذا الإصدار التجريبي مخصص للاختبارات المهنية. البيانات محلية.' : 'Cette version béta est réservée aux tests métiers. Les données sont locales.'}
+              </p>
            </div>
         </div>
       </div>
@@ -210,14 +221,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <div className="flex gap-3">
                          <ShieldCheck size={18} className="text-amber-600 shrink-0" />
                          <p className="text-[10px] text-amber-800 dark:text-amber-200 leading-relaxed">
-                            <strong>Note :</strong> Dans cet environnement de test, assurez-vous que votre session Google Cloud est toujours active pour que le lien reste accessible.
+                            <strong>{isAr ? 'ملاحظة:' : 'Note :'}</strong> {isAr ? 'في بيئة الاختبار هذه، تأكد من أن جلسة Google Cloud الخاصة بك لا تزال نشطة حتى يبقى الرابط قابلاً للوصول.' : 'Dans cet environnement de test, assurez-vous que votre session Google Cloud est toujours active pour que le lien reste accessible.'}
                          </p>
                       </div>
                    </div>
 
                    <button onClick={handleCopy} className="w-full py-4 bg-legal-blue dark:bg-legal-gold text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
                       {copied ? <Check size={18} /> : <Share2 size={18} />}
-                      {copied ? 'Lien de Cabinet Copié !' : 'Copier l\'URL Racine'}
+                      {copied ? (isAr ? 'تم نسخ رابط المكتب!' : 'Lien de Cabinet Copié !') : (isAr ? 'نسخ الرابط الأساسي' : 'Copier l\'URL Racine')}
                    </button>
                 </div>
              </div>

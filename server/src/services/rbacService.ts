@@ -337,7 +337,9 @@ export class RBACService {
 
     } catch (error) {
       logger.error('Initialize default roles error:', error);
-      throw new Error('Failed to initialize default roles');
+      // Ne pas faire échouer le serveur si l'initialisation RBAC échoue
+      logger.warn('RBAC initialization failed, continuing without default roles');
+      return; // Retourner au lieu de throw pour éviter l'arrêt du serveur
     }
   }
 

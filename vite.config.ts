@@ -8,6 +8,16 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 5173,
         host: '0.0.0.0',
+        proxy: {
+          '/api/groq': {
+            target: 'https://api.groq.com',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api\/groq/, ''),
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+            }
+          }
+        }
       },
       plugins: [react()],
       define: {

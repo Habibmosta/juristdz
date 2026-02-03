@@ -14,7 +14,10 @@ export enum Sender {
   BOT = 'bot'
 }
 
-export type Language = 'fr' | 'ar';
+export enum Language {
+  FRENCH = 'fr',
+  ARABIC = 'ar'
+}
 
 export type SubscriptionPlan = 'free' | 'pro' | 'cabinet';
 

@@ -190,7 +190,11 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
             </button>
             
             <button 
-              onClick={() => onLanguageChange(language === 'fr' ? 'ar' : 'fr')}
+              onClick={() => {
+                const newLanguage = language === 'fr' ? 'ar' : 'fr';
+                console.log(`🔧 Language switch requested: ${language} -> ${newLanguage}`);
+                onLanguageChange(newLanguage);
+              }}
               className="px-3 py-1.5 text-xs font-bold border rounded-lg hover:border-legal-gold transition-colors uppercase"
             >
               {language}

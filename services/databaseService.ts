@@ -126,6 +126,27 @@ export const databaseService = {
     }));
   },
 
+  async clearMessages(userId: string): Promise<{ error: any }> {
+    console.log(`🔄 Clearing all messages for user: ${userId}`);
+    
+    if (!supabase) {
+      // Clear from localStorage
+      storage.set(`msgs_${userId}`, []);
+      console.log(`🔄 Messages cleared from localStorage`);
+      return { error: null };
+    }
+    
+    // Clear from Supabase
+    const { error } = await supabase.from('messages').delete().eq('user_id', userId);
+    if (error) {
+      console.error(`🔄 Error clearing messages from Supabase:`, error);
+    } else {
+      console.log(`🔄 Messages cleared from Supabase`);
+    }
+    
+    return { error };
+  },
+
   // --- TRANSACTIONS ---
   async addTransaction(transaction: Transaction) {
     if (!supabase) {

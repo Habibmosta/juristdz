@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import RoleBasedLayout from './components/RoleBasedLayout';
-import ChatInterface from './components/ChatInterface';
+import ChatInterface from './components/ImprovedChatInterface';
 import DraftingInterface from './components/DraftingInterface';
 import AnalysisInterface from './components/AnalysisInterface';
 import AdminDashboard from './components/AdminDashboard';
@@ -12,6 +12,7 @@ import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, 
 import { databaseService } from './services/databaseService';
 import { supabase } from './services/supabaseClient';
 import { routingService } from './services/routingService';
+import { autoTranslationService } from './services/autoTranslationService';
 import { getDefaultMode } from './config/roleRouting';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { UI_TRANSLATIONS } from './constants';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   const [userProfile, setUserProfile] = useState<EnhancedUserProfile | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [translationSystemReady, setTranslationSystemReady] = useState(false);
   
   // Legacy state for backward compatibility
   const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([]);
@@ -40,6 +42,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
+        // DISABLED: Complex translation systems that cause conflicts
+        // console.log('🚀 Initializing Pure Translation System...');
+        // await initializePureTranslationSystem();
+        
+        // DISABLED: Content interceptors that cause issues
+        // console.log('🧹 Activating Content Interceptor...');
+        // contentInterceptor.setEnabled(true);
+        
+        // DISABLED: Emergency cleaners that cause infinite loops
+        // console.log('🚨 ACTIVATING EMERGENCY CONTENT CLEANER...');
+        // console.log('🔥 ACTIVATING RADICAL CONTENT CLEANER - NUCLEAR OPTION...');
+        // console.log('🔧 ACTIVATING SIDEBAR LANGUAGE FIXER...');
+        
+        setTranslationSystemReady(true);
+        console.log('✅ Simple translation system ready');
+
         let userId = localStorage.getItem('juristdz_user_id');
         if (!userId) {
           userId = 'USR-' + Math.floor(Math.random() * 1000000);
@@ -149,6 +167,14 @@ const App: React.FC = () => {
     routingService.setCurrentUser(updatedProfile);
   };
 
+  const handleLanguageChange = (newLanguage: Language) => {
+    console.log(`🌐 App: Language change requested: ${language} -> ${newLanguage}`);
+    setLanguage(newLanguage);
+    
+    // Simple notification to translation service
+    autoTranslationService.setLanguage(newLanguage);
+  };
+
   const generateLicenseKey = () => {
     const newKey: LicenseKey = {
       key: 'JDZ-' + Math.random().toString(36).substring(2, 15).toUpperCase(),
@@ -179,12 +205,16 @@ const App: React.FC = () => {
   }
 
   // Loading state
-  if (!isDataLoaded) {
+  if (!isDataLoaded || !translationSystemReady) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white">
         <Loader2 className="w-12 h-12 text-legal-gold animate-spin mb-4" />
         <p className="font-serif italic text-slate-400">Initialisation Cabinet JuristDZ...</p>
-        <p className="text-xs text-slate-500 mt-2">Configuration du système de routage par rôle...</p>
+        {!translationSystemReady ? (
+          <p className="text-xs text-slate-500 mt-2">Configuration du système de traduction pure...</p>
+        ) : (
+          <p className="text-xs text-slate-500 mt-2">Configuration du système de routage par rôle...</p>
+        )}
       </div>
     );
   }
@@ -240,7 +270,7 @@ const App: React.FC = () => {
       theme={theme}
       onModeChange={handleModeChange}
       onRoleSwitch={handleRoleSwitch}
-      onLanguageChange={setLanguage}
+      onLanguageChange={handleLanguageChange}
       onThemeToggle={toggleTheme}
     >
       {currentMode === AppMode.DASHBOARD && (

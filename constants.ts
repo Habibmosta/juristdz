@@ -19,6 +19,8 @@ export const UI_TRANSLATIONS = {
     share_success: "Lien de test copié !",
     mode_secure: "Mode Sécurisé",
     mode_secure_desc: "Données protégées et chiffrées. Vérifiez toujours avec le JORA.",
+    professional_suite: "Suite Métier",
+    ai_assistant: "Assistant IA",
     
     dash_welcome: "Bonjour Maître,",
     dash_subtitle: "Bienvenue dans votre cabinet numérique.",
@@ -82,6 +84,8 @@ export const UI_TRANSLATIONS = {
     share_success: "تم نسخ الرابط بنجاح!",
     mode_secure: "وضع آمن",
     mode_secure_desc: "جميع البيانات محمية ومشفرة. تحقق دائماً من الجريدة الرسمية.",
+    professional_suite: "المساحة المهنية",
+    ai_assistant: "مساعد ذكي",
 
     dash_welcome: "أهلاً بك يا أستاذ،",
     dash_subtitle: "مرحباً بك في مكتبك الرقمي المطور.",

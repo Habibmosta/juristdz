@@ -140,6 +140,19 @@ export class NotificationService {
    */
   async processPendingNotifications(batchSize: number = 100): Promise<number> {
     try {
+      // Vérifier si la table notifications existe
+      const tableExists = await db.query(`
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_name = 'notifications'
+        ) as exists
+      `);
+      
+      if (!tableExists.rows[0].exists) {
+        // Table n'existe pas, retourner 0 sans erreur
+        return 0;
+      }
+
       // Get pending notifications
       const result = await db.query(
         `SELECT * FROM notifications 
@@ -188,7 +201,9 @@ export class NotificationService {
         }
       }
 
-      logger.info('Processed pending notifications', { processedCount, totalFound: notifications.length });
+      if (processedCount > 0) {
+        logger.info('Processed pending notifications', { processedCount, totalFound: notifications.length });
+      }
       return processedCount;
 
     } catch (error) {
@@ -263,6 +278,19 @@ export class NotificationService {
    */
   async generateDeadlineNotifications(): Promise<number> {
     try {
+      // Vérifier si la fonction existe avant de l'appeler
+      const functionExists = await db.query(`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_proc 
+          WHERE proname = 'generate_deadline_notifications'
+        ) as exists
+      `);
+      
+      if (!functionExists.rows[0].exists) {
+        logger.warn('Function generate_deadline_notifications does not exist, skipping');
+        return 0;
+      }
+
       const result = await db.query('SELECT generate_deadline_notifications()');
       const notificationsCreated = (result as any).rows[0].generate_deadline_notifications;
 
@@ -271,7 +299,9 @@ export class NotificationService {
 
     } catch (error) {
       logger.error('Generate deadline notifications error:', error);
-      throw new Error('Failed to generate deadline notifications');
+      // Ne pas faire échouer le processus, juste logger l'erreur
+      logger.warn('Deadline notifications generation failed, continuing');
+      return 0;
     }
   }
 
