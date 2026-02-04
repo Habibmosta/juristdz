@@ -54,6 +54,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   const [accessDeniedMessage, setAccessDeniedMessage] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
+  const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
 
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
@@ -118,6 +119,21 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
     setNavigationItems(items);
   };
 
+  // Smooth language transition handler
+  const handleLanguageTransition = (newLanguage: Language) => {
+    setIsLanguageTransitioning(true);
+    
+    // Add a small delay for smooth visual transition
+    setTimeout(() => {
+      onLanguageChange(newLanguage);
+      
+      // Reset transition state after animation completes
+      setTimeout(() => {
+        setIsLanguageTransitioning(false);
+      }, 300);
+    }, 150);
+  };
+
   const handleNavigation = (targetMode: AppMode) => {
     const result = routingService.navigateToMode(targetMode);
     
@@ -155,11 +171,11 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden font-sans transition-all duration-300 ease-in-out ${
+    <div className={`flex h-screen overflow-hidden font-sans transition-all duration-500 ease-in-out dir-transition ${
       theme === 'light' 
         ? 'bg-slate-50 text-slate-900' 
         : 'bg-slate-950 text-slate-100'
-    }`} dir={isAr ? 'rtl' : 'ltr'}>
+    } ${isLanguageTransitioning ? 'language-transitioning' : ''}`} dir={isAr ? 'rtl' : 'ltr'}>
       
       {/* Mobile Header */}
       <div className={`md:hidden fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-4 border-b transition-colors ${
@@ -196,23 +212,23 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
           <button 
             onClick={() => {
               const newLanguage = language === 'fr' ? 'ar' : 'fr';
-              onLanguageChange(newLanguage);
+              handleLanguageTransition(newLanguage);
             }}
-            className={`relative w-10 h-6 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:ring-offset-2 ${
+            className={`language-toggle relative w-10 h-6 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:ring-offset-2 transform hover:scale-105 btn-press ${
               language === 'ar' 
                 ? 'bg-legal-gold/20' 
                 : 'bg-slate-200 dark:bg-slate-700'
-            }`}
+            } ${isLanguageTransitioning ? 'language-button-active animate-pulse' : ''}`}
             dir="ltr"
           >
-            <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-lg transition-all duration-300 ease-out transform ${
+            <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-lg transition-all duration-500 ease-out transform ${
               language === 'ar' 
                 ? 'translate-x-4 bg-legal-gold' 
                 : 'translate-x-0.5 bg-white dark:bg-slate-300'
-            }`}>
-              <Globe size={10} className={`absolute inset-0 m-auto transition-colors duration-300 ${
+            } ${isLanguageTransitioning ? 'scale-110' : ''}`}>
+              <Globe size={10} className={`absolute inset-0 m-auto transition-all duration-500 ${
                 language === 'ar' ? 'text-white' : 'text-legal-gold'
-              }`} />
+              } ${isLanguageTransitioning ? 'animate-spin' : ''}`} />
             </div>
           </button>
 
@@ -265,11 +281,11 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
       {/* Desktop Sidebar */}
       <div className={`hidden md:flex ${
         isDesktopSidebarCollapsed ? 'w-20' : 'w-80'
-      } flex-col h-full shadow-xl flex-shrink-0 border-e transition-all duration-300 ease-in-out z-20 print:hidden ${
+      } flex-col h-full shadow-xl flex-shrink-0 border-e transition-all duration-500 ease-in-out z-20 print:hidden ${
         theme === 'light' 
           ? 'bg-white border-slate-200' 
           : 'bg-slate-900 border-slate-800'
-      }`}>
+      } ${isLanguageTransitioning ? 'transform scale-[0.995] opacity-95' : 'transform scale-100 opacity-100'}`}>
         
         {/* Desktop Sidebar Header */}
         <div className={`p-6 border-b transition-colors ${
@@ -361,24 +377,24 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                 <button 
                   onClick={() => {
                     const newLanguage = language === 'fr' ? 'ar' : 'fr';
-                    onLanguageChange(newLanguage);
+                    handleLanguageTransition(newLanguage);
                   }}
-                  className={`relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:ring-offset-2 dark:focus:ring-offset-slate-900 hover:shadow-md ${
+                  className={`language-toggle relative w-12 h-6 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:ring-offset-2 dark:focus:ring-offset-slate-900 hover:shadow-md transform hover:scale-105 btn-press ${
                     language === 'ar' 
                       ? 'bg-legal-gold/20 hover:bg-legal-gold/30' 
                       : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
-                  }`}
+                  } ${isLanguageTransitioning ? 'language-button-active animate-pulse' : ''}`}
                   title={language === 'fr' ? 'Basculer vers l\'arabe' : 'التبديل إلى الفرنسية'}
                   dir="ltr"
                 >
-                  <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-lg transition-all duration-300 ease-out transform ${
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-lg transition-all duration-500 ease-out transform ${
                     language === 'ar' 
                       ? 'translate-x-6 bg-legal-gold scale-110' 
                       : 'translate-x-0.5 bg-white dark:bg-slate-300 scale-100'
-                  }`}>
-                    <Globe size={12} className={`absolute inset-0 m-auto transition-colors duration-300 ${
+                  } ${isLanguageTransitioning ? 'scale-125' : ''}`}>
+                    <Globe size={12} className={`absolute inset-0 m-auto transition-all duration-500 ${
                       language === 'ar' ? 'text-white' : 'text-legal-gold'
-                    }`} />
+                    } ${isLanguageTransitioning ? 'animate-spin' : ''}`} />
                   </div>
                 </button>
                 <span className={`text-xs font-medium transition-all duration-300 ${language === 'ar' ? 'text-legal-gold font-semibold' : 'text-slate-400'}`}>
@@ -411,10 +427,14 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <main className={`flex-1 relative flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out ${
+      <main className={`flex-1 relative flex flex-col h-full overflow-hidden transition-all duration-500 ease-in-out ${
         isMobileSidebarOpen ? 'md:ml-0' : ''
       } pt-16 md:pt-0`}>
-        <div className="transition-opacity duration-300 ease-in-out h-full">
+        <div className={`transition-all duration-500 ease-in-out h-full ${
+          isLanguageTransitioning 
+            ? 'opacity-90 transform scale-[0.99] blur-[0.5px]' 
+            : 'opacity-100 transform scale-100 blur-0'
+        } ${language === 'ar' ? 'content-slide-in-rtl' : 'content-slide-in-ltr'}`}>
           {children}
         </div>
       </main>

@@ -1,0 +1,150 @@
+/* Professional Language Transition Animations */
+
+@keyframes languageTransition {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.98) translateX(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+@keyframes languageGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2);
+  }
+}
+
+@keyframes smoothFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes smoothSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes rtlSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Language transition classes */
+.language-transitioning {
+  animation: languageTransition 0.6s ease-in-out;
+}
+
+.language-button-active {
+  animation: languageGlow 0.8s ease-in-out;
+}
+
+.content-fade-in {
+  animation: smoothFadeIn 0.5s ease-out;
+}
+
+.content-slide-in-ltr {
+  animation: smoothSlideIn 0.5s ease-out;
+}
+
+.content-slide-in-rtl {
+  animation: rtlSlideIn 0.5s ease-out;
+}
+
+/* Enhanced hover effects for language buttons */
+.language-toggle:hover {
+  transform: scale(1.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.language-toggle:active {
+  transform: scale(0.95);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth text transitions */
+.text-transition {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Professional blur effect during transitions */
+.transition-blur {
+  transition: filter 0.3s ease-in-out;
+}
+
+.transition-blur.blurred {
+  filter: blur(0.5px);
+}
+
+/* Smooth direction change animation */
+.dir-transition {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Smooth modal transitions */
+.modal-enter {
+  animation: modalEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Professional button press feedback */
+.btn-press {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-press:active {
+  transform: scale(0.98);
+}
