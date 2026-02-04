@@ -280,6 +280,7 @@ const App: React.FC = () => {
           enhancedUser={userProfile}
           setMode={setMode} 
           showSpecializedInterface={true}
+          theme={theme}
         />
       )}
       {currentMode === AppMode.CASES && (

@@ -22,9 +22,10 @@ interface DashboardProps {
   enhancedUser?: EnhancedUserProfile;
   setMode: (mode: AppMode) => void;
   showSpecializedInterface?: boolean;
+  theme?: 'light' | 'dark';
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, setMode, showSpecializedInterface = false }) => {
+const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, setMode, showSpecializedInterface = false, theme = 'light' }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
 
@@ -49,19 +50,19 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
   if (showSpecializedInterface && enhancedUser) {
     switch (enhancedUser.activeRole) {
       case UserRole.AVOCAT:
-        return <AvocatInterface user={enhancedUser} language={language} />;
+        return <AvocatInterface user={enhancedUser} language={language} theme={theme} />;
       case UserRole.NOTAIRE:
-        return <NotaireInterface user={enhancedUser} language={language} />;
+        return <NotaireInterface user={enhancedUser} language={language} theme={theme} />;
       case UserRole.HUISSIER:
-        return <HuissierInterface user={enhancedUser} language={language} />;
+        return <HuissierInterface user={enhancedUser} language={language} theme={theme} />;
       case UserRole.MAGISTRAT:
-        return <MagistratInterface user={enhancedUser} language={language} />;
+        return <MagistratInterface user={enhancedUser} language={language} theme={theme} />;
       case UserRole.ETUDIANT:
-        return <EtudiantInterface user={enhancedUser} language={language} />;
+        return <EtudiantInterface user={enhancedUser} language={language} theme={theme} />;
       case UserRole.JURISTE_ENTREPRISE:
-        return <JuristeEntrepriseInterface user={enhancedUser} language={language} />;
+        return <JuristeEntrepriseInterface user={enhancedUser} language={language} theme={theme} />;
       case UserRole.ADMIN:
-        return <AdminInterface user={enhancedUser} language={language} />;
+        return <AdminInterface user={enhancedUser} language={language} theme={theme} />;
       default:
         // Fall back to default dashboard
         break;
