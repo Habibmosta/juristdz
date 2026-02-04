@@ -99,7 +99,9 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
   const inputClass = (hasError = false) => `w-full p-3 border rounded-xl transition-colors ${
     hasError 
       ? 'border-red-500 focus:border-red-500' 
-      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
+      : theme === 'light' 
+        ? 'border-slate-200 focus:border-legal-blue' 
+        : 'border-slate-700 focus:border-legal-blue'
   } ${
     theme === 'light' 
       ? 'bg-white text-slate-900' 
@@ -226,7 +228,7 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
         
         {/* Header */}
         <div className={`p-6 border-b ${
-          theme === 'light' ? 'border-slate-200' : 'border-slate-800'
+          theme === 'light' ? 'border-slate-200' : 'border-slate-700'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -234,10 +236,14 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
                 <Plus size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">
+                <h2 className={`text-2xl font-bold ${
+                  theme === 'light' ? 'text-slate-900' : 'text-slate-100'
+                }`}>
                   {isAr ? 'إنشاء ملف قضائي جديد' : 'Nouveau Dossier Juridique'}
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className={`text-sm ${
+                  theme === 'light' ? 'text-slate-500' : 'text-slate-400'
+                }`}>
                   {isAr ? 'أدخل معلومات العميل وتفاصيل القضية' : 'Saisissez les informations client et les détails du dossier'}
                 </p>
               </div>
@@ -247,7 +253,7 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
               className={`p-2 rounded-lg transition-colors ${
                 theme === 'light' 
                   ? 'hover:bg-slate-100 text-slate-500' 
-                  : 'hover:bg-slate-800 text-slate-400'
+                  : 'hover:bg-slate-700 text-slate-400'
               }`}
             >
               <X size={20} />
@@ -466,14 +472,16 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <div className={`flex items-center justify-end gap-4 pt-6 border-t ${
+            theme === 'light' ? 'border-slate-200' : 'border-slate-700'
+          }`}>
             <button
               type="button"
               onClick={onClose}
               className={`px-6 py-3 border rounded-xl font-medium transition-colors ${
                 theme === 'light' 
-                  ? 'border-slate-200 hover:bg-slate-50' 
-                  : 'border-slate-700 hover:bg-slate-800'
+                  ? 'border-slate-200 hover:bg-slate-50 text-slate-700' 
+                  : 'border-slate-600 hover:bg-slate-700 text-slate-300'
               }`}
             >
               {isAr ? 'إلغاء' : 'Annuler'}
