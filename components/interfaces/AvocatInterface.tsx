@@ -71,8 +71,15 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   const loadCases = async () => {
     setIsLoadingCases(true);
     try {
-      const cases = caseService.getActiveCases();
+      const cases = await caseService.getActiveCases();
       setActiveCases(cases);
+      
+      // Log storage method being used
+      if (caseService.isUsingSupabase()) {
+        console.log('✅ Cases loaded from Supabase database');
+      } else {
+        console.log('⚠️ Cases loaded from local storage (fallback)');
+      }
     } catch (error) {
       console.error('Error loading cases:', error);
     } finally {
@@ -80,9 +87,13 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     }
   };
 
-  const loadCaseStatistics = () => {
-    const stats = caseService.getCaseStatistics();
-    setCaseStats(stats);
+  const loadCaseStatistics = async () => {
+    try {
+      const stats = await caseService.getCaseStatistics();
+      setCaseStats(stats);
+    } catch (error) {
+      console.error('Error loading case statistics:', error);
+    }
   };
 
   // Handle new case creation

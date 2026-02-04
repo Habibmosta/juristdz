@@ -1,17 +1,223 @@
 import { Case } from '../types';
+import { supabaseCaseService } from './supabaseCaseService';
 
 /**
- * Service for managing legal cases/dossiers
- * Handles CRUD operations for case management
+ * Enhanced Case Service with Supabase integration
+ * Falls back to in-memory storage if Supabase is not available
  */
 class CaseService {
   private cases: Case[] = [];
   private nextId = 1;
+  private useSupabase = true;
 
   constructor() {
-    // Initialize with some mock data
-    this.initializeMockData();
+    // Check if Supabase is available
+    this.useSupabase = supabaseCaseService.isAvailable();
+    
+    if (!this.useSupabase) {
+      console.warn('⚠️ Supabase not available, falling back to in-memory storage');
+      this.initializeMockData();
+    } else {
+      console.log('✅ Using Supabase for data persistence');
+    }
   }
+
+  /**
+   * Get all cases
+   */
+  async getAllCases(): Promise<Case[]> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getAllCases();
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getAllCasesLocal();
+      }
+    }
+    return this.getAllCasesLocal();
+  }
+
+  /**
+   * Get active cases only
+   */
+  async getActiveCases(): Promise<Case[]> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getActiveCases();
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getActiveCasesLocal();
+      }
+    }
+    return this.getActiveCasesLocal();
+  }
+
+  /**
+   * Get cases by priority
+   */
+  async getCasesByPriority(priority: 'low' | 'medium' | 'high' | 'urgent'): Promise<Case[]> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getCasesByPriority(priority);
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getCasesByPriorityLocal(priority);
+      }
+    }
+    return this.getCasesByPriorityLocal(priority);
+  }
+
+  /**
+   * Get cases with upcoming deadlines
+   */
+  async getUpcomingDeadlines(days: number = 7): Promise<Case[]> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getUpcomingDeadlines(days);
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getUpcomingDeadlinesLocal(days);
+      }
+    }
+    return this.getUpcomingDeadlinesLocal(days);
+  }
+
+  /**
+   * Get case by ID
+   */
+  async getCaseById(id: string): Promise<Case | null> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getCaseById(id);
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getCaseByIdLocal(id);
+      }
+    }
+    return this.getCaseByIdLocal(id);
+  }
+
+  /**
+   * Create a new case
+   */
+  async createCase(caseData: Partial<Case>): Promise<Case> {
+    if (this.useSupabase) {
+      try {
+        const newCase = await supabaseCaseService.createCase(caseData);
+        console.log('✅ Case saved to Supabase:', newCase.title);
+        return newCase;
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.createCaseLocal(caseData);
+      }
+    }
+    return this.createCaseLocal(caseData);
+  }
+
+  /**
+   * Update an existing case
+   */
+  async updateCase(id: string, updates: Partial<Case>): Promise<Case | null> {
+    if (this.useSupabase) {
+      try {
+        const updatedCase = await supabaseCaseService.updateCase(id, updates);
+        if (updatedCase) {
+          console.log('✅ Case updated in Supabase:', updatedCase.title);
+        }
+        return updatedCase;
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.updateCaseLocal(id, updates);
+      }
+    }
+    return this.updateCaseLocal(id, updates);
+  }
+
+  /**
+   * Delete a case (archive it)
+   */
+  async deleteCase(id: string): Promise<boolean> {
+    if (this.useSupabase) {
+      try {
+        const result = await supabaseCaseService.deleteCase(id);
+        if (result) {
+          console.log('✅ Case archived in Supabase');
+        }
+        return result;
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.deleteCaseLocal(id);
+      }
+    }
+    return this.deleteCaseLocal(id);
+  }
+
+  /**
+   * Search cases by title, client name, or description
+   */
+  async searchCases(query: string): Promise<Case[]> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.searchCases(query);
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.searchCasesLocal(query);
+      }
+    }
+    return this.searchCasesLocal(query);
+  }
+
+  /**
+   * Get case statistics
+   */
+  async getCaseStatistics() {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getCaseStatistics();
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getCaseStatisticsLocal();
+      }
+    }
+    return this.getCaseStatisticsLocal();
+  }
+
+  /**
+   * Get cases grouped by type
+   */
+  async getCasesByType(): Promise<Record<string, Case[]>> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseCaseService.getCasesByType();
+      } catch (error) {
+        console.error('Supabase error, falling back to local storage:', error);
+        this.useSupabase = false;
+        return this.getCasesByTypeLocal();
+      }
+    }
+    return this.getCasesByTypeLocal();
+  }
+
+  /**
+   * Check if using Supabase
+   */
+  isUsingSupabase(): boolean {
+    return this.useSupabase;
+  }
+
+  // ========================================
+  // LOCAL STORAGE FALLBACK METHODS
+  // ========================================
 
   private initializeMockData() {
     const mockCases: Case[] = [
@@ -78,35 +284,23 @@ class CaseService {
     this.nextId = mockCases.length + 1;
   }
 
-  /**
-   * Get all cases
-   */
-  getAllCases(): Case[] {
+  private getAllCasesLocal(): Case[] {
     return [...this.cases].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  /**
-   * Get active cases only
-   */
-  getActiveCases(): Case[] {
+  private getActiveCasesLocal(): Case[] {
     return this.cases
       .filter(case_ => case_.status === 'active')
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  /**
-   * Get cases by priority
-   */
-  getCasesByPriority(priority: 'low' | 'medium' | 'high' | 'urgent'): Case[] {
+  private getCasesByPriorityLocal(priority: 'low' | 'medium' | 'high' | 'urgent'): Case[] {
     return this.cases
       .filter(case_ => case_.priority === priority)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  /**
-   * Get cases with upcoming deadlines
-   */
-  getUpcomingDeadlines(days: number = 7): Case[] {
+  private getUpcomingDeadlinesLocal(days: number = 7): Case[] {
     const now = new Date();
     const futureDate = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
     
@@ -120,17 +314,11 @@ class CaseService {
       .sort((a, b) => (a.deadline?.getTime() || 0) - (b.deadline?.getTime() || 0));
   }
 
-  /**
-   * Get case by ID
-   */
-  getCaseById(id: string): Case | null {
+  private getCaseByIdLocal(id: string): Case | null {
     return this.cases.find(case_ => case_.id === id) || null;
   }
 
-  /**
-   * Create a new case
-   */
-  async createCase(caseData: Partial<Case>): Promise<Case> {
+  private async createCaseLocal(caseData: Partial<Case>): Promise<Case> {
     const newCase: Case = {
       id: this.nextId.toString(),
       title: caseData.title || '',
@@ -151,10 +339,7 @@ class CaseService {
     return newCase;
   }
 
-  /**
-   * Update an existing case
-   */
-  async updateCase(id: string, updates: Partial<Case>): Promise<Case | null> {
+  private async updateCaseLocal(id: string, updates: Partial<Case>): Promise<Case | null> {
     const caseIndex = this.cases.findIndex(case_ => case_.id === id);
     
     if (caseIndex === -1) {
@@ -173,10 +358,7 @@ class CaseService {
     return this.cases[caseIndex];
   }
 
-  /**
-   * Delete a case (archive it)
-   */
-  async deleteCase(id: string): Promise<boolean> {
+  private async deleteCaseLocal(id: string): Promise<boolean> {
     const caseIndex = this.cases.findIndex(case_ => case_.id === id);
     
     if (caseIndex === -1) {
@@ -193,14 +375,11 @@ class CaseService {
     return true;
   }
 
-  /**
-   * Search cases by title, client name, or description
-   */
-  searchCases(query: string): Case[] {
+  private searchCasesLocal(query: string): Case[] {
     const searchTerm = query.toLowerCase().trim();
     
     if (!searchTerm) {
-      return this.getAllCases();
+      return this.getAllCasesLocal();
     }
 
     return this.cases.filter(case_ =>
@@ -212,14 +391,11 @@ class CaseService {
     ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  /**
-   * Get case statistics
-   */
-  getCaseStatistics() {
-    const activeCases = this.getActiveCases();
-    const upcomingDeadlines = this.getUpcomingDeadlines();
-    const highPriorityCases = this.getCasesByPriority('high');
-    const urgentCases = this.getCasesByPriority('urgent');
+  private getCaseStatisticsLocal() {
+    const activeCases = this.getActiveCasesLocal();
+    const upcomingDeadlines = this.getUpcomingDeadlinesLocal();
+    const highPriorityCases = this.getCasesByPriorityLocal('high');
+    const urgentCases = this.getCasesByPriorityLocal('urgent');
 
     const totalEstimatedValue = activeCases.reduce((sum, case_) => 
       sum + (case_.estimatedValue || 0), 0
@@ -237,10 +413,7 @@ class CaseService {
     };
   }
 
-  /**
-   * Get cases grouped by type
-   */
-  getCasesByType(): Record<string, Case[]> {
+  private getCasesByTypeLocal(): Record<string, Case[]> {
     const grouped: Record<string, Case[]> = {};
     
     this.cases.forEach(case_ => {
