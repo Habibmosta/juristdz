@@ -91,6 +91,21 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
 
+  // CSS classes for consistent styling
+  const labelClass = `block text-sm font-bold mb-2 ${
+    theme === 'light' ? 'text-slate-700' : 'text-slate-300'
+  }`;
+  
+  const inputClass = (hasError = false) => `w-full p-3 border rounded-xl transition-colors ${
+    hasError 
+      ? 'border-red-500 focus:border-red-500' 
+      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
+  } ${
+    theme === 'light' 
+      ? 'bg-white text-slate-900' 
+      : 'bg-slate-800 text-slate-100'
+  }`;
+
   const [formData, setFormData] = useState<CaseFormData>({
     title: '',
     clientName: '',
@@ -245,25 +260,23 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
           
           {/* Case Information */}
           <div className="space-y-6">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${
+              theme === 'light' ? 'text-slate-900' : 'text-slate-100'
+            }`}>
               <FileText size={20} className="text-legal-blue" />
               {isAr ? 'معلومات القضية' : 'Informations du Dossier'}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'عنوان القضية *' : 'Titre du Dossier *'}
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors ${
-                    errors.title 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
-                  } ${theme === 'light' ? 'bg-white' : 'bg-slate-800'}`}
+                  className={inputClass(!!errors.title)}
                   placeholder={isAr ? 'مثال: قضية تجارية ضد شركة...' : 'Ex: Litige commercial contre société...'}
                 />
                 {errors.title && (
@@ -275,17 +288,13 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'نوع القضية *' : 'Type de Dossier *'}
                 </label>
                 <select
                   value={formData.caseType}
                   onChange={(e) => handleInputChange('caseType', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors ${
-                    errors.caseType 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
-                  } ${theme === 'light' ? 'bg-white' : 'bg-slate-800'}`}
+                  className={inputClass(!!errors.caseType)}
                 >
                   <option value="">
                     {isAr ? 'اختر نوع القضية' : 'Sélectionnez le type'}
@@ -305,15 +314,13 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'الأولوية' : 'Priorité'}
                 </label>
                 <select
                   value={formData.priority}
                   onChange={(e) => handleInputChange('priority', e.target.value as any)}
-                  className={`w-full p-3 border rounded-xl transition-colors border-slate-200 dark:border-slate-700 focus:border-legal-blue ${
-                    theme === 'light' ? 'bg-white' : 'bg-slate-800'
-                  }`}
+                  className={inputClass()}
                 >
                   {Object.entries(PRIORITY_LEVELS[language]).map(([key, label]) => (
                     <option key={key} value={key}>
@@ -324,47 +331,39 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'القيمة المقدرة (دج)' : 'Valeur Estimée (DA)'}
                 </label>
                 <input
                   type="number"
                   value={formData.estimatedValue}
                   onChange={(e) => handleInputChange('estimatedValue', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors border-slate-200 dark:border-slate-700 focus:border-legal-blue ${
-                    theme === 'light' ? 'bg-white' : 'bg-slate-800'
-                  }`}
+                  className={inputClass()}
                   placeholder={isAr ? '0' : '0'}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'الموعد النهائي' : 'Échéance'}
                 </label>
                 <input
                   type="date"
                   value={formData.deadline}
                   onChange={(e) => handleInputChange('deadline', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors border-slate-200 dark:border-slate-700 focus:border-legal-blue ${
-                    theme === 'light' ? 'bg-white' : 'bg-slate-800'
-                  }`}
+                  className={inputClass()}
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'وصف القضية *' : 'Description du Dossier *'}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={4}
-                  className={`w-full p-3 border rounded-xl transition-colors resize-none ${
-                    errors.description 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
-                  } ${theme === 'light' ? 'bg-white' : 'bg-slate-800'}`}
+                  className={`${inputClass(!!errors.description)} resize-none`}
                   placeholder={isAr ? 'اشرح تفاصيل القضية والوقائع الأساسية...' : 'Décrivez les détails du dossier et les faits principaux...'}
                 />
                 {errors.description && (
@@ -379,25 +378,23 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
 
           {/* Client Information */}
           <div className="space-y-6">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${
+              theme === 'light' ? 'text-slate-900' : 'text-slate-100'
+            }`}>
               <User size={20} className="text-legal-blue" />
               {isAr ? 'معلومات العميل' : 'Informations Client'}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'اسم العميل *' : 'Nom du Client *'}
                 </label>
                 <input
                   type="text"
                   value={formData.clientName}
                   onChange={(e) => handleInputChange('clientName', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors ${
-                    errors.clientName 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
-                  } ${theme === 'light' ? 'bg-white' : 'bg-slate-800'}`}
+                  className={inputClass(!!errors.clientName)}
                   placeholder={isAr ? 'الاسم الكامل للعميل' : 'Nom complet du client'}
                 />
                 {errors.clientName && (
@@ -409,33 +406,27 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'رقم الهاتف' : 'Téléphone'}
                 </label>
                 <input
                   type="tel"
                   value={formData.clientPhone}
                   onChange={(e) => handleInputChange('clientPhone', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors border-slate-200 dark:border-slate-700 focus:border-legal-blue ${
-                    theme === 'light' ? 'bg-white' : 'bg-slate-800'
-                  }`}
+                  className={inputClass()}
                   placeholder={isAr ? '+213 XX XX XX XX' : '+213 XX XX XX XX'}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'البريد الإلكتروني' : 'Email'}
                 </label>
                 <input
                   type="email"
                   value={formData.clientEmail}
                   onChange={(e) => handleInputChange('clientEmail', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors ${
-                    errors.clientEmail 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : 'border-slate-200 dark:border-slate-700 focus:border-legal-blue'
-                  } ${theme === 'light' ? 'bg-white' : 'bg-slate-800'}`}
+                  className={inputClass(!!errors.clientEmail)}
                   placeholder={isAr ? 'client@example.com' : 'client@example.com'}
                 />
                 {errors.clientEmail && (
@@ -447,31 +438,27 @@ const NewCaseModal: React.FC<NewCaseModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'العنوان' : 'Adresse'}
                 </label>
                 <input
                   type="text"
                   value={formData.clientAddress}
                   onChange={(e) => handleInputChange('clientAddress', e.target.value)}
-                  className={`w-full p-3 border rounded-xl transition-colors border-slate-200 dark:border-slate-700 focus:border-legal-blue ${
-                    theme === 'light' ? 'bg-white' : 'bg-slate-800'
-                  }`}
+                  className={inputClass()}
                   placeholder={isAr ? 'العنوان الكامل' : 'Adresse complète'}
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold mb-2">
+                <label className={labelClass}>
                   {isAr ? 'ملاحظات إضافية' : 'Notes Additionnelles'}
                 </label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => handleInputChange('notes', e.target.value)}
                   rows={3}
-                  className={`w-full p-3 border rounded-xl transition-colors resize-none border-slate-200 dark:border-slate-700 focus:border-legal-blue ${
-                    theme === 'light' ? 'bg-white' : 'bg-slate-800'
-                  }`}
+                  className={`${inputClass()} resize-none`}
                   placeholder={isAr ? 'أي معلومات إضافية مهمة...' : 'Toute information supplémentaire importante...'}
                 />
               </div>
