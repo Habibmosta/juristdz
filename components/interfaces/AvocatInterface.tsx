@@ -4,7 +4,9 @@ import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search
 import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
 import SearchResults from '../search/SearchResults';
+import NewCaseModal from '../modals/NewCaseModal';
 import { searchService } from '../../services/searchService';
+import { caseService } from '../../services/caseService';
 import { 
   Scale, 
   Search, 
@@ -26,7 +28,9 @@ import {
   MapPin,
   Gavel,
   BookOpen,
-  Calculator
+  Calculator,
+  CheckCircle,
+  RefreshCw
 } from 'lucide-react';
 
 interface AvocatInterfaceProps {
@@ -53,25 +57,48 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   const [searchResults, setSearchResults] = useState<SearchResult<JurisprudenceResult | LegalText> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   
-  // Mock data - in real implementation, this would come from API
-  const [activeCases, setActiveCases] = useState<Case[]>([
-    {
-      id: '1',
-      title: 'Affaire Benali vs. Société SARL',
-      clientName: 'M. Ahmed Benali',
-      description: 'Litige commercial concernant un contrat de fourniture',
-      createdAt: new Date('2024-01-15'),
-      status: 'active'
-    },
-    {
-      id: '2', 
-      title: 'Divorce contentieux Mme Khadija',
-      clientName: 'Mme Khadija Mansouri',
-      description: 'Procédure de divorce avec garde d\'enfants',
-      createdAt: new Date('2024-02-01'),
-      status: 'active'
+  // Case management state
+  const [showNewCaseModal, setShowNewCaseModal] = useState(false);
+  const [activeCases, setActiveCases] = useState<Case[]>([]);
+  const [isLoadingCases, setIsLoadingCases] = useState(true);
+  const [caseStats, setCaseStats] = useState<any>(null);
+  // Load cases and statistics on component mount
+  useEffect(() => {
+    loadCases();
+    loadCaseStatistics();
+  }, []);
+
+  const loadCases = async () => {
+    setIsLoadingCases(true);
+    try {
+      const cases = caseService.getActiveCases();
+      setActiveCases(cases);
+    } catch (error) {
+      console.error('Error loading cases:', error);
+    } finally {
+      setIsLoadingCases(false);
     }
-  ]);
+  };
+
+  const loadCaseStatistics = () => {
+    const stats = caseService.getCaseStatistics();
+    setCaseStats(stats);
+  };
+
+  // Handle new case creation
+  const handleCreateCase = async (caseData: Partial<Case>) => {
+    try {
+      const newCase = await caseService.createCase(caseData);
+      setActiveCases(prev => [newCase, ...prev]);
+      loadCaseStatistics(); // Refresh stats
+      
+      // Show success message (you could add a toast notification here)
+      console.log('Case created successfully:', newCase);
+    } catch (error) {
+      console.error('Error creating case:', error);
+      // Handle error (show error message to user)
+    }
+  };
 
   const [recentSearches] = useState([
     'Jurisprudence divorce garde enfants',
@@ -84,12 +111,18 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     { case: 'Divorce Mansouri', deadline: '2024-03-20', type: 'Audience' }
   ]);
 
-  const [monthlyStats] = useState({
-    revenue: '125,400',
-    newCases: 8,
-    closedCases: 5,
-    billableHours: 156
-  });
+  // Get updated monthly stats from case service
+  const monthlyStats = caseStats ? {
+    revenue: caseStats.totalEstimatedValue.toLocaleString(),
+    newCases: caseStats.activeCases,
+    closedCases: caseStats.archivedCases,
+    billableHours: 156 // This would come from time tracking
+  } : {
+    revenue: '0',
+    newCases: 0,
+    closedCases: 0,
+    billableHours: 0
+  };
 
   // Handle search functionality
   const handleSearch = async (query: any) => {
@@ -141,7 +174,10 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <Calendar size={16} className="inline mr-2" />
               {isAr ? 'الأجندة' : 'Agenda'}
             </button>
-            <button className="px-6 py-2 bg-legal-blue text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <button 
+              onClick={() => setShowNewCaseModal(true)}
+              className="px-6 py-2 bg-legal-blue text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all hover:bg-legal-blue/90"
+            >
               <Plus size={18} />
               {isAr ? 'قضية جديدة' : 'Nouveau Dossier'}
             </button>
@@ -189,7 +225,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                 <Briefcase size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {activeCases.length}
+                {caseStats?.activeCases || activeCases.length}
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
@@ -223,7 +259,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                 <Clock size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {upcomingDeadlines.length}
+                {caseStats?.upcomingDeadlines || upcomingDeadlines.length}
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
@@ -268,39 +304,89 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
             </div>
             
             <div className="p-6 space-y-4">
-              {activeCases.map(case_ => (
-                <div key={case_.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors cursor-pointer">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
-                        {case_.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-                        <User size={14} />
-                        {case_.clientName}
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {case_.description}
-                      </p>
-                    </div>
-                    <button className="p-1 text-slate-400 hover:text-slate-600">
-                      <MoreVertical size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-500">
-                      {isAr ? 'تاريخ الإنشاء:' : 'Créé le'} {case_.createdAt.toLocaleDateString()}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-bold rounded-full">
-                        {isAr ? 'نشط' : 'ACTIF'}
-                      </span>
-                      <ChevronRight size={16} className="text-slate-400" />
-                    </div>
-                  </div>
+              {isLoadingCases ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw size={24} className="animate-spin text-legal-blue" />
+                  <span className="ml-2 text-slate-500">
+                    {isAr ? 'جاري تحميل القضايا...' : 'Chargement des dossiers...'}
+                  </span>
                 </div>
-              ))}
+              ) : activeCases.length === 0 ? (
+                <div className="text-center py-8">
+                  <Briefcase size={48} className="mx-auto text-slate-300 mb-4" />
+                  <p className="text-slate-500 mb-4">
+                    {isAr ? 'لا توجد قضايا نشطة حالياً' : 'Aucun dossier actif pour le moment'}
+                  </p>
+                  <button 
+                    onClick={() => setShowNewCaseModal(true)}
+                    className="px-4 py-2 bg-legal-blue text-white rounded-xl font-medium flex items-center gap-2 mx-auto hover:bg-legal-blue/90 transition-colors"
+                  >
+                    <Plus size={16} />
+                    {isAr ? 'إنشاء أول قضية' : 'Créer le premier dossier'}
+                  </button>
+                </div>
+              ) : (
+                activeCases.map(case_ => (
+                  <div key={case_.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors cursor-pointer group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-legal-blue transition-colors">
+                          {case_.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
+                          <User size={14} />
+                          {case_.clientName}
+                          {case_.clientPhone && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <Phone size={12} />
+                              <span className="text-xs">{case_.clientPhone}</span>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                          {case_.description}
+                        </p>
+                        {case_.caseType && (
+                          <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full">
+                            {case_.caseType}
+                          </span>
+                        )}
+                      </div>
+                      <button className="p-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <MoreVertical size={16} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <span>
+                          {isAr ? 'تاريخ الإنشاء:' : 'Créé le'} {case_.createdAt.toLocaleDateString()}
+                        </span>
+                        {case_.priority && (
+                          <span className={`px-2 py-1 rounded-full font-bold ${
+                            case_.priority === 'urgent' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
+                            case_.priority === 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' :
+                            case_.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                            'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                          }`}>
+                            {case_.priority === 'urgent' ? (isAr ? 'عاجل' : 'URGENT') :
+                             case_.priority === 'high' ? (isAr ? 'عالي' : 'ÉLEVÉ') :
+                             case_.priority === 'medium' ? (isAr ? 'متوسط' : 'MOYEN') :
+                             (isAr ? 'منخفض' : 'FAIBLE')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-bold rounded-full">
+                          {isAr ? 'نشط' : 'ACTIF'}
+                        </span>
+                        <ChevronRight size={16} className="text-slate-400 group-hover:text-legal-blue transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -409,6 +495,15 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* New Case Modal */}
+      <NewCaseModal
+        isOpen={showNewCaseModal}
+        onClose={() => setShowNewCaseModal(false)}
+        onSave={handleCreateCase}
+        language={language}
+        theme={theme}
+      />
     </div>
   );
 };

@@ -67,6 +67,19 @@ export interface Case {
   description: string;
   createdAt: Date;
   status: 'active' | 'archived';
+  // Extended fields for comprehensive case management
+  clientPhone?: string;
+  clientEmail?: string;
+  clientAddress?: string;
+  caseType?: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  estimatedValue?: number;
+  deadline?: Date;
+  notes?: string;
+  assignedLawyer?: string;
+  lastUpdated?: Date;
+  documents?: string[];
+  tags?: string[];
 }
 
 export interface UserFeedback {
