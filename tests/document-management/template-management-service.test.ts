@@ -18,4 +18,4 @@ import {
 import { UserRole } from '../../types';
 
 // Mock Supabase service
-jest.mock('../../src/document-management/services/s
+jest.mock('../../src/document-management/services/supabaseService');

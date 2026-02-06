@@ -604,7 +604,7 @@ const CustomTemplateEditor: React.FC<CustomTemplateEditorProps> = ({
                         {variable.label}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {{variable.name}} - {variable.type}
+                        {`{${variable.name}}`} - {variable.type}
                         {variable.required && <span className="text-red-500"> *</span>}
                       </div>
                     </div>

@@ -16,4 +16,4 @@ import {
   AuditSeverity, 
   AuditOutcome,
   ComplianceReportType,
-  SecurityE
+  SecurityEvent
