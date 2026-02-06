@@ -427,10 +427,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
       )}
 
       {/* Messages Container */}
-          </button>
-        </div>
-      )}
-
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {currentMessages.map((msg) => (
           <div key={msg.id} className={`flex items-start gap-4 ${msg.sender === Sender.USER ? 'flex-row-reverse' : ''}`}>
