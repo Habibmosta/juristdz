@@ -17,3 +17,4 @@ import {
   AuditOutcome,
   ComplianceReportType,
   SecurityEvent
+} from '../../types/document-management';
