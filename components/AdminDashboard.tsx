@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserStats, LicenseKey, Language, Transaction, UserFeedback, AppMode } from '../types';
-import { Key, Users, ShieldCheck, ReceiptText, ThumbsUp, ThumbsDown, MessageSquareQuote, CheckCircle2, AlertTriangle, TrendingUp, Plus, Copy, Check, Hash, Database, Cloud, Share2, Globe, ExternalLink, Activity, Wifi, RefreshCw } from 'lucide-react';
+import { UserStats, LicenseKey, Language, Transaction, UserFeedback } from '../types';
+import { Key, Users, ShieldCheck, ThumbsUp, ThumbsDown, MessageSquareQuote, CheckCircle2, AlertTriangle, TrendingUp, Plus, Copy, Check, Hash, Database, Cloud, Share2, Globe, ExternalLink, Activity, Wifi, RefreshCw } from 'lucide-react';
 import { UI_TRANSLATIONS } from '../constants';
 import { databaseService } from '../services/databaseService';
 import { supabase } from '../services/supabaseClient';

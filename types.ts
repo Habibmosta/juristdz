@@ -98,7 +98,7 @@ export interface UserStats {
   credits: number;
   plan: SubscriptionPlan;
   isPro: boolean;
-  role: UserRole;
+  role: 'admin' | 'user' | 'tester'; // Legacy role type for backward compatibility
   joinedAt: Date;
 }
 

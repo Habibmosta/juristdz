@@ -55,10 +55,16 @@
     "sourceMap": true
   },
   "include": [
-    "src/**/*",
-    "tests/**/*",
+    "*.ts",
+    "*.tsx",
+    "components/**/*",
+    "config/**/*",
+    "data/**/*",
+    "hooks/**/*",
+    "lib/**/*",
+    "services/**/*",
     "types/**/*",
-    "scripts/**/*"
+    "utils/**/*"
   ],
   "exclude": [
     "node_modules",

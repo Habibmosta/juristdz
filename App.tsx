@@ -10,13 +10,11 @@ import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
-import { supabase } from './services/supabaseClient';
 import { routingService } from './services/routingService';
 import { autoTranslationService } from './services/autoTranslationService';
 import { demoSetup } from './services/demoSetup';
 import { getDefaultMode } from './config/roleRouting';
 import { Loader2, AlertTriangle } from 'lucide-react';
-import { UI_TRANSLATIONS } from './constants';
 
 const App: React.FC = () => {
   const [currentMode, setMode] = useState<AppMode>(AppMode.DASHBOARD);
@@ -32,9 +30,10 @@ const App: React.FC = () => {
   const [translationSystemReady, setTranslationSystemReady] = useState(false);
   
   // Legacy state for backward compatibility
+  // Note: Setters prefixed with _ are kept for potential future use but not currently used
   const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [cases, setCases] = useState<Case[]>([
+  const [transactions, _setTransactions] = useState<Transaction[]>([]);
+  const [cases, _setCases] = useState<Case[]>([
     { id: '1', title: 'Litige Foncier El Madania', clientName: 'Mr. Ahmed B.', description: 'Contestation de titre de propriété datant de 2012.', createdAt: new Date(), status: 'active' },
     { id: '2', title: 'Divorce Benamrane', clientName: 'Mme. Sarah L.', description: 'Requête de khol et garde des enfants.', createdAt: new Date(), status: 'active' }
   ]);
