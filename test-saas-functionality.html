@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SAAS Functionality - JuristDZ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .success { border-left: 4px solid #10b981; background: #064e3b; }
+        .error { border-left: 4px solid #ef4444; background: #7f1d1d; }
+        .warning { border-left: 4px solid #f59e0b; background: #78350f; }
+        .info { border-left: 4px solid #3b82f6; background: #1e3a8a; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: 600;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #64748b; cursor: not-allowed; }
+        .test-result {
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #64748b;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        pre {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Test SAAS Multi-User Functionality</h1>
+        <p>Test de l'architecture SAAS multi-organisations de JuristDZ</p>
+    </div>
+
+    <div class="container">
+        <h2>🔧 Configuration Tests</h2>
+        <button onclick="testSupabaseConnection()">Test Connexion Supabase</button>
+        <button onclick="testEnvironmentVariables()">Test Variables d'Environnement</button>
+        <button onclick="testDemoSetup()">Test Demo Setup</button>
+        <div id="config-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>👤 Authentication & User Context</h2>
+        <button onclick="testAuthService()">Test Auth Service</button>
+        <button onclick="testUserProfile()">Test User Profile</button>
+        <button onclick="testOrganizationContext()">Test Organization Context</button>
+        <div id="auth-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>📁 Multi-User Case Management</h2>
+        <button onclick="testMultiUserCaseService()">Test Multi-User Service</button>
+        <button onclick="testCaseCreation()">Test Case Creation</button>
+        <button onclick="testCaseStatistics()">Test Case Statistics</button>
+        <div id="case-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>🏗️ Database Schema</h2>
+        <button onclick="testDatabaseSchema()">Test Schema Tables</button>
+        <button onclick="testRLSPolicies()">Test RLS Policies</button>
+        <button onclick="testOrganizationIsolation()">Test Organization Isolation</button>
+        <div id="schema-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Test Results Summary</h2>
+        <div id="summary-results"></div>
+    </div>
+
+    <script type="module">
+        // Import services
+        import { supabase } from './services/supabaseClient.js';
+        import { authService } from './services/authService.js';
+        import { demoSetup } from './services/demoSetup.js';
+        import { multiUserCaseService } from './services/multiUserCaseService.js';
+        import { caseService } from './services/caseService.js';
+
+        let testResults = [];
+
+        function addResult(category, test, status, message, data = null) {
+            const result = { category, test, status, message, data, timestamp: new Date() };
+            testResults.push(result);
+            
+            const container = document.getElementById(`${category}-results`);
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `
+                <strong>${test}:</strong> ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            container.appendChild(div);
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summary = testResults.reduce((acc, result) => {
+                acc[result.status] = (acc[result.status] || 0) + 1;
+                return acc;
+            }, {});
+            
+            document.getElementById('summary-results').innerHTML = `
+                <div class="success">✅ Succès: ${summary.success || 0}</div>
+                <div class="warning">⚠️ Avertissements: ${summary.warning || 0}</div>
+                <div class="error">❌ Erreurs: ${summary.error || 0}</div>
+                <div class="info">ℹ️ Total: ${testResults.length}</div>
+            `;
+        }
+
+        // Configuration Tests
+        window.testSupabaseConnection = async () => {
+            try {
+                if (!supabase) {
+                    addResult('config', 'Supabase Connection', 'error', 'Supabase client not initialized');
+                    return;
+                }
+
+                const { data, error } = await supabase.from('subscription_plans').select('count').limit(1);
+                
+                if (error) {
+                    addResult('config', 'Supabase Connection', 'error', `Connection failed: ${error.message}`);
+                } else {
+                    addResult('config', 'Supabase Connection', 'success', 'Connected successfully', data);
+                }
+            } catch (error) {
+                addResult('config', 'Supabase Connection', 'error', `Exception: ${error.message}`);
+            }
+        };
+
+        window.testEnvironmentVariables = () => {
+            const requiredVars = [
+                'VITE_SUPABASE_URL',
+                'VITE_SUPABASE_ANON_KEY'
+            ];
+
+            const missing = requiredVars.filter(varName => !import.meta.env[varName]);
+            
+            if (missing.length > 0) {
+                addResult('config', 'Environment Variables', 'error', `Missing variables: ${missing.join(', ')}`);
+            } else {
+                addResult('config', 'Environment Variables', 'success', 'All required variables present', {
+                    url: import.meta.env.VITE_SUPABASE_URL,
+                    keyLength: import.meta.env.VITE_SUPABASE_ANON_KEY?.length
+                });
+            }
+        };
+
+        window.testDemoSetup = async () => {
+            try {
+                const initialized = await demoSetup.initializeDemo();
+                
+                if (initialized) {
+                    addResult('config', 'Demo Setup', 'success', 'Demo environment initialized successfully');
+                } else {
+                    addResult('config', 'Demo Setup', 'warning', 'Demo setup failed or already initialized');
+                }
+            } catch (error) {
+                addResult('config', 'Demo Setup', 'error', `Demo setup failed: ${error.message}`);
+            }
+        };
+
+        // Authentication Tests
+        window.testAuthService = async () => {
+            try {
+                const isAvailable = authService.isAvailable();
+                
+                if (!isAvailable) {
+                    addResult('auth', 'Auth Service', 'error', 'Auth service not available');
+                    return;
+                }
+
+                const user = await authService.getCurrentUser();
+                
+                if (user) {
+                    addResult('auth', 'Auth Service', 'success', 'User context available', {
+                        id: user.id,
+                        name: `${user.first_name} ${user.last_name}`,
+                        role: user.role,
+                        organization: user.organization?.name
+                    });
+                } else {
+                    addResult('auth', 'Auth Service', 'warning', 'No authenticated user found');
+                }
+            } catch (error) {
+                addResult('auth', 'Auth Service', 'error', `Auth service error: ${error.message}`);
+            }
+        };
+
+        window.testUserProfile = async () => {
+            try {
+                const profile = await authService.createDemoUserProfile();
+                
+                if (profile) {
+                    addResult('auth', 'User Profile', 'success', 'Demo user profile created', {
+                        name: `${profile.first_name} ${profile.last_name}`,
+                        email: profile.email,
+                        role: profile.role,
+                        organization: profile.organization?.name
+                    });
+                } else {
+                    addResult('auth', 'User Profile', 'error', 'Failed to create demo user profile');
+                }
+            } catch (error) {
+                addResult('auth', 'User Profile', 'error', `Profile creation failed: ${error.message}`);
+            }
+        };
+
+        window.testOrganizationContext = async () => {
+            try {
+                const users = await authService.getOrganizationUsers();
+                
+                addResult('auth', 'Organization Context', 'success', `Found ${users.length} organization users`, users);
+            } catch (error) {
+                addResult('auth', 'Organization Context', 'error', `Organization context failed: ${error.message}`);
+            }
+        };
+
+        // Case Management Tests
+        window.testMultiUserCaseService = async () => {
+            try {
+                const isAvailable = multiUserCaseService.isAvailable();
+                
+                if (!isAvailable) {
+                    addResult('case', 'Multi-User Service', 'error', 'Multi-user service not available');
+                    return;
+                }
+
+                const cases = await multiUserCaseService.getAllCases();
+                
+                addResult('case', 'Multi-User Service', 'success', `Service available, found ${cases.length} cases`, {
+                    caseCount: cases.length,
+                    sampleTitles: cases.slice(0, 3).map(c => c.title)
+                });
+            } catch (error) {
+                addResult('case', 'Multi-User Service', 'error', `Service error: ${error.message}`);
+            }
+        };
+
+        window.testCaseCreation = async () => {
+            try {
+                const testCase = {
+                    title: 'Test SAAS Case',
+                    clientName: 'Client Test SAAS',
+                    description: 'Test case for SAAS functionality',
+                    caseType: 'Test',
+                    priority: 'medium'
+                };
+
+                const newCase = await caseService.createCase(testCase);
+                
+                if (newCase) {
+                    addResult('case', 'Case Creation', 'success', 'Test case created successfully', {
+                        id: newCase.id,
+                        title: newCase.title,
+                        service: caseService.isUsingMultiUser() ? 'Multi-User SAAS' : 
+                                caseService.isUsingSupabase() ? 'Single-User Supabase' : 'Local Storage'
+                    });
+                } else {
+                    addResult('case', 'Case Creation', 'error', 'Failed to create test case');
+                }
+            } catch (error) {
+                addResult('case', 'Case Creation', 'error', `Case creation failed: ${error.message}`);
+            }
+        };
+
+        window.testCaseStatistics = async () => {
+            try {
+                const stats = await caseService.getCaseStatistics();
+                
+                addResult('case', 'Case Statistics', 'success', 'Statistics retrieved successfully', stats);
+            } catch (error) {
+                addResult('case', 'Case Statistics', 'error', `Statistics failed: ${error.message}`);
+            }
+        };
+
+        // Database Schema Tests
+        window.testDatabaseSchema = async () => {
+            try {
+                const tables = [
+                    'subscription_plans',
+                    'organizations', 
+                    'user_profiles',
+                    'cases',
+                    'clients'
+                ];
+
+                const results = {};
+                
+                for (const table of tables) {
+                    try {
+                        const { data, error } = await supabase.from(table).select('*').limit(1);
+                        results[table] = error ? `Error: ${error.message}` : 'OK';
+                    } catch (e) {
+                        results[table] = `Exception: ${e.message}`;
+                    }
+                }
+
+                const successCount = Object.values(results).filter(r => r === 'OK').length;
+                const status = successCount === tables.length ? 'success' : 
+                             successCount > 0 ? 'warning' : 'error';
+
+                addResult('schema', 'Database Schema', status, 
+                    `${successCount}/${tables.length} tables accessible`, results);
+            } catch (error) {
+                addResult('schema', 'Database Schema', 'error', `Schema test failed: ${error.message}`);
+            }
+        };
+
+        window.testRLSPolicies = async () => {
+            try {
+                // Test if RLS is working by trying to access data
+                const { data, error } = await supabase.from('cases').select('*').limit(1);
+                
+                if (error) {
+                    if (error.message.includes('RLS') || error.message.includes('policy')) {
+                        addResult('schema', 'RLS Policies', 'success', 'RLS policies are active (access denied as expected)', error.message);
+                    } else {
+                        addResult('schema', 'RLS Policies', 'warning', 'Unexpected error (may indicate RLS issues)', error.message);
+                    }
+                } else {
+                    addResult('schema', 'RLS Policies', 'info', 'Data access successful (RLS may be disabled or user has access)', {
+                        recordCount: data?.length || 0
+                    });
+                }
+            } catch (error) {
+                addResult('schema', 'RLS Policies', 'error', `RLS test failed: ${error.message}`);
+            }
+        };
+
+        window.testOrganizationIsolation = async () => {
+            try {
+                // This would require multiple organizations to test properly
+                addResult('schema', 'Organization Isolation', 'info', 'Organization isolation test requires multiple organizations (manual test needed)');
+            } catch (error) {
+                addResult('schema', 'Organization Isolation', 'error', `Isolation test failed: ${error.message}`);
+            }
+        };
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testEnvironmentVariables();
+                testSupabaseConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

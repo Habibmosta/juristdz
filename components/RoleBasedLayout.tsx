@@ -427,7 +427,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <main className={`flex-1 relative flex flex-col h-full overflow-hidden transition-all duration-500 ease-in-out ${
+      <main className={`flex-1 relative flex flex-col h-full overflow-y-auto transition-all duration-500 ease-in-out ${
         isMobileSidebarOpen ? 'md:ml-0' : ''
       } pt-16 md:pt-0`}>
         <div className={`transition-all duration-500 ease-in-out h-full ${

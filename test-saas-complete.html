@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SAAS Complet - JuristDZ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .success { border-left: 4px solid #10b981; background: #064e3b; }
+        .error { border-left: 4px solid #ef4444; background: #7f1d1d; }
+        .warning { border-left: 4px solid #f59e0b; background: #78350f; }
+        .info { border-left: 4px solid #3b82f6; background: #1e3a8a; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: 600;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #64748b; cursor: not-allowed; }
+        .test-result {
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #64748b;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        pre {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Test SAAS Complet</h1>
+        <p>Test complet de l'architecture SAAS avec initialisation de l'environnement de démonstration</p>
+    </div>
+
+    <div class="container">
+        <h2>🚀 Test Complet Automatique</h2>
+        <button onclick="runCompleteTest()" id="testBtn">Lancer Test Complet</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Résumé des Tests</h2>
+        <div id="summary-results"></div>
+    </div>
+
+    <script type="module">
+        // Import services
+        import { supabase } from './services/supabaseClient.js';
+        import { authService } from './services/authService.js';
+        import { demoSetup } from './services/demoSetup.js';
+        import { multiUserCaseService } from './services/multiUserCaseService.js';
+        import { caseService } from './services/caseService.js';
+
+        let testResults = [];
+
+        function addResult(category, test, status, message, data = null) {
+            const result = { category, test, status, message, data, timestamp: new Date() };
+            testResults.push(result);
+            
+            const container = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `
+                <strong>[${category}] ${test}:</strong> ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            container.appendChild(div);
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summary = testResults.reduce((acc, result) => {
+                acc[result.status] = (acc[result.status] || 0) + 1;
+                return acc;
+            }, {});
+            
+            document.getElementById('summary-results').innerHTML = `
+                <div class="success">✅ Succès: ${summary.success || 0}</div>
+                <div class="warning">⚠️ Avertissements: ${summary.warning || 0}</div>
+                <div class="error">❌ Erreurs: ${summary.error || 0}</div>
+                <div class="info">ℹ️ Total: ${testResults.length}</div>
+            `;
+        }
+
+        window.runCompleteTest = async () => {
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Test en cours...';
+            
+            // Clear previous results
+            testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+            
+            try {
+                // 1. Test de base
+                await testBasicConnection();
+                
+                // 2. Initialisation de l'environnement de démonstration
+                await testDemoInitialization();
+                
+                // 3. Test des services d'authentification
+                await testAuthenticationServices();
+                
+                // 4. Test des services SAAS
+                await testSAASServices();
+                
+                // 5. Test de création de dossiers
+                await testCaseManagement();
+                
+                // 6. Test des statistiques
+                await testStatistics();
+                
+                addResult('FINAL', 'Test Complet', 'success', 'Tous les tests terminés avec succès !');
+                
+            } catch (error) {
+                addResult('FINAL', 'Test Complet', 'error', `Erreur générale: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Relancer Test Complet';
+            }
+        };
+
+        async function testBasicConnection() {
+            try {
+                const { data, error } = await supabase.from('subscription_plans').select('count').limit(1);
+                if (error) {
+                    addResult('CONFIG', 'Connexion Supabase', 'error', `Erreur: ${error.message}`);
+                } else {
+                    addResult('CONFIG', 'Connexion Supabase', 'success', 'Connexion établie', data);
+                }
+            } catch (error) {
+                addResult('CONFIG', 'Connexion Supabase', 'error', `Exception: ${error.message}`);
+            }
+        }
+
+        async function testDemoInitialization() {
+            try {
+                const initialized = await demoSetup.initializeDemo();
+                if (initialized) {
+                    addResult('DEMO', 'Initialisation', 'success', 'Environnement de démonstration initialisé');
+                } else {
+                    addResult('DEMO', 'Initialisation', 'warning', 'Initialisation échouée ou déjà faite');
+                }
+            } catch (error) {
+                addResult('DEMO', 'Initialisation', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function testAuthenticationServices() {
+            try {
+                const user = await authService.getCurrentUser();
+                if (user) {
+                    addResult('AUTH', 'Utilisateur Actuel', 'success', 'Utilisateur authentifié', {
+                        name: `${user.first_name} ${user.last_name}`,
+                        role: user.role,
+                        organization: user.organization?.name
+                    });
+                } else {
+                    addResult('AUTH', 'Utilisateur Actuel', 'warning', 'Aucun utilisateur authentifié');
+                }
+
+                const orgUsers = await authService.getOrganizationUsers();
+                addResult('AUTH', 'Utilisateurs Organisation', 'success', `${orgUsers.length} utilisateurs trouvés`, orgUsers);
+
+            } catch (error) {
+                addResult('AUTH', 'Services Auth', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function testSAASServices() {
+            try {
+                const isAvailable = multiUserCaseService.isAvailable();
+                addResult('SAAS', 'Service Multi-User', 'info', `Service disponible: ${isAvailable}`);
+
+                if (isAvailable) {
+                    try {
+                        const cases = await multiUserCaseService.getAllCases();
+                        addResult('SAAS', 'Récupération Dossiers', 'success', `${cases.length} dossiers trouvés`, {
+                            count: cases.length,
+                            titles: cases.slice(0, 3).map(c => c.title)
+                        });
+                    } catch (error) {
+                        addResult('SAAS', 'Récupération Dossiers', 'warning', `Erreur service multi-user: ${error.message}`);
+                    }
+                }
+            } catch (error) {
+                addResult('SAAS', 'Services SAAS', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function testCaseManagement() {
+            try {
+                const testCase = {
+                    title: 'Test SAAS Complet',
+                    clientName: 'Client Test SAAS',
+                    description: 'Dossier de test pour vérifier le fonctionnement SAAS',
+                    caseType: 'Test',
+                    priority: 'medium'
+                };
+
+                const newCase = await caseService.createCase(testCase);
+                if (newCase) {
+                    addResult('CASES', 'Création Dossier', 'success', 'Dossier créé avec succès', {
+                        id: newCase.id,
+                        title: newCase.title,
+                        service: caseService.isUsingMultiUser() ? 'Multi-User SAAS' : 
+                                caseService.isUsingSupabase() ? 'Supabase' : 'Local Storage'
+                    });
+                } else {
+                    addResult('CASES', 'Création Dossier', 'error', 'Échec de création');
+                }
+            } catch (error) {
+                addResult('CASES', 'Gestion Dossiers', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function testStatistics() {
+            try {
+                const stats = await caseService.getCaseStatistics();
+                addResult('STATS', 'Statistiques', 'success', 'Statistiques récupérées', stats);
+            } catch (error) {
+                addResult('STATS', 'Statistiques', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('INFO', 'Page Chargée', 'info', 'Prêt pour les tests SAAS');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

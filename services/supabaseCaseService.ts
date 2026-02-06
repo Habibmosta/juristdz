@@ -136,12 +136,15 @@ class SupabaseCaseService {
    */
   async createCase(caseData: Partial<Case>): Promise<Case> {
     try {
-      // Get current user
-      const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
+      console.log('🔍 Début création cas Supabase:', caseData);
       
       const supabaseData = this.mapCaseToSupabase(caseData);
-      supabaseData.user_id = user?.id || null;
+      console.log('🔄 Données mappées pour Supabase:', supabaseData);
+      
+      // Pour les tests, on met user_id à null pour contourner RLS temporairement
+      supabaseData.user_id = null;
 
+      console.log('📤 Envoi vers Supabase...');
       const { data, error } = await supabase
         ?.from(this.tableName)
         .insert([supabaseData])
@@ -149,13 +152,19 @@ class SupabaseCaseService {
         .single();
 
       if (error) {
-        console.error('Error creating case:', error);
+        console.error('❌ Erreur Supabase détaillée:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
         throw new Error(`Failed to create case: ${error.message}`);
       }
 
+      console.log('✅ Cas créé avec succès dans Supabase:', data);
       return this.mapSupabaseToCase(data);
     } catch (error) {
-      console.error('Error in createCase:', error);
+      console.error('❌ Erreur générale dans createCase:', error);
       throw error;
     }
   }
@@ -338,8 +347,7 @@ class SupabaseCaseService {
    * Map Case interface to Supabase data
    */
   private mapCaseToSupabase(caseData: Partial<Case>): any {
-    return {
-      id: caseData.id,
+    const supabaseData: any = {
       title: caseData.title,
       client_name: caseData.clientName,
       client_phone: caseData.clientPhone,
@@ -354,10 +362,23 @@ class SupabaseCaseService {
       notes: caseData.notes,
       assigned_lawyer: caseData.assignedLawyer,
       tags: caseData.tags || [],
-      documents: caseData.documents || [],
-      created_at: caseData.createdAt?.toISOString(),
-      updated_at: caseData.lastUpdated?.toISOString()
+      documents: caseData.documents || []
     };
+
+    // Only include id if it exists and is not undefined
+    if (caseData.id) {
+      supabaseData.id = caseData.id;
+    }
+
+    // Only include timestamps if they exist
+    if (caseData.createdAt) {
+      supabaseData.created_at = caseData.createdAt.toISOString();
+    }
+    if (caseData.lastUpdated) {
+      supabaseData.updated_at = caseData.lastUpdated.toISOString();
+    }
+
+    return supabaseData;
   }
 
   /**

@@ -1,18 +1,48 @@
 /**
- * Test Setup for Pure Translation System
+ * Test Setup for JuristDZ Systems
  * 
  * Configures Jest testing environment with property-based testing support
- * and custom matchers for translation quality validation.
+ * for both Pure Translation System and Document Management System.
  */
 
 import * as fc from 'fast-check';
+import { initializeTestConfig } from './document-management/testConfig';
+import { setupTestDatabase, cleanupAfterEach, cleanupAfterAll } from './document-management/testDatabase';
 
-// Configure fast-check for property-based testing
-fc.configureGlobal({
-  numRuns: 100, // Minimum 100 iterations as specified in design
-  verbose: true,
-  seed: Date.now(),
-  endOnFailure: false
+// Initialize test configuration (includes fast-check configuration)
+initializeTestConfig();
+
+// Global test setup
+beforeAll(async () => {
+  // Setup test database for document management tests
+  try {
+    await setupTestDatabase();
+    console.log('✅ Test database setup completed');
+  } catch (error) {
+    console.error('❌ Test database setup failed:', error);
+    throw error;
+  }
+});
+
+// Global test cleanup after each test
+afterEach(async () => {
+  // Clean up test data after each test
+  try {
+    await cleanupAfterEach();
+  } catch (error) {
+    console.warn('⚠️ Test cleanup warning:', error);
+  }
+});
+
+// Global test cleanup after all tests
+afterAll(async () => {
+  // Final cleanup
+  try {
+    await cleanupAfterAll();
+    console.log('✅ Test cleanup completed');
+  } catch (error) {
+    console.warn('⚠️ Final cleanup warning:', error);
+  }
 });
 
 // Custom Jest matchers for Pure Translation System
@@ -25,6 +55,11 @@ declare global {
       toHaveNoCorruptedCharacters(): R;
       toHaveNoUIElements(): R;
       toMeetZeroTolerancePolicy(): R;
+      // Document Management System matchers
+      toBeValidDocument(): R;
+      toHaveValidPermissions(): R;
+      toBeEncrypted(): R;
+      toHaveValidSignature(): R;
     }
   }
 }
@@ -137,6 +172,57 @@ expect.extend({
         `expected to meet zero tolerance policy (100% purity), but got ${purityScore}%`,
       pass,
     };
+  },
+
+  // Document Management System matchers
+  toBeValidDocument(received: any) {
+    const requiredFields = ['id', 'name', 'mimeType', 'size', 'createdAt', 'createdBy'];
+    const missingFields = requiredFields.filter(field => !(field in received));
+    const pass = missingFields.length === 0;
+    
+    return {
+      message: () =>
+        `expected document to have all required fields, but missing: ${missingFields.join(', ')}`,
+      pass,
+    };
+  },
+
+  toHaveValidPermissions(received: any) {
+    const validPermissions = ['view', 'edit', 'delete', 'share', 'sign'];
+    const hasValidPermissions = received.permissions && 
+      Array.isArray(received.permissions) &&
+      received.permissions.every((perm: string) => validPermissions.includes(perm));
+    
+    return {
+      message: () =>
+        `expected to have valid permissions array, but got: ${JSON.stringify(received.permissions)}`,
+      pass: hasValidPermissions,
+    };
+  },
+
+  toBeEncrypted(received: any) {
+    const hasEncryptionKey = received.encryptionKey && typeof received.encryptionKey === 'string';
+    const hasChecksum = received.checksum && typeof received.checksum === 'string';
+    const pass = hasEncryptionKey && hasChecksum;
+    
+    return {
+      message: () =>
+        `expected document to be encrypted with encryptionKey and checksum`,
+      pass,
+    };
+  },
+
+  toHaveValidSignature(received: any) {
+    const hasSignatureData = received.signatureData && typeof received.signatureData === 'string';
+    const hasCertificate = received.certificate && typeof received.certificate === 'string';
+    const hasTimestamp = received.timestamp && received.timestamp instanceof Date;
+    const pass = hasSignatureData && hasCertificate && hasTimestamp;
+    
+    return {
+      message: () =>
+        `expected signature to have signatureData, certificate, and timestamp`,
+      pass,
+    };
   }
 });
 
@@ -184,7 +270,67 @@ export const testGenerators = {
     'الشهود Defined في المادة 1 من قانون الإجراءات الجنائية ال процедة',
     'Les témoins sont Pro V2 الشهود AUTO-TRANSLATE',
     'Defined محامي процедة JuristDZ'
-  )
+  ),
+
+  // Document Management System generators
+  documentId: fc.uuid(),
+  
+  fileName: fc.oneof(
+    fc.string({ minLength: 1, maxLength: 100 }).map(s => s + '.pdf'),
+    fc.string({ minLength: 1, maxLength: 100 }).map(s => s + '.docx'),
+    fc.string({ minLength: 1, maxLength: 100 }).map(s => s + '.txt')
+  ),
+  
+  fileSize: fc.integer({ min: 1, max: 50 * 1024 * 1024 }), // Up to 50MB
+  
+  mimeType: fc.constantFrom(
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'image/jpeg',
+    'image/png',
+    'text/plain'
+  ),
+  
+  documentCategory: fc.constantFrom(
+    'contract',
+    'pleading',
+    'evidence',
+    'correspondence',
+    'template',
+    'other'
+  ),
+  
+  confidentialityLevel: fc.constantFrom(
+    'public',
+    'internal',
+    'confidential',
+    'restricted'
+  ),
+  
+  userRole: fc.constantFrom(
+    'avocat',
+    'notaire',
+    'huissier',
+    'magistrate',
+    'admin'
+  ),
+  
+  permission: fc.constantFrom(
+    'view',
+    'edit',
+    'delete',
+    'share',
+    'sign'
+  ),
+  
+  folderDepth: fc.integer({ min: 0, max: 5 }),
+  
+  encryptionKey: fc.string({ minLength: 32, maxLength: 64 }),
+  
+  checksum: fc.string({ minLength: 32, maxLength: 64 }),
+  
+  tags: fc.array(fc.string({ minLength: 1, maxLength: 50 }), { minLength: 0, maxLength: 10 })
 };
 
 // Test utilities
@@ -250,6 +396,81 @@ export const testUtils = {
     }
     
     return true;
+  },
+
+  // Document Management System utilities
+  createMockDocument: (overrides: any = {}) => ({
+    id: 'doc-123',
+    caseId: 'case-456',
+    name: 'test-document.pdf',
+    originalName: 'test-document.pdf',
+    mimeType: 'application/pdf',
+    size: 1024,
+    checksum: 'abc123',
+    encryptionKey: 'key123',
+    storagePath: '/documents/doc-123',
+    tags: ['legal', 'contract'],
+    metadata: {
+      description: 'Test document',
+      category: 'contract' as const,
+      confidentialityLevel: 'confidential' as const,
+      customFields: {}
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'user-123',
+    currentVersionId: 'version-1',
+    isDeleted: false,
+    ...overrides
+  }),
+
+  createMockFolder: (overrides: any = {}) => ({
+    id: 'folder-123',
+    caseId: 'case-456',
+    name: 'Test Folder',
+    parentId: null,
+    path: '/Test Folder',
+    level: 0,
+    createdAt: new Date(),
+    createdBy: 'user-123',
+    isDeleted: false,
+    ...overrides
+  }),
+
+  createMockSignature: (overrides: any = {}) => ({
+    id: 'sig-123',
+    signerId: 'user-123',
+    signatureData: 'signature-data-base64',
+    certificate: 'certificate-data',
+    timestamp: new Date(),
+    ipAddress: '192.168.1.1',
+    location: 'Algiers, Algeria',
+    ...overrides
+  }),
+
+  isValidFileType: (mimeType: string): boolean => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'image/jpeg',
+      'image/png',
+      'text/plain'
+    ];
+    return allowedTypes.includes(mimeType);
+  },
+
+  isValidFileSize: (size: number): boolean => {
+    return size > 0 && size <= 50 * 1024 * 1024; // 50MB limit
+  },
+
+  isValidFolderDepth: (depth: number): boolean => {
+    return depth >= 0 && depth <= 5;
+  },
+
+  validateDocumentStructure: (doc: any): boolean => {
+    const requiredFields = ['id', 'name', 'mimeType', 'size', 'createdAt', 'createdBy'];
+    return requiredFields.every(field => field in doc);
   }
 };
 
@@ -259,8 +480,14 @@ export const testConfig = {
   timeoutMs: 30000,
   maxTextLength: 10000,
   supportedLanguages: ['fr', 'ar'] as const,
-  zeroToleranceThreshold: 100
+  zeroToleranceThreshold: 100,
+  // Document Management System configuration
+  maxFileSize: 50 * 1024 * 1024, // 50MB
+  allowedFileTypes: ['pdf', 'doc', 'docx', 'jpg', 'png', 'txt'],
+  maxFolderDepth: 5,
+  encryptionAlgorithm: 'AES-256'
 };
 
-console.log('Pure Translation System test setup completed');
+console.log('JuristDZ Systems test setup completed');
 console.log(`Property-based testing configured with ${testConfig.propertyTestRuns} runs per test`);
+console.log('Document Management System test utilities loaded');

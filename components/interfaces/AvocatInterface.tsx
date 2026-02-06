@@ -5,6 +5,7 @@ import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
 import SearchResults from '../search/SearchResults';
 import NewCaseModal from '../modals/NewCaseModal';
+import EditCaseModal from '../modals/EditCaseModal';
 import { searchService } from '../../services/searchService';
 import { caseService } from '../../services/caseService';
 import { 
@@ -30,7 +31,10 @@ import {
   BookOpen,
   Calculator,
   CheckCircle,
-  RefreshCw
+  RefreshCw,
+  Edit3,
+  Trash2,
+  X
 } from 'lucide-react';
 
 interface AvocatInterfaceProps {
@@ -59,26 +63,56 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   
   // Case management state
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
+  const [showEditCaseModal, setShowEditCaseModal] = useState(false);
+  const [editingCase, setEditingCase] = useState<Case | null>(null);
   const [activeCases, setActiveCases] = useState<Case[]>([]);
+  const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [isLoadingCases, setIsLoadingCases] = useState(true);
   const [caseStats, setCaseStats] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   // Load cases and statistics on component mount
   useEffect(() => {
     loadCases();
     loadCaseStatistics();
   }, []);
 
+  // Filter cases based on search and priority
+  useEffect(() => {
+    let filtered = activeCases;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(case_ =>
+        case_.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        case_.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        case_.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        case_.caseType?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(case_ => case_.priority === priorityFilter);
+    }
+    
+    setFilteredCases(filtered);
+  }, [activeCases, searchQuery, priorityFilter]);
+
   const loadCases = async () => {
     setIsLoadingCases(true);
     try {
+      // Use the updated case service which handles multi-user SAAS automatically
       const cases = await caseService.getActiveCases();
       setActiveCases(cases);
       
-      // Log storage method being used
-      if (caseService.isUsingSupabase()) {
-        console.log('✅ Cases loaded from Supabase database');
+      // Log which service is being used
+      if (caseService.isUsingMultiUser()) {
+        console.log('✅ Cases loaded from Multi-User SAAS database');
+      } else if (caseService.isUsingSupabase()) {
+        console.log('⚠️ Cases loaded from single-user Supabase database');
       } else {
-        console.log('⚠️ Cases loaded from local storage (fallback)');
+        console.log('⚠️ Cases loaded from local storage');
       }
     } catch (error) {
       console.error('Error loading cases:', error);
@@ -103,12 +137,58 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       setActiveCases(prev => [newCase, ...prev]);
       loadCaseStatistics(); // Refresh stats
       
-      // Show success message (you could add a toast notification here)
-      console.log('Case created successfully:', newCase);
+      if (caseService.isUsingMultiUser()) {
+        console.log('✅ Case created successfully in Multi-User SAAS:', newCase);
+      } else if (caseService.isUsingSupabase()) {
+        console.log('✅ Case created successfully in Supabase:', newCase);
+      } else {
+        console.log('✅ Case created successfully in local storage:', newCase);
+      }
     } catch (error) {
       console.error('Error creating case:', error);
-      // Handle error (show error message to user)
     }
+  };
+
+  // Handle case update
+  const handleUpdateCase = async (caseData: Partial<Case>) => {
+    if (!editingCase) return;
+    
+    try {
+      const updatedCase = await caseService.updateCase(editingCase.id, caseData);
+      if (updatedCase) {
+        setActiveCases(prev => prev.map(c => c.id === editingCase.id ? updatedCase : c));
+        loadCaseStatistics(); // Refresh stats
+        setEditingCase(null);
+        setShowEditCaseModal(false);
+        console.log('Case updated successfully:', updatedCase);
+      }
+    } catch (error) {
+      console.error('Error updating case:', error);
+    }
+  };
+
+  // Handle case deletion (archive)
+  const handleDeleteCase = async (caseId: string) => {
+    if (!confirm(isAr ? 'هل أنت متأكد من أرشفة هذا الملف؟' : 'Êtes-vous sûr de vouloir archiver ce dossier ?')) {
+      return;
+    }
+    
+    try {
+      const success = await caseService.deleteCase(caseId);
+      if (success) {
+        setActiveCases(prev => prev.filter(c => c.id !== caseId));
+        loadCaseStatistics(); // Refresh stats
+        console.log('Case archived successfully');
+      }
+    } catch (error) {
+      console.error('Error archiving case:', error);
+    }
+  };
+
+  // Handle edit case
+  const handleEditCase = (case_: Case) => {
+    setEditingCase(case_);
+    setShowEditCaseModal(true);
   };
 
   const [recentSearches] = useState([
@@ -308,10 +388,58 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <h2 className="font-bold text-lg flex items-center gap-2">
                 <Briefcase size={20} className="text-legal-blue" />
                 {isAr ? 'القضايا النشطة' : 'Dossiers en Cours'}
+                <span className="text-sm font-normal text-slate-500 ml-2">
+                  ({filteredCases.length})
+                </span>
               </h2>
-              <button className="text-sm text-legal-blue hover:underline">
-                {isAr ? 'عرض الكل' : 'Voir tout'}
+              <button 
+                onClick={() => setShowNewCaseModal(true)}
+                className="px-4 py-2 bg-legal-blue text-white rounded-xl font-medium flex items-center gap-2 hover:bg-legal-blue/90 transition-colors"
+              >
+                <Plus size={16} />
+                {isAr ? 'ملف جديد' : 'Nouveau Dossier'}
               </button>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Search Bar */}
+                <div className="flex-1 relative">
+                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder={isAr ? 'البحث في الملفات...' : 'Rechercher dans les dossiers...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-blue focus:border-transparent"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Priority Filter */}
+                <div className="relative">
+                  <Filter size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                    className="pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-legal-blue focus:border-transparent"
+                  >
+                    <option value="all">{isAr ? 'جميع الأولويات' : 'Toutes priorités'}</option>
+                    <option value="urgent">{isAr ? 'عاجل' : 'Urgent'}</option>
+                    <option value="high">{isAr ? 'عالي' : 'Élevé'}</option>
+                    <option value="medium">{isAr ? 'متوسط' : 'Moyen'}</option>
+                    <option value="low">{isAr ? 'منخفض' : 'Faible'}</option>
+                  </select>
+                </div>
+              </div>
             </div>
             
             <div className="p-6 space-y-4">
@@ -322,22 +450,27 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                     {isAr ? 'جاري تحميل القضايا...' : 'Chargement des dossiers...'}
                   </span>
                 </div>
-              ) : activeCases.length === 0 ? (
+              ) : filteredCases.length === 0 ? (
                 <div className="text-center py-8">
                   <Briefcase size={48} className="mx-auto text-slate-300 mb-4" />
                   <p className="text-slate-500 mb-4">
-                    {isAr ? 'لا توجد قضايا نشطة حالياً' : 'Aucun dossier actif pour le moment'}
+                    {searchQuery || priorityFilter !== 'all' ? 
+                      (isAr ? 'لا توجد نتائج' : 'Aucun résultat trouvé') :
+                      (isAr ? 'لا توجد قضايا نشطة حالياً' : 'Aucun dossier actif pour le moment')
+                    }
                   </p>
-                  <button 
-                    onClick={() => setShowNewCaseModal(true)}
-                    className="px-4 py-2 bg-legal-blue text-white rounded-xl font-medium flex items-center gap-2 mx-auto hover:bg-legal-blue/90 transition-colors"
-                  >
-                    <Plus size={16} />
-                    {isAr ? 'إنشاء أول قضية' : 'Créer le premier dossier'}
-                  </button>
+                  {!searchQuery && priorityFilter === 'all' && (
+                    <button 
+                      onClick={() => setShowNewCaseModal(true)}
+                      className="px-4 py-2 bg-legal-blue text-white rounded-xl font-medium flex items-center gap-2 mx-auto hover:bg-legal-blue/90 transition-colors"
+                    >
+                      <Plus size={16} />
+                      {isAr ? 'إنشاء أول قضية' : 'Créer le premier dossier'}
+                    </button>
+                  )}
                 </div>
               ) : (
-                activeCases.map(case_ => (
+                filteredCases.map(case_ => (
                   <div key={case_.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors cursor-pointer group">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -364,9 +497,22 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                           </span>
                         )}
                       </div>
-                      <button className="p-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreVertical size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditCase(case_)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title={isAr ? 'تعديل الملف' : 'Modifier le dossier'}
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCase(case_.id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title={isAr ? 'أرشفة الملف' : 'Archiver le dossier'}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -515,6 +661,21 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         language={language}
         theme={theme}
       />
+
+      {/* Edit Case Modal */}
+      {editingCase && (
+        <EditCaseModal
+          isOpen={showEditCaseModal}
+          onClose={() => {
+            setShowEditCaseModal(false);
+            setEditingCase(null);
+          }}
+          onSubmit={handleUpdateCase}
+          language={language}
+          theme={theme}
+          case_={editingCase}
+        />
+      )}
     </div>
   );
 };

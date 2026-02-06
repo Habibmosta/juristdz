@@ -13,6 +13,7 @@ import { databaseService } from './services/databaseService';
 import { supabase } from './services/supabaseClient';
 import { routingService } from './services/routingService';
 import { autoTranslationService } from './services/autoTranslationService';
+import { demoSetup } from './services/demoSetup';
 import { getDefaultMode } from './config/roleRouting';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { UI_TRANSLATIONS } from './constants';
@@ -42,6 +43,16 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
+        // Initialize SAAS Demo Environment
+        console.log('🚀 Initializing SAAS Demo Environment...');
+        const demoInitialized = await demoSetup.initializeDemo();
+        
+        if (demoInitialized) {
+          console.log('✅ SAAS Demo Environment ready');
+        } else {
+          console.warn('⚠️ SAAS Demo Environment failed, continuing with legacy mode');
+        }
+        
         // DISABLED: Complex translation systems that cause conflicts
         // console.log('🚀 Initializing Pure Translation System...');
         // await initializePureTranslationSystem();

@@ -1,24 +1,29 @@
 import { Case } from '../types';
 import { supabaseCaseService } from './supabaseCaseService';
+import { multiUserCaseService } from './multiUserCaseService';
 
 /**
- * Enhanced Case Service with Supabase integration
- * Falls back to in-memory storage if Supabase is not available
+ * Enhanced Case Service with SAAS Multi-User integration
+ * Falls back to single-user Supabase, then to in-memory storage if not available
  */
 class CaseService {
   private cases: Case[] = [];
   private nextId = 1;
+  private useMultiUser = true;
   private useSupabase = true;
 
   constructor() {
-    // Check if Supabase is available
+    // Check if Multi-User SAAS service is available
+    this.useMultiUser = multiUserCaseService.isAvailable();
     this.useSupabase = supabaseCaseService.isAvailable();
     
-    if (!this.useSupabase) {
-      console.warn('⚠️ Supabase not available, falling back to in-memory storage');
-      this.initializeMockData();
+    if (this.useMultiUser) {
+      console.log('✅ Using Multi-User SAAS service for data persistence');
+    } else if (this.useSupabase) {
+      console.log('⚠️ Multi-User service not available, using single-user Supabase');
     } else {
-      console.log('✅ Using Supabase for data persistence');
+      console.warn('⚠️ No database services available, falling back to in-memory storage');
+      this.initializeMockData();
     }
   }
 
@@ -26,6 +31,19 @@ class CaseService {
    * Get all cases
    */
   async getAllCases(): Promise<Case[]> {
+    if (this.useMultiUser) {
+      try {
+        return await multiUserCaseService.getAllCases();
+      } catch (error) {
+        console.error('Multi-User service error, falling back to single-user Supabase:', error);
+        this.useMultiUser = false;
+        return this.getAllCasesSupabase();
+      }
+    }
+    return this.getAllCasesSupabase();
+  }
+
+  private async getAllCasesSupabase(): Promise<Case[]> {
     if (this.useSupabase) {
       try {
         return await supabaseCaseService.getAllCases();
@@ -42,6 +60,19 @@ class CaseService {
    * Get active cases only
    */
   async getActiveCases(): Promise<Case[]> {
+    if (this.useMultiUser) {
+      try {
+        return await multiUserCaseService.getAllCases(); // Multi-user service returns all accessible cases
+      } catch (error) {
+        console.error('Multi-User service error, falling back to single-user Supabase:', error);
+        this.useMultiUser = false;
+        return this.getActiveCasesSupabase();
+      }
+    }
+    return this.getActiveCasesSupabase();
+  }
+
+  private async getActiveCasesSupabase(): Promise<Case[]> {
     if (this.useSupabase) {
       try {
         return await supabaseCaseService.getActiveCases();
@@ -106,6 +137,21 @@ class CaseService {
    * Create a new case
    */
   async createCase(caseData: Partial<Case>): Promise<Case> {
+    if (this.useMultiUser) {
+      try {
+        const newCase = await multiUserCaseService.createCase(caseData);
+        console.log('✅ Case saved to Multi-User SAAS:', newCase.title);
+        return newCase;
+      } catch (error) {
+        console.error('Multi-User service error, falling back to single-user Supabase:', error);
+        this.useMultiUser = false;
+        return this.createCaseSupabase(caseData);
+      }
+    }
+    return this.createCaseSupabase(caseData);
+  }
+
+  private async createCaseSupabase(caseData: Partial<Case>): Promise<Case> {
     if (this.useSupabase) {
       try {
         const newCase = await supabaseCaseService.createCase(caseData);
@@ -124,6 +170,23 @@ class CaseService {
    * Update an existing case
    */
   async updateCase(id: string, updates: Partial<Case>): Promise<Case | null> {
+    if (this.useMultiUser) {
+      try {
+        const updatedCase = await multiUserCaseService.updateCase(id, updates);
+        if (updatedCase) {
+          console.log('✅ Case updated in Multi-User SAAS:', updatedCase.title);
+        }
+        return updatedCase;
+      } catch (error) {
+        console.error('Multi-User service error, falling back to single-user Supabase:', error);
+        this.useMultiUser = false;
+        return this.updateCaseSupabase(id, updates);
+      }
+    }
+    return this.updateCaseSupabase(id, updates);
+  }
+
+  private async updateCaseSupabase(id: string, updates: Partial<Case>): Promise<Case | null> {
     if (this.useSupabase) {
       try {
         const updatedCase = await supabaseCaseService.updateCase(id, updates);
@@ -144,6 +207,23 @@ class CaseService {
    * Delete a case (archive it)
    */
   async deleteCase(id: string): Promise<boolean> {
+    if (this.useMultiUser) {
+      try {
+        const result = await multiUserCaseService.archiveCase(id);
+        if (result) {
+          console.log('✅ Case archived in Multi-User SAAS');
+        }
+        return result;
+      } catch (error) {
+        console.error('Multi-User service error, falling back to single-user Supabase:', error);
+        this.useMultiUser = false;
+        return this.deleteCaseSupabase(id);
+      }
+    }
+    return this.deleteCaseSupabase(id);
+  }
+
+  private async deleteCaseSupabase(id: string): Promise<boolean> {
     if (this.useSupabase) {
       try {
         const result = await supabaseCaseService.deleteCase(id);
@@ -180,6 +260,19 @@ class CaseService {
    * Get case statistics
    */
   async getCaseStatistics() {
+    if (this.useMultiUser) {
+      try {
+        return await multiUserCaseService.getCaseStatistics();
+      } catch (error) {
+        console.error('Multi-User service error, falling back to single-user Supabase:', error);
+        this.useMultiUser = false;
+        return this.getCaseStatisticsSupabase();
+      }
+    }
+    return this.getCaseStatisticsSupabase();
+  }
+
+  private async getCaseStatisticsSupabase() {
     if (this.useSupabase) {
       try {
         return await supabaseCaseService.getCaseStatistics();
@@ -206,6 +299,13 @@ class CaseService {
       }
     }
     return this.getCasesByTypeLocal();
+  }
+
+  /**
+   * Check if using Multi-User SAAS service
+   */
+  isUsingMultiUser(): boolean {
+    return this.useMultiUser;
   }
 
   /**

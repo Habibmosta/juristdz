@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAAS Migration Status - JuristDZ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .success { border-left: 4px solid #10b981; background: #064e3b; }
+        .error { border-left: 4px solid #ef4444; background: #7f1d1d; }
+        .warning { border-left: 4px solid #f59e0b; background: #78350f; }
+        .info { border-left: 4px solid #3b82f6; background: #1e3a8a; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px 8px 8px 0;
+            font-weight: 600;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #64748b; cursor: not-allowed; }
+        .step {
+            margin: 16px 0;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .step.completed { background: #064e3b; border-color: #10b981; }
+        .step.pending { background: #78350f; border-color: #f59e0b; }
+        .step.failed { background: #7f1d1d; border-color: #ef4444; }
+        .step-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        .step.completed .step-number { background: #10b981; }
+        .step.failed .step-number { background: #ef4444; }
+        pre {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            font-size: 12px;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #64748b;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 SAAS Migration Status</h1>
+        <p>Vérification de l'état de la migration vers l'architecture SAAS multi-organisations</p>
+        <button onclick="checkMigrationStatus()">🔍 Vérifier le Statut</button>
+        <button onclick="showMigrationInstructions()">📋 Instructions de Migration</button>
+    </div>
+
+    <div id="migration-steps"></div>
+
+    <div class="container" id="instructions" style="display: none;">
+        <h2>📋 Instructions de Migration SAAS</h2>
+        
+        <div class="step">
+            <h3><span class="step-number">1</span>Exécuter le Script de Migration</h3>
+            <p>Copiez et exécutez le script SQL suivant dans votre console Supabase :</p>
+            <ol>
+                <li>Ouvrez votre <a href="https://supabase.com/dashboard" target="_blank" style="color: #3b82f6;">console Supabase</a></li>
+                <li>Allez dans l'éditeur SQL</li>
+                <li>Copiez le contenu du fichier <code>database/migration-to-saas.sql</code></li>
+                <li>Exécutez le script</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>Vérifier les Tables</h3>
+            <p>Assurez-vous que les nouvelles tables ont été créées :</p>
+            <ul>
+                <li><code>subscription_plans</code> - Plans d'abonnement</li>
+                <li><code>organizations</code> - Organisations/Cabinets</li>
+                <li><code>user_profiles</code> - Profils utilisateurs étendus</li>
+                <li><code>clients</code> - Clients partagés par organisation</li>
+                <li><code>cases</code> - Dossiers avec isolation par organisation</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>Configurer RLS</h3>
+            <p>Vérifiez que les politiques Row Level Security sont actives pour l'isolation des données.</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>Tester l'Application</h3>
+            <p>Une fois la migration terminée, testez l'application pour vérifier le bon fonctionnement.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './services/supabaseClient.js';
+
+        const migrationSteps = [
+            {
+                id: 'connection',
+                title: 'Connexion Supabase',
+                description: 'Vérification de la connexion à la base de données',
+                test: async () => {
+                    if (!supabase) throw new Error('Client Supabase non initialisé');
+                    const { data, error } = await supabase.from('cases').select('count').limit(1);
+                    if (error && !error.message.includes('relation') && !error.message.includes('RLS')) {
+                        throw error;
+                    }
+                    return 'Connexion établie';
+                }
+            },
+            {
+                id: 'subscription_plans',
+                title: 'Table subscription_plans',
+                description: 'Vérification de la table des plans d\'abonnement',
+                test: async () => {
+                    const { data, error } = await supabase.from('subscription_plans').select('count').limit(1);
+                    if (error) throw error;
+                    return `Table présente (${data?.[0]?.count || 0} enregistrements)`;
+                }
+            },
+            {
+                id: 'organizations',
+                title: 'Table organizations',
+                description: 'Vérification de la table des organisations',
+                test: async () => {
+                    const { data, error } = await supabase.from('organizations').select('count').limit(1);
+                    if (error) throw error;
+                    return `Table présente (${data?.[0]?.count || 0} enregistrements)`;
+                }
+            },
+            {
+                id: 'user_profiles',
+                title: 'Table user_profiles',
+                description: 'Vérification de la table des profils utilisateurs',
+                test: async () => {
+                    const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
+                    if (error) throw error;
+                    return `Table présente (${data?.[0]?.count || 0} enregistrements)`;
+                }
+            },
+            {
+                id: 'clients',
+                title: 'Table clients',
+                description: 'Vérification de la table des clients',
+                test: async () => {
+                    const { data, error } = await supabase.from('clients').select('count').limit(1);
+                    if (error) throw error;
+                    return `Table présente (${data?.[0]?.count || 0} enregistrements)`;
+                }
+            },
+            {
+                id: 'cases_saas',
+                title: 'Table cases (SAAS)',
+                description: 'Vérification de la nouvelle table cases avec support multi-organisations',
+                test: async () => {
+                    const { data, error } = await supabase.from('cases').select('organization_id').limit(1);
+                    if (error) throw error;
+                    return 'Table cases migrée vers SAAS';
+                }
+            },
+            {
+                id: 'rls_policies',
+                title: 'Politiques RLS',
+                description: 'Vérification des politiques de sécurité Row Level Security',
+                test: async () => {
+                    // Test if RLS is working by trying to access data without proper context
+                    const { data, error } = await supabase.from('cases').select('*').limit(1);
+                    if (error && (error.message.includes('RLS') || error.message.includes('policy'))) {
+                        return 'RLS actif (accès refusé comme attendu)';
+                    } else if (data) {
+                        return 'RLS configuré (accès autorisé)';
+                    } else {
+                        return 'RLS status indéterminé';
+                    }
+                }
+            }
+        ];
+
+        window.checkMigrationStatus = async () => {
+            const container = document.getElementById('migration-steps');
+            container.innerHTML = '<div class="container"><h2>🔍 Vérification en cours...</h2></div>';
+
+            let allCompleted = true;
+            let results = [];
+
+            for (const step of migrationSteps) {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'step pending';
+                stepDiv.innerHTML = `
+                    <h3><span class="step-number">${migrationSteps.indexOf(step) + 1}</span>${step.title}</h3>
+                    <p>${step.description}</p>
+                    <div class="status"><span class="loading"></span> Vérification...</div>
+                `;
+                container.appendChild(stepDiv);
+
+                try {
+                    const result = await step.test();
+                    stepDiv.className = 'step completed';
+                    stepDiv.querySelector('.status').innerHTML = `✅ ${result}`;
+                    results.push({ step: step.title, status: 'success', message: result });
+                } catch (error) {
+                    stepDiv.className = 'step failed';
+                    stepDiv.querySelector('.status').innerHTML = `❌ ${error.message}`;
+                    results.push({ step: step.title, status: 'error', message: error.message });
+                    allCompleted = false;
+                }
+
+                // Small delay for better UX
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Add summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `container ${allCompleted ? 'success' : 'warning'}`;
+            summaryDiv.innerHTML = `
+                <h2>${allCompleted ? '✅ Migration Complète' : '⚠️ Migration Incomplète'}</h2>
+                <p>${allCompleted ? 
+                    'Toutes les vérifications sont passées. L\'architecture SAAS est prête.' : 
+                    'Certaines étapes de migration sont manquantes. Consultez les instructions ci-dessous.'
+                }</p>
+                ${!allCompleted ? '<button onclick="showMigrationInstructions()">📋 Voir les Instructions</button>' : ''}
+            `;
+            container.appendChild(summaryDiv);
+        };
+
+        window.showMigrationInstructions = () => {
+            document.getElementById('instructions').style.display = 'block';
+            document.getElementById('instructions').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Auto-check on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkMigrationStatus, 1000);
+        });
+    </script>
+</body>
+</html>

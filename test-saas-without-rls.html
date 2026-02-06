@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SAAS Sans RLS - JuristDZ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .success { border-left: 4px solid #10b981; background: #064e3b; }
+        .error { border-left: 4px solid #ef4444; background: #7f1d1d; }
+        .warning { border-left: 4px solid #f59e0b; background: #78350f; }
+        .info { border-left: 4px solid #3b82f6; background: #1e3a8a; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: 600;
+        }
+        button:hover { background: #2563eb; }
+        pre {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            font-size: 12px;
+        }
+        .test-result {
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Test SAAS Sans RLS</h1>
+        <p>Test de l'architecture SAAS avec RLS désactivé temporairement</p>
+    </div>
+
+    <div class="container warning">
+        <h2>⚠️ Mode Test Sans RLS</h2>
+        <p>Les politiques RLS sont désactivées pour éviter la récursion infinie. L'isolation des données sera gérée au niveau applicatif.</p>
+    </div>
+
+    <div class="container">
+        <h2>🔧 Tests de Base</h2>
+        <button onclick="testDirectAccess()">Test Accès Direct aux Tables</button>
+        <button onclick="testDataInsertion()">Test Insertion de Données</button>
+        <button onclick="testSAASServices()">Test Services SAAS</button>
+        <div id="test-results"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './services/supabaseClient.js';
+
+        let testResults = [];
+
+        function addResult(test, status, message, data = null) {
+            const result = { test, status, message, data, timestamp: new Date() };
+            testResults.push(result);
+            
+            const container = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `
+                <strong>${test}:</strong> ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            container.appendChild(div);
+        }
+
+        window.testDirectAccess = async () => {
+            const tables = ['subscription_plans', 'organizations', 'user_profiles', 'clients', 'cases'];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(3);
+                    
+                    if (error) {
+                        addResult(`Table ${table}`, 'error', `Erreur: ${error.message}`);
+                    } else {
+                        addResult(`Table ${table}`, 'success', `Accessible - ${data.length} enregistrements`, data);
+                    }
+                } catch (e) {
+                    addResult(`Table ${table}`, 'error', `Exception: ${e.message}`);
+                }
+            }
+        };
+
+        window.testDataInsertion = async () => {
+            try {
+                // Test d'insertion d'un client
+                const { data: orgData } = await supabase
+                    .from('organizations')
+                    .select('id')
+                    .eq('name', 'Cabinet de Démonstration')
+                    .single();
+
+                if (!orgData) {
+                    addResult('Insertion Client', 'error', 'Organisation de démonstration non trouvée');
+                    return;
+                }
+
+                const { data: clientData, error: clientError } = await supabase
+                    .from('clients')
+                    .insert([{
+                        organization_id: orgData.id,
+                        type: 'individual',
+                        first_name: 'Test',
+                        last_name: 'Client',
+                        email: 'test@example.com',
+                        phone: '+213 555 000 000'
+                    }])
+                    .select()
+                    .single();
+
+                if (clientError) {
+                    addResult('Insertion Client', 'error', `Erreur: ${clientError.message}`);
+                } else {
+                    addResult('Insertion Client', 'success', 'Client créé avec succès', clientData);
+                }
+
+            } catch (error) {
+                addResult('Insertion Client', 'error', `Exception: ${error.message}`);
+            }
+        };
+
+        window.testSAASServices = async () => {
+            try {
+                // Test du service multi-utilisateur
+                const { multiUserCaseService } = await import('./services/multiUserCaseService.js');
+                
+                addResult('Service Multi-User', 'info', `Service disponible: ${multiUserCaseService.isAvailable()}`);
+                
+                // Test du service de cas
+                const { caseService } = await import('./services/caseService.js');
+                
+                const stats = await caseService.getCaseStatistics();
+                addResult('Statistiques Cases', 'success', 'Statistiques récupérées', stats);
+
+            } catch (error) {
+                addResult('Services SAAS', 'error', `Erreur: ${error.message}`);
+            }
+        };
+
+        // Auto-run basic test
+        window.addEventListener('load', () => {
+            setTimeout(testDirectAccess, 1000);
+        });
+    </script>
+</body>
+</html>
