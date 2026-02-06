@@ -2,7 +2,7 @@
 import React from 'react';
 import { AppMode, Language, UserStats, UserRole, EnhancedUserProfile } from '../types';
 import { UI_TRANSLATIONS } from '../constants';
-import { MessageSquare, Briefcase, FileText, ShieldCheck, Zap, ArrowRight, Star, Clock, ShieldAlert } from 'lucide-react';
+import { MessageSquare, Briefcase, FileText, ShieldCheck, ArrowRight, Star, Clock, ShieldAlert } from 'lucide-react';
 import { ROLE_INTERFACE_CONFIG } from '../config/roleRouting';
 import DashboardWidget from './widgets/DashboardWidget';
 import ApiTestComponent from './ApiTestComponent';

@@ -18,7 +18,7 @@ interface TranslatableMessage extends Message {
   originalLang?: Language;
   isTranslated?: boolean;
   translationQuality?: 'excellent' | 'good' | 'fair' | 'poor';
-  translationError?: string;
+  translationError?: string | undefined;
 }
 
 // Search session interface for history management
@@ -426,28 +426,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
         </div>
       )}
 
-      {/* Translation Debug Panel */}
-      {showTranslationDebug && translationErrors.length > 0 && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-6">
-          <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2">
-            <AlertTriangle size={16} />
-            Erreurs de traduction détectées
-          </h4>
-          <div className="space-y-1">
-            {translationErrors.slice(-5).map((error, index) => (
-              <div key={index} className="text-xs text-red-600 font-mono bg-red-100 p-2 rounded">
-                {error}
-              </div>
-            ))}
-          </div>
-          <button 
-            onClick={() => {
-              setTranslationErrors([]);
-              improvedTranslationService.clearTranslationErrors();
-            }}
-            className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-          >
-            Effacer les erreurs
+      {/* Messages Container */}
           </button>
         </div>
       )}
