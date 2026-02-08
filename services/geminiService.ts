@@ -251,7 +251,7 @@ const sendMessageToGeminiAPI = async (
   imageAttachment?: { mimeType: string; data: string }
 ): Promise<ChatResponse> => {
   try {
-    const modelId = 'gemini-1.5-flash'; 
+    const modelId = 'gemini-2.5-flash'; 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
