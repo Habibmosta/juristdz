@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import StructuredLegalForm from './StructuredLegalForm';
+import ActeVenteForm from './forms/ActeVenteForm';
 import WilayaSelector from './WilayaSelector';
 import ClauseSelector from './ClauseSelector';
 import TemplateContribution from './TemplateContribution';
@@ -405,11 +406,23 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
               {useStructuredForm ? (
                 <div className="space-y-4">
-                  <StructuredLegalForm
-                    templateId={selectedTemplateId}
-                    language={language}
-                    onFormChange={setStructuredFormData}
-                  />
+                  {/* Utiliser le formulaire professionnel pour acte de vente */}
+                  {selectedTemplateId === 'acte_vente_immobiliere' ? (
+                    <ActeVenteForm
+                      language={language}
+                      onFormChange={setStructuredFormData}
+                      onComplete={() => {
+                        // Passer automatiquement à la génération
+                        console.log('Formulaire complété, prêt pour génération');
+                      }}
+                    />
+                  ) : (
+                    <StructuredLegalForm
+                      templateId={selectedTemplateId}
+                      language={language}
+                      onFormChange={setStructuredFormData}
+                    />
+                  )}
                   <div>
                     <label className="text-xs font-bold text-slate-500 block mb-2">
                       {language === 'ar' ? 'تفاصيل إضافية' : 'Détails complémentaires'}
