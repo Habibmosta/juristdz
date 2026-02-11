@@ -406,34 +406,14 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
               {useStructuredForm ? (
                 <div className="space-y-4">
-                  {/* Utiliser le formulaire professionnel pour acte de vente */}
-                  {selectedTemplateId === 'acte_vente_immobiliere' ? (
-                    <ActeVenteForm
-                      language={language}
-                      onFormChange={setStructuredFormData}
-                      onComplete={() => {
-                        // Passer automatiquement à la génération
-                        console.log('Formulaire complété, prêt pour génération');
-                      }}
-                    />
-                  ) : (
-                    <StructuredLegalForm
-                      templateId={selectedTemplateId}
-                      language={language}
-                      onFormChange={setStructuredFormData}
-                    />
-                  )}
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 block mb-2">
-                      {language === 'ar' ? 'تفاصيل إضافية' : 'Détails complémentaires'}
-                    </label>
-                    <textarea 
-                      value={details}
-                      onChange={(e) => setDetails(e.target.value)}
-                      className="w-full h-24 p-3 bg-slate-50 dark:bg-slate-800 border rounded-lg text-sm"
-                      placeholder={language === 'ar' ? 'معلومات إضافية...' : 'Informations supplémentaires...'}
-                    />
-                  </div>
+                  {/* Toujours utiliser le formulaire professionnel */}
+                  <ActeVenteForm
+                    language={language}
+                    onFormChange={setStructuredFormData}
+                    onComplete={() => {
+                      console.log('Formulaire complété, prêt pour génération');
+                    }}
+                  />
                 </div>
               ) : (
                 <textarea 

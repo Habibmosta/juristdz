@@ -369,10 +369,158 @@ const ActeVenteForm: React.FC<ActeVenteFormProps> = ({ language, onFormChange, o
           </div>
         )}
 
-        {/* Autres étapes similaires... */}
+        {/* Étape Acheteur */}
         {currentStep === 'acheteur' && (
-          <div className="text-center py-8 text-slate-500">
-            <p>{isAr ? 'نفس الحقول للمشتري...' : 'Mêmes champs pour l\'acheteur...'}</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProfessionalInput
+                label={isAr ? 'اللقب' : 'Nom de famille'}
+                value={formData.acheteurNom}
+                onChange={(v) => updateField('acheteurNom', v)}
+                required
+                placeholder="Ex: KHELIFI"
+                helpText="Nom tel qu'il apparaît sur la CIN"
+                example="KHELIFI, SALEM, MEZIANE"
+                legalRef="Art. 324 Code de Procédure Civile"
+                validator={validateName}
+                language={language}
+              />
+              <ProfessionalInput
+                label={isAr ? 'الاسم' : 'Prénom'}
+                value={formData.acheteurPrenom}
+                onChange={(v) => updateField('acheteurPrenom', v)}
+                required
+                placeholder="Ex: Karim"
+                validator={validateName}
+                language={language}
+              />
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
+                {isAr ? 'النسب (إجباري)' : 'Filiation (obligatoire)'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ProfessionalInput
+                  label={isAr ? 'لقب الأب' : 'Nom du père'}
+                  value={formData.acheteurNomPere}
+                  onChange={(v) => updateField('acheteurNomPere', v)}
+                  required
+                  validator={validateName}
+                  language={language}
+                />
+                <ProfessionalInput
+                  label={isAr ? 'اسم الأب' : 'Prénom du père'}
+                  value={formData.acheteurPrenomPere}
+                  onChange={(v) => updateField('acheteurPrenomPere', v)}
+                  required
+                  validator={validateName}
+                  language={language}
+                />
+                <ProfessionalInput
+                  label={isAr ? 'لقب الأم' : 'Nom de la mère'}
+                  value={formData.acheteurNomMere}
+                  onChange={(v) => updateField('acheteurNomMere', v)}
+                  required
+                  validator={validateName}
+                  language={language}
+                />
+                <ProfessionalInput
+                  label={isAr ? 'اسم الأم' : 'Prénom de la mère'}
+                  value={formData.acheteurPrenomMere}
+                  onChange={(v) => updateField('acheteurPrenomMere', v)}
+                  required
+                  validator={validateName}
+                  language={language}
+                />
+              </div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-4">
+                {isAr ? 'وثيقة الهوية' : 'Document d\'identité'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ProfessionalInput
+                  label={isAr ? 'رقم بطاقة التعريف الوطنية' : 'Numéro CIN'}
+                  value={formData.acheteurCIN}
+                  onChange={(v) => updateField('acheteurCIN', v)}
+                  required
+                  placeholder="123456789012345678"
+                  helpText="18 chiffres exactement"
+                  example="123456789012345678"
+                  validator={validateCIN}
+                  language={language}
+                  maxLength={18}
+                />
+                <ProfessionalInput
+                  label={isAr ? 'تاريخ الإصدار' : 'Date de délivrance'}
+                  value={formData.acheteurDateCIN}
+                  onChange={(v) => updateField('acheteurDateCIN', v)}
+                  type="date"
+                  language={language}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProfessionalInput
+                label={isAr ? 'تاريخ الميلاد' : 'Date de naissance'}
+                value={formData.acheteurDateNaissance}
+                onChange={(v) => updateField('acheteurDateNaissance', v)}
+                type="date"
+                required
+                validator={validateBirthDate}
+                language={language}
+              />
+              <ProfessionalInput
+                label={isAr ? 'مكان الميلاد' : 'Lieu de naissance'}
+                value={formData.acheteurLieuNaissance}
+                onChange={(v) => updateField('acheteurLieuNaissance', v)}
+                required
+                placeholder="Ex: Oran"
+                language={language}
+              />
+            </div>
+
+            <ProfessionalInput
+              label={isAr ? 'العنوان الكامل' : 'Adresse complète'}
+              value={formData.acheteurAdresse}
+              onChange={(v) => updateField('acheteurAdresse', v)}
+              required
+              placeholder="Ex: 25 Boulevard de la République, Oran"
+              helpText="Adresse actuelle et complète"
+              validator={validateAddress}
+              language={language}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ProfessionalInput
+                label={isAr ? 'البلدية' : 'Commune'}
+                value={formData.acheteurCommune}
+                onChange={(v) => updateField('acheteurCommune', v)}
+                required
+                language={language}
+              />
+              <ProfessionalInput
+                label={isAr ? 'الولاية' : 'Wilaya'}
+                value={formData.acheteurWilaya}
+                onChange={(v) => updateField('acheteurWilaya', v)}
+                type="select"
+                options={wilayas}
+                required
+                language={language}
+              />
+              <ProfessionalInput
+                label={isAr ? 'الهاتف' : 'Téléphone'}
+                value={formData.acheteurTelephone}
+                onChange={(v) => updateField('acheteurTelephone', v)}
+                type="tel"
+                placeholder="0555123456"
+                validator={validatePhoneAlgeria}
+                language={language}
+              />
+            </div>
           </div>
         )}
 
@@ -387,21 +535,78 @@ const ActeVenteForm: React.FC<ActeVenteFormProps> = ({ language, onFormChange, o
                 { value: 'APPARTEMENT', label: isAr ? 'شقة' : 'Appartement' },
                 { value: 'VILLA', label: isAr ? 'فيلا' : 'Villa' },
                 { value: 'TERRAIN', label: isAr ? 'أرض' : 'Terrain' },
-                { value: 'LOCAL_COMMERCIAL', label: isAr ? 'محل تجاري' : 'Local commercial' }
+                { value: 'LOCAL_COMMERCIAL', label: isAr ? 'محل تجاري' : 'Local commercial' },
+                { value: 'GARAGE', label: isAr ? 'مرآب' : 'Garage' },
+                { value: 'FERME', label: isAr ? 'مزرعة' : 'Ferme' }
               ]}
               required
+              helpText="Type de bien immobilier"
               language={language}
             />
             
             <ProfessionalInput
-              label={isAr ? 'المساحة (م²)' : 'Superficie (m²)'}
-              value={formData.superficie}
-              onChange={(v) => updateField('superficie', v)}
-              type="number"
+              label={isAr ? 'عنوان العقار' : 'Adresse du bien'}
+              value={formData.adresseBien}
+              onChange={(v) => updateField('adresseBien', v)}
               required
-              placeholder="85"
-              helpText="Superficie en mètres carrés"
+              placeholder="Ex: 25 Rue Larbi Ben M'hidi, Alger"
+              helpText="Adresse complète et précise du bien"
+              validator={validateAddress}
               language={language}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProfessionalInput
+                label={isAr ? 'المساحة (م²)' : 'Superficie (m²)'}
+                value={formData.superficie}
+                onChange={(v) => updateField('superficie', v)}
+                type="number"
+                required
+                placeholder="85"
+                helpText="Superficie en mètres carrés"
+                example="85, 120, 250"
+                language={language}
+              />
+              <ProfessionalInput
+                label={isAr ? 'رقم السند العقاري' : 'Numéro titre foncier'}
+                value={formData.numeroTitreFoncier}
+                onChange={(v) => updateField('numeroTitreFoncier', v)}
+                required
+                placeholder="Ex: 12345/16"
+                helpText="Numéro du titre de propriété"
+                example="12345/16, 67890/31"
+                legalRef="Conservation Foncière"
+                language={language}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProfessionalInput
+                label={isAr ? 'القسم المساحي' : 'Section cadastrale'}
+                value={formData.sectionCadastrale}
+                onChange={(v) => updateField('sectionCadastrale', v)}
+                placeholder="Ex: A-123"
+                helpText="Référence cadastrale"
+                language={language}
+              />
+              <ProfessionalInput
+                label={isAr ? 'المحافظة العقارية' : 'Conservation foncière'}
+                value={formData.conservationFonciere}
+                onChange={(v) => updateField('conservationFonciere', v)}
+                placeholder="Ex: Conservation Foncière d'Alger Centre"
+                language={language}
+              />
+            </div>
+
+            <ProfessionalInput
+              label={isAr ? 'وصف العقار' : 'Description du bien'}
+              value={formData.descriptionBien}
+              onChange={(v) => updateField('descriptionBien', v)}
+              type="textarea"
+              placeholder={isAr ? 'وصف تفصيلي للعقار...' : 'Description détaillée du bien...'}
+              helpText="Caractéristiques, état, équipements, etc."
+              language={language}
+              maxLength={500}
             />
           </div>
         )}
@@ -415,20 +620,133 @@ const ActeVenteForm: React.FC<ActeVenteFormProps> = ({ language, onFormChange, o
               type="number"
               required
               placeholder="5000000"
-              helpText="Montant en Dinars Algériens"
-              example="5000000 DA"
+              helpText="Montant total en Dinars Algériens"
+              example="5000000, 10000000, 25000000"
+              legalRef="Art. 351 Code Civil - Prix déterminé"
               validator={validateAmount}
               language={language}
             />
             
             {formData.prixVente && parseFloat(formData.prixVente) > 0 && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  <span className="font-semibold">{isAr ? 'بالحروف:' : 'En lettres:'}</span>{' '}
-                  {amountToWords(parseFloat(formData.prixVente))} dinars algériens
-                </p>
+              <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-green-500 rounded-lg">
+                    <Check size={20} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-2">
+                      {isAr ? 'المبلغ بالحروف:' : 'Montant en lettres:'}
+                    </p>
+                    <p className="text-lg font-bold text-green-800 dark:text-green-200">
+                      {amountToWords(parseFloat(formData.prixVente))} dinars algériens
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
+
+            <ProfessionalInput
+              label={isAr ? 'طريقة الدفع' : 'Modalité de paiement'}
+              value={formData.modalitePaiement}
+              onChange={(v) => updateField('modalitePaiement', v)}
+              type="select"
+              options={[
+                { value: 'COMPTANT', label: isAr ? 'نقداً' : 'Comptant' },
+                { value: 'ECHELONNE', label: isAr ? 'على أقساط' : 'Échelonné' },
+                { value: 'CHEQUE', label: isAr ? 'شيك' : 'Chèque' },
+                { value: 'VIREMENT', label: isAr ? 'تحويل بنكي' : 'Virement bancaire' }
+              ]}
+              required
+              helpText="Mode de règlement du prix"
+              language={language}
+            />
+
+            <ProfessionalInput
+              label={isAr ? 'تاريخ التوقيع' : 'Date de signature'}
+              value={formData.dateSignature}
+              onChange={(v) => updateField('dateSignature', v)}
+              type="date"
+              required
+              helpText="Date de conclusion de la vente"
+              language={language}
+            />
+          </div>
+        )}
+
+        {currentStep === 'garanties' && (
+          <div className="space-y-6">
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6 border border-amber-200 dark:border-amber-800">
+              <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2">
+                <Shield size={20} />
+                {isAr ? 'الضمانات القانونية' : 'Garanties légales'}
+              </h3>
+              
+              <div className="space-y-4">
+                <label className="flex items-start gap-3 p-4 bg-white dark:bg-slate-800 rounded-lg cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={formData.garantieEviction}
+                    onChange={(e) => updateField('garantieEviction', e.target.checked)}
+                    className="mt-1 w-5 h-5 text-legal-gold rounded focus:ring-legal-gold"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                      {isAr ? 'ضمان الاستحقاق' : 'Garantie d\'éviction'}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      {isAr 
+                        ? 'يضمن البائع للمشتري عدم التعرض له في ملكيته'
+                        : 'Le vendeur garantit l\'acquéreur contre tout trouble de jouissance'}
+                    </div>
+                    <div className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                      ⚖️ Art. 371-379 Code Civil
+                    </div>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-4 bg-white dark:bg-slate-800 rounded-lg cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={formData.garantieVicesCaches}
+                    onChange={(e) => updateField('garantieVicesCaches', e.target.checked)}
+                    className="mt-1 w-5 h-5 text-legal-gold rounded focus:ring-legal-gold"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                      {isAr ? 'ضمان العيوب الخفية' : 'Garantie des vices cachés'}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      {isAr 
+                        ? 'يضمن البائع العيوب الخفية التي تنقص من قيمة العقار'
+                        : 'Le vendeur garantit les défauts cachés qui diminuent la valeur du bien'}
+                    </div>
+                    <div className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                      ⚖️ Art. 379-383 Code Civil
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <ProfessionalInput
+              label={isAr ? 'الارتفاقات' : 'Servitudes'}
+              value={formData.servitudes}
+              onChange={(v) => updateField('servitudes', v)}
+              type="textarea"
+              placeholder={isAr ? 'حق المرور، حق الارتفاق...' : 'Droit de passage, servitudes...'}
+              helpText="Servitudes grevant le bien (si applicable)"
+              language={language}
+            />
+
+            <ProfessionalInput
+              label={isAr ? 'الأعباء والتكاليف' : 'Charges et frais'}
+              value={formData.charges}
+              onChange={(v) => updateField('charges', v)}
+              type="textarea"
+              placeholder={isAr ? 'الضرائب، رسوم التسجيل...' : 'Taxes, frais d\'enregistrement...'}
+              helpText="Répartition des frais entre vendeur et acheteur"
+              language={language}
+            />
           </div>
         )}
       </div>
