@@ -104,9 +104,11 @@ const ActeVenteForm: React.FC<ActeVenteFormProps> = ({ language, onFormChange, o
   });
 
   const updateField = (field: keyof ActeVenteData, value: any) => {
-    const newData = { ...formData, [field]: value };
-    setFormData(newData);
-    onFormChange(newData);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      onFormChange(newData);
+      return newData;
+    });
   };
 
   const steps: { id: Step; label_fr: string; label_ar: string; icon: any }[] = [

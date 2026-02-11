@@ -43,13 +43,6 @@ const ProfessionalInput: React.FC<ProfessionalInputProps> = ({
 
   const handleChange = (newValue: string) => {
     onChange(newValue);
-    
-    if (validator && newValue) {
-      const result = validator(newValue);
-      setValidationResult(result);
-    } else {
-      setValidationResult(null);
-    }
   };
 
   const handleBlur = () => {
@@ -59,6 +52,14 @@ const ProfessionalInput: React.FC<ProfessionalInputProps> = ({
       setValidationResult(result);
     }
   };
+
+  // Valider seulement au blur, pas pendant la saisie
+  React.useEffect(() => {
+    if (touched && validator && value) {
+      const result = validator(value);
+      setValidationResult(result);
+    }
+  }, [value, touched, validator]);
 
   const showValidation = touched && value;
   const isValid = validationResult?.valid !== false;
