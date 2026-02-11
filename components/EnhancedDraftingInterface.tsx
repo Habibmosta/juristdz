@@ -15,15 +15,14 @@ import {
 import { AppMode, Language, UserRole } from '../types';
 import { 
   FileText, Download, CheckCircle, ChevronRight, PenTool, Eye, 
-  Printer, Share2, Check, Edit3, Save, Scale, Settings, Languages,
+  Printer, Share2, Check, Edit3, Save, Scale, Languages,
   MapPin, BookOpen, Plus, Layers
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import StructuredLegalForm from './StructuredLegalForm';
-import ActeVenteForm from './forms/ActeVenteForm';
 import WilayaSelector from './WilayaSelector';
 import ClauseSelector from './ClauseSelector';
 import TemplateContribution from './TemplateContribution';
+import ActeVenteForm from './forms/ActeVenteForm';
 
 interface EnhancedDraftingInterfaceProps {
   language: Language;
@@ -74,7 +73,6 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   // Form data
   const [details, setDetails] = useState('');
   const [structuredFormData, setStructuredFormData] = useState<any>({});
-  const [useStructuredForm, setUseStructuredForm] = useState(true);
   
   // Document state
   const [generatedDoc, setGeneratedDoc] = useState('');
@@ -262,7 +260,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       case 'template': return !!selectedTemplateId;
       case 'wilaya': return true; // Optional
       case 'clauses': return true; // Optional
-      case 'details': return useStructuredForm ? Object.keys(structuredFormData).length > 0 || details.trim() : details.trim();
+      case 'details': return Object.keys(structuredFormData).length > 0;
       default: return false;
     }
   };
@@ -386,43 +384,17 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
             </div>
           )}
 
-          {/* Step 4: Details */}
+          {/* Step 4: Details - FORMULAIRE PROFESSIONNEL */}
           {currentStep === 'details' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm">
-                  {language === 'ar' ? 'تفاصيل الوثيقة' : 'Détails du document'}
-                </h3>
-                <button
-                  onClick={() => setUseStructuredForm(!useStructuredForm)}
-                  className={`p-2 rounded-lg transition ${
-                    useStructuredForm ? 'bg-legal-gold text-white' : 'bg-slate-100 text-slate-500'
-                  }`}
-                  title={useStructuredForm ? 'Mode texte libre' : 'Formulaire structuré'}
-                >
-                  <Settings size={14} />
-                </button>
-              </div>
-
-              {useStructuredForm ? (
-                <div className="space-y-4">
-                  {/* Toujours utiliser le formulaire professionnel */}
-                  <ActeVenteForm
-                    language={language}
-                    onFormChange={setStructuredFormData}
-                    onComplete={() => {
-                      console.log('Formulaire complété, prêt pour génération');
-                    }}
-                  />
-                </div>
-              ) : (
-                <textarea 
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  className="w-full h-64 p-3 bg-slate-50 dark:bg-slate-800 border rounded-lg text-sm"
-                  placeholder={language === 'ar' ? 'اكتب تفاصيل القضية...' : 'Décrivez les détails de l\'affaire...'}
-                />
-              )}
+              {/* NOUVEAU FORMULAIRE PROFESSIONNEL COMPLET */}
+              <ActeVenteForm
+                language={language}
+                onFormChange={setStructuredFormData}
+                onComplete={() => {
+                  console.log('Formulaire complété, prêt pour génération');
+                }}
+              />
             </div>
           )}
         </div>
