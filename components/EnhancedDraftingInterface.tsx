@@ -4,7 +4,7 @@ import { autoTranslationService } from '../services/autoTranslationService';
 import { wilayaTemplateService } from '../services/wilayaTemplateService';
 import { clauseService } from '../services/clauseService';
 import { 
-  TEMPLATES, 
+  AVOCAT_TEMPLATES, 
   NOTAIRE_TEMPLATES, 
   HUISSIER_TEMPLATES, 
   MAGISTRAT_TEMPLATES, 
@@ -22,7 +22,7 @@ import ReactMarkdown from 'react-markdown';
 import WilayaSelector from './WilayaSelector';
 import ClauseSelector from './ClauseSelector';
 import TemplateContribution from './TemplateContribution';
-import ActeVenteForm from './forms/ActeVenteForm';
+import DynamicLegalForm from './forms/DynamicLegalForm';
 
 interface EnhancedDraftingInterfaceProps {
   language: Language;
@@ -46,16 +46,16 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   // Template selection
   const getTemplatesForRole = (role: UserRole) => {
     switch (role) {
-      case UserRole.AVOCAT: return TEMPLATES;
+      case UserRole.AVOCAT: return AVOCAT_TEMPLATES;
       case UserRole.NOTAIRE: return NOTAIRE_TEMPLATES;
       case UserRole.HUISSIER: return HUISSIER_TEMPLATES;
       case UserRole.MAGISTRAT: return MAGISTRAT_TEMPLATES;
       case UserRole.JURISTE_ENTREPRISE: return JURISTE_TEMPLATES;
       case UserRole.ETUDIANT: return ETUDIANT_TEMPLATES;
       case UserRole.ADMIN:
-        return [...TEMPLATES, ...NOTAIRE_TEMPLATES, ...HUISSIER_TEMPLATES, 
+        return [...AVOCAT_TEMPLATES, ...NOTAIRE_TEMPLATES, ...HUISSIER_TEMPLATES, 
                 ...MAGISTRAT_TEMPLATES, ...JURISTE_TEMPLATES, ...ETUDIANT_TEMPLATES];
-      default: return TEMPLATES;
+      default: return AVOCAT_TEMPLATES;
     }
   };
   
@@ -73,6 +73,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   // Form data
   const [details, setDetails] = useState('');
   const [structuredFormData, setStructuredFormData] = useState<any>({});
+  const [showFormModal, setShowFormModal] = useState(false);
   
   // Document state
   const [generatedDoc, setGeneratedDoc] = useState('');
@@ -89,6 +90,116 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
   const componentId = `enhanced-drafting-${userRole}`;
   const selectedTemplate = availableTemplates.find(t => t.id === selectedTemplateId) || availableTemplates[0];
+
+  // Helper function to replace placeholders with form data
+  const replacePlaceholdersWithFormData = (document: string, formData: any): string => {
+    let result = document;
+    
+    // Mapping des champs du formulaire vers les placeholders courants
+    const placeholderMappings: { [key: string]: string[] } = {
+      // Demandeur
+      'demandeurNom': ['[NOM]', '[NOM_DEMANDEUR]'],
+      'demandeurPrenom': ['[PRENOM]', '[PRENOM_DEMANDEUR]'],
+      'demandeurDateNaissance': ['[DATE_NAISSANCE]', '[DATE_NAISSANCE_DEMANDEUR]'],
+      'demandeurLieuNaissance': ['[LIEU_NAISSANCE]', '[LIEU_NAISSANCE_DEMANDEUR]'],
+      'demandeurCIN': ['[CIN]', '[CIN_DEMANDEUR]', '[NUMERO_CIN]'],
+      'demandeurAdresse': ['[ADRESSE]', '[ADRESSE_DEMANDEUR]'],
+      'demandeurProfession': ['[PROFESSION]', '[PROFESSION_DEMANDEUR]'],
+      
+      // Défendeur
+      'defendeurNom': ['[NOM_DEFENDEUR]'],
+      'defendeurPrenom': ['[PRENOM_DEFENDEUR]'],
+      'defendeurDateNaissance': ['[DATE_NAISSANCE_DEFENDEUR]'],
+      'defendeurLieuNaissance': ['[LIEU_NAISSANCE_DEFENDEUR]'],
+      'defendeurCIN': ['[CIN_DEFENDEUR]'],
+      'defendeurAdresse': ['[ADRESSE_DEFENDEUR]'],
+      'defendeurProfession': ['[PROFESSION_DEFENDEUR]'],
+      
+      // Débiteur
+      'debiteurNom': ['[NOM_DEBITEUR]'],
+      'debiteurPrenom': ['[PRENOM_DEBITEUR]'],
+      'debiteurDateNaissance': ['[DATE_NAISSANCE_DEBITEUR]'],
+      'debiteurLieuNaissance': ['[LIEU_NAISSANCE_DEBITEUR]'],
+      'debiteurCIN': ['[CIN_DEBITEUR]'],
+      'debiteurAdresse': ['[ADRESSE_DEBITEUR]'],
+      'debiteurProfession': ['[PROFESSION_DEBITEUR]'],
+      
+      // Défunt
+      'defuntNom': ['[NOM_DEFUNT]'],
+      'defuntPrenom': ['[PRENOM_DEFUNT]'],
+      'defuntCIN': ['[CIN_DEFUNT]'],
+      'dateDeces': ['[DATE_DECES]'],
+      'lieuDeces': ['[LIEU_DECES]'],
+      
+      // Dates génériques
+      'dateCIN': ['[DATE_CIN]'],
+      'lieuCIN': ['[LIEU_CIN]'],
+    };
+    
+    // Remplacer les placeholders avec les vraies valeurs
+    Object.entries(formData).forEach(([fieldName, fieldValue]) => {
+      if (fieldValue && fieldValue !== '') {
+        // Utiliser les mappings définis
+        if (placeholderMappings[fieldName]) {
+          placeholderMappings[fieldName].forEach(placeholder => {
+            result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), String(fieldValue));
+          });
+        }
+        
+        // Aussi essayer de remplacer directement le nom du champ en majuscules
+        const upperFieldName = fieldName.replace(/([A-Z])/g, '_$1').toUpperCase();
+        result = result.replace(new RegExp(`\\[${upperFieldName}\\]`, 'g'), String(fieldValue));
+      }
+    });
+    
+    // Construire les identités complètes pour remplacer les patterns "[NOM] [PRENOM]"
+    const identityPatterns = [
+      { nom: 'demandeurNom', prenom: 'demandeurPrenom', pattern: /\[NOM\]\s*\[PRENOM\]/g },
+      { nom: 'demandeurNom', prenom: 'demandeurPrenom', pattern: /\[NOM_DEMANDEUR\]\s*\[PRENOM_DEMANDEUR\]/g },
+      { nom: 'defendeurNom', prenom: 'defendeurPrenom', pattern: /\[NOM_DEFENDEUR\]\s*\[PRENOM_DEFENDEUR\]/g },
+      { nom: 'debiteurNom', prenom: 'debiteurPrenom', pattern: /\[NOM_DEBITEUR\]\s*\[PRENOM_DEBITEUR\]/g },
+      { nom: 'defuntNom', prenom: 'defuntPrenom', pattern: /\[NOM_DEFUNT\]\s*\[PRENOM_DEFUNT\]/g },
+    ];
+    
+    identityPatterns.forEach(({ nom, prenom, pattern }) => {
+      if (formData[nom] && formData[prenom]) {
+        const fullName = `${formData[prenom]} ${formData[nom]}`;
+        result = result.replace(pattern, fullName);
+      }
+    });
+    
+    // Formater les dates au format français si elles sont au format ISO
+    result = result.replace(/(\d{4})-(\d{2})-(\d{2})/g, (match, year, month, day) => {
+      return `${day}/${month}/${year}`;
+    });
+    
+    // Remplacer les placeholders de date génériques restants
+    if (formData.demandeurDateNaissance) {
+      const date = new Date(formData.demandeurDateNaissance);
+      const formatted = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      result = result.replace(/\[DATE_NAISSANCE\]/g, formatted);
+    }
+    
+    // Pour les CIN, si on n'a pas de date/lieu de délivrance, on les supprime proprement
+    if (!formData.dateCIN) {
+      result = result.replace(/,?\s*délivrée le \[DATE_CIN\]/g, '');
+      result = result.replace(/,?\s*delivered on \[DATE_CIN\]/g, '');
+    }
+    if (!formData.lieuCIN) {
+      result = result.replace(/\s*à \[LIEU_CIN\]/g, '');
+      result = result.replace(/\s*at \[LIEU_CIN\]/g, '');
+    }
+    
+    // Nettoyer les placeholders restants qui n'ont pas de valeur
+    // Les remplacer par des mentions génériques plutôt que de les laisser vides
+    result = result.replace(/\[DATE_CIN\]/g, '[date à préciser]');
+    result = result.replace(/\[LIEU_CIN\]/g, '[lieu à préciser]');
+    result = result.replace(/\[DATE\]/g, new Date().toLocaleDateString('fr-FR'));
+    result = result.replace(/\[MOIS\]/g, new Date().toLocaleDateString('fr-FR', { month: 'long' }));
+    result = result.replace(/\[ANNEE\]/g, new Date().getFullYear().toString());
+    
+    return result;
+  };
 
   // Auto translation
   useEffect(() => {
@@ -132,6 +243,16 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   const getName = (tpl: any) => language === 'ar' ? tpl.name_ar : tpl.name;
   const getDesc = (tpl: any) => language === 'ar' ? tpl.description_ar : tpl.description;
 
+  const canProceed = () => {
+    switch (currentStep) {
+      case 'template': return !!selectedTemplateId;
+      case 'wilaya': return true; // Optional
+      case 'clauses': return true; // Optional
+      case 'details': return Object.keys(structuredFormData).length > 0;
+      default: return false;
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedTemplate) return;
     
@@ -168,41 +289,121 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       // 3. Construire le prompt avec les données structurées
       let prompt = basePrompt;
       
-      if (useStructuredForm && Object.keys(structuredFormData).length > 0) {
-        prompt += '\n\nInformations fournies :\n';
+      if (Object.keys(structuredFormData).length > 0) {
+        prompt += '\n\n=== INFORMATIONS COMPLÈTES DU FORMULAIRE ===\n';
+        prompt += '⚠️ UTILISEZ CES INFORMATIONS EXACTES - NE LAISSEZ AUCUN PLACEHOLDER VIDE\n\n';
         
-        // Informations de la personne
-        if (structuredFormData.personnePhysique) {
-          const p = structuredFormData.personnePhysique;
-          if (p.nom && p.prenom) {
-            prompt += `\nPersonne concernée : ${p.prenom} ${p.nom}`;
-            if (p.dateNaissance) prompt += `, né(e) le ${p.dateNaissance}`;
-            if (p.lieuNaissance) prompt += ` à ${p.lieuNaissance}`;
-            if (p.adresse) prompt += `, demeurant à ${p.adresse}`;
-          }
-        }
+        // Créer des groupes logiques de données
+        const dataGroups: { [key: string]: { [key: string]: any } } = {};
         
-        // Informations du cabinet
-        if (structuredFormData.cabinet) {
-          const c = structuredFormData.cabinet;
-          if (c.nomCabinet && c.nomPraticien) {
-            prompt += `\n\nCabinet : ${c.nomCabinet}`;
-            prompt += `\nReprésenté par Maître ${c.prenomPraticien} ${c.nomPraticien}`;
+        Object.entries(structuredFormData).forEach(([key, value]) => {
+          if (value && value !== '') {
+            // Extraire le préfixe (demandeur, defendeur, etc.)
+            const match = key.match(/^([a-z]+[A-Z][a-z]+)/);
+            const prefix = match ? match[1] : 'general';
+            
+            if (!dataGroups[prefix]) {
+              dataGroups[prefix] = {};
+            }
+            
+            // Extraire le nom du champ sans le préfixe
+            const fieldName = key.replace(prefix, '');
+            dataGroups[prefix][fieldName || key] = value;
           }
-        }
+        });
+        
+        // Afficher les données par groupe
+        Object.entries(dataGroups).forEach(([groupName, fields]) => {
+          // Formater le nom du groupe
+          const readableGroupName = groupName
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/^./, str => str.toUpperCase());
+          
+          prompt += `--- ${readableGroupName} ---\n`;
+          
+          // Construire l'identité complète si on a nom et prénom
+          if (fields['Nom'] && fields['Prenom']) {
+            prompt += `Identité complète: ${fields['Prenom']} ${fields['Nom']}\n`;
+          }
+          
+          // Afficher tous les champs
+          Object.entries(fields).forEach(([fieldName, fieldValue]) => {
+            const readableFieldName = fieldName
+              .replace(/([a-z])([A-Z])/g, '$1 $2')
+              .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+              .trim();
+            
+            if (readableFieldName && readableFieldName !== 'Nom' && readableFieldName !== 'Prenom') {
+              prompt += `${readableFieldName}: ${fieldValue}\n`;
+            }
+          });
+          
+          prompt += '\n';
+        });
+        
+        prompt += '\n\n⚠️ INSTRUCTIONS CRITIQUES POUR LA GÉNÉRATION:\n';
+        prompt += '1. Remplacez TOUS les placeholders [NOM], [PRENOM], [DATE_NAISSANCE], etc. par les VRAIES valeurs ci-dessus\n';
+        prompt += '2. Utilisez les noms COMPLETS: "Prénom Nom" (ex: "Djillali Ahmed" pas "[NOM] [PRENOM]")\n';
+        prompt += '3. Pour les dates: utilisez le format "JJ/MM/AAAA" (ex: "05/12/2001" pas "[DATE_NAISSANCE]")\n';
+        prompt += '4. Pour les CIN: utilisez le numéro exact fourni (ex: "65498645" pas "[CIN]")\n';
+        prompt += '5. Pour les adresses: utilisez l\'adresse complète fournie (pas "[ADRESSE]")\n';
+        prompt += '6. Pour les professions: utilisez la profession exacte (ex: "comptable" pas "[PROFESSION]")\n';
+        prompt += '7. Si une information n\'est pas fournie, utilisez une formulation générique mais NE LAISSEZ PAS de placeholder vide\n';
+        prompt += '8. Le document DOIT être prêt à être signé - AUCUN placeholder ne doit rester\n';
+        prompt += '9. N\'UTILISEZ JAMAIS de crochets [ ] dans le document final\n';
+        prompt += '10. Chaque mention d\'une personne doit utiliser son identité COMPLÈTE avec les vraies valeurs\n';
+        
+        prompt += '\n=== EXEMPLES DE REMPLACEMENT CORRECT ===\n';
+        prompt += '❌ INCORRECT: "Monsieur [NOM] [PRENOM], né(e) le [DATE_NAISSANCE]"\n';
+        prompt += '✅ CORRECT: "Monsieur Djillali Ahmed, né le 05/12/2001"\n\n';
+        prompt += '❌ INCORRECT: "titulaire de la carte d\'identité nationale n° [CIN]"\n';
+        prompt += '✅ CORRECT: "titulaire de la carte d\'identité nationale n° 65498645"\n\n';
+        prompt += '❌ INCORRECT: "demeurant à [ADRESSE], profession [PROFESSION]"\n';
+        prompt += '✅ CORRECT: "demeurant à la Rue 72, Tigditt, comptable"\n\n';
+        prompt += '❌ INCORRECT: "décédé le [DATE_DECES]"\n';
+        prompt += '✅ CORRECT: "décédé le 04/02/2026"\n\n';
+        prompt += 'RÈGLE D\'OR: Si vous voyez des crochets [ ] dans votre document, c\'est une ERREUR. Remplacez-les par les vraies valeurs!\n';
       }
       
       // Détails supplémentaires
       if (details.trim()) {
-        prompt += `\n\nDétails spécifiques :\n${details}`;
+        prompt += `\n\nDétails spécifiques supplémentaires:\n${details}`;
       }
 
       // 4. Si on a déjà du contenu (clauses), demander à l'IA de compléter
       if (documentContent.trim()) {
         prompt += `\n\nDocument de base déjà généré :\n${documentContent}`;
-        prompt += '\n\nVeuillez compléter ce document en ajoutant les sections manquantes et en assurant la cohérence juridique.';
+        prompt += '\n\nVeuillez compléter ce document en ajoutant les sections manquantes et en assurant la cohérence juridique. Utilisez les informations fournies ci-dessus pour personnaliser le document.';
       } else {
-        prompt += '\n\nVeuillez rédiger le document juridique complet en respectant la forme légale algérienne.';
+        prompt += '\n\n=== INSTRUCTIONS DE GÉNÉRATION ===\n';
+        prompt += 'Rédigez un document juridique COMPLET et PROFESSIONNEL en respectant:\n';
+        prompt += '1. La forme légale algérienne\n';
+        prompt += '2. La structure du document (voir ci-dessous)\n';
+        prompt += '3. L\'utilisation de TOUTES les informations du formulaire\n';
+        prompt += '4. Un langage juridique formel et précis\n';
+        
+        // Ajouter la structure spécifique selon le template
+        if (selectedTemplate.structure) {
+          const structure = language === 'ar' ? selectedTemplate.structure_ar : selectedTemplate.structure;
+          if (structure && Array.isArray(structure)) {
+            prompt += '\n=== STRUCTURE ATTENDUE ===\n';
+            structure.forEach((section: string, index: number) => {
+              prompt += `${index + 1}. ${section}\n`;
+            });
+          }
+        }
+        
+        prompt += '\n=== RÈGLES IMPORTANTES ===\n';
+        prompt += '- Remplacez TOUS les placeholders par les vraies valeurs\n';
+        prompt += '- Utilisez les noms COMPLETS (ex: "Mohamed Benali" pas "M. Benali")\n';
+        prompt += '- Formatez les montants: "15 000 DA" ou "15.000,00 DA"\n';
+        prompt += '- Formatez les dates: "15 juin 2024" ou "15/06/2024"\n';
+        prompt += '- Soyez précis et professionnel\n';
+        prompt += '- Le document doit être prêt à être signé et déposé au tribunal\n';
+        
+        prompt += '\n=== EXEMPLE DE REMPLACEMENT ===\n';
+        prompt += 'INCORRECT: "Monsieur [NOM] [PRENOM]..."\n';
+        prompt += 'CORRECT: "Monsieur Mohamed Benali..." (en utilisant les vraies valeurs du formulaire)\n';
       }
 
       // 5. Générer avec l'IA
@@ -218,6 +419,11 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
           selectedWilaya,
           selectedTribunal
         );
+      }
+
+      // 8. POST-TRAITEMENT: Remplacer les placeholders restants avec les vraies données
+      if (Object.keys(structuredFormData).length > 0) {
+        finalDocument = replacePlaceholdersWithFormData(finalDocument, structuredFormData);
       }
 
       setOriginalDoc(finalDocument);
@@ -254,16 +460,6 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     { id: 'clauses', label_fr: 'Clauses', label_ar: 'البنود', icon: BookOpen },
     { id: 'details', label_fr: 'Détails', label_ar: 'التفاصيل', icon: Edit3 }
   ];
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 'template': return !!selectedTemplateId;
-      case 'wilaya': return true; // Optional
-      case 'clauses': return true; // Optional
-      case 'details': return Object.keys(structuredFormData).length > 0;
-      default: return false;
-    }
-  };
 
   return (
     <div className="flex flex-col md:flex-row h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
@@ -387,14 +583,33 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
           {/* Step 4: Details - FORMULAIRE PROFESSIONNEL */}
           {currentStep === 'details' && (
             <div className="space-y-4">
-              {/* NOUVEAU FORMULAIRE PROFESSIONNEL COMPLET */}
-              <ActeVenteForm
-                language={language}
-                onFormChange={setStructuredFormData}
-                onComplete={() => {
-                  console.log('Formulaire complété, prêt pour génération');
-                }}
-              />
+              <div className="text-center py-8">
+                <h3 className="text-lg font-bold mb-4">
+                  {language === 'ar' ? 'معلومات الوثيقة' : 'Informations du document'}
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                  {language === 'ar' 
+                    ? 'انقر على الزر أدناه لفتح نموذج الإدخال'
+                    : 'Cliquez sur le bouton ci-dessous pour ouvrir le formulaire de saisie'}
+                </p>
+                <button
+                  onClick={() => setShowFormModal(true)}
+                  className="px-8 py-4 bg-legal-gold text-white rounded-xl font-bold text-lg hover:bg-legal-gold/90 transition-colors shadow-lg"
+                >
+                  {language === 'ar' ? 'فتح نموذج الإدخال' : 'Ouvrir le formulaire'}
+                </button>
+                
+                {Object.keys(structuredFormData).length > 0 && (
+                  <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
+                      <Check size={20} />
+                      <span className="font-semibold">
+                        {language === 'ar' ? 'تم ملء النموذج بنجاح' : 'Formulaire rempli avec succès'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -547,6 +762,19 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
           userRole={userRole}
           userId={userId}
           onClose={() => setShowContribution(false)}
+        />
+      )}
+
+      {/* Form Modal */}
+      {showFormModal && (
+        <DynamicLegalForm
+          language={language}
+          templateId={selectedTemplateId}
+          onSubmit={(data) => {
+            setStructuredFormData(data);
+            setShowFormModal(false);
+          }}
+          onClose={() => setShowFormModal(false)}
         />
       )}
     </div>

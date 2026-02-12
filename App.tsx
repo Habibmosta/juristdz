@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import RoleBasedLayout from './components/RoleBasedLayout';
 import ChatInterface from './components/ImprovedChatInterface';
-import DraftingInterface from './components/DraftingInterface';
+import EnhancedDraftingInterface from './components/EnhancedDraftingInterface';
 import AnalysisInterface from './components/AnalysisInterface';
 import AdminDashboard from './components/AdminDashboard';
 import Documentation from './components/Documentation';
@@ -308,9 +308,10 @@ const App: React.FC = () => {
         />
       )}
       {currentMode === AppMode.DRAFTING && (
-        <DraftingInterface 
+        <EnhancedDraftingInterface 
           language={language} 
           userRole={userProfile.activeRole}
+          userId={userProfile.id}
         />
       )}
       {currentMode === AppMode.ANALYSIS && (

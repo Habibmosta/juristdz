@@ -75,9 +75,7 @@ export const CLAUSES_STANDARDS: Clause[] = [
     applicable_to: ['all'],
     mandatory: true,
     variables: ['NOM', 'PRENOM', 'DATE_NAISSANCE', 'LIEU_NAISSANCE', 'CIN', 'DATE_CIN', 'LIEU_CIN', 'ADRESSE', 'PROFESSION']
-  }
-];
-
+  },
   {
     id: 'id_personne_morale',
     category: 'identification',
@@ -196,9 +194,7 @@ export const CLAUSES_STANDARDS: Clause[] = [
     applicable_to: ['bail_habitation', 'bail_commercial'],
     legal_reference: 'Article 507 du Code Civil',
     variables: ['MONTANT_DEPOT', 'NOMBRE_MOIS']
-  }
-];
-
+  },
 
   // === OBLIGATIONS DES PARTIES ===
   {

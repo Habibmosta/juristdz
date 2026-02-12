@@ -46,7 +46,7 @@ const WilayaSelector: React.FC<WilayaSelectorProps> = ({
         <select
           value={selectedWilaya || ''}
           onChange={(e) => onWilayaChange(e.target.value)}
-          className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800"
+          className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
           dir={language === 'ar' ? 'rtl' : 'ltr'}
         >
           <option value="">
@@ -72,7 +72,7 @@ const WilayaSelector: React.FC<WilayaSelectorProps> = ({
             <select
               value={selectedTribunal}
               onChange={(e) => setSelectedTribunal(e.target.value)}
-              className="w-full p-2 border rounded text-sm"
+              className="w-full p-2 border rounded text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               dir={language === 'ar' ? 'rtl' : 'ltr'}
             >
               <option value="">

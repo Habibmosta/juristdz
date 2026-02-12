@@ -156,7 +156,7 @@ Tu es un analyste juridique spécialisé dans l'audit de contrats et de jugement
 Ta mission est de protéger les intérêts de l'avocat en détectant les clauses léonines ou les erreurs de procédure.
 `;
 
-export const TEMPLATES: DocumentTemplate[] = [
+export const AVOCAT_TEMPLATES: DocumentTemplate[] = [
   // ==================== TEMPLATES POUR AVOCAT ====================
   
   // === DROIT DE LA FAMILLE ===
