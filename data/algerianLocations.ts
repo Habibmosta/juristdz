@@ -102,7 +102,7 @@ export function getCommunesByDaira(wilayaCode: string, dairaName: string): strin
   return daira ? daira.communes : [];
 }
 
-// Liste complète des 58 wilayas
+// Liste complète des 69 wilayas (mise à jour novembre 2025)
 export const ALL_WILAYAS = {
   '01': { fr: 'Adrar', ar: 'أدرار' },
   '02': { fr: 'Chlef', ar: 'الشلف' },
@@ -161,5 +161,17 @@ export const ALL_WILAYAS = {
   '55': { fr: 'Touggourt', ar: 'توقرت' },
   '56': { fr: 'Djanet', ar: 'جانت' },
   '57': { fr: 'El M\'Ghair', ar: 'المغير' },
-  '58': { fr: 'El Meniaa', ar: 'المنيعة' }
+  '58': { fr: 'El Meniaa', ar: 'المنيعة' },
+  // Nouvelles wilayas ajoutées en novembre 2025
+  '59': { fr: 'Aflou', ar: 'أفلو' },
+  '60': { fr: 'Barika', ar: 'باريكة' },
+  '61': { fr: 'Ksar Chellala', ar: 'قصر الشلالة' },
+  '62': { fr: 'Messaad', ar: 'مسعد' },
+  '63': { fr: 'Aïn Oussera', ar: 'عين وسارة' },
+  '64': { fr: 'Boussaâda', ar: 'بوسعادة' },
+  '65': { fr: 'El Abiodh Sidi Cheikh', ar: 'الأبيض سيدي الشيخ' },
+  '66': { fr: 'El Kantara', ar: 'القنطرة' },
+  '67': { fr: 'Bir El Ater', ar: 'بئر العاتر' },
+  '68': { fr: 'Ksar El Boukhari', ar: 'قصر البخاري' },
+  '69': { fr: 'El Aricha', ar: 'العريشة' }
 };

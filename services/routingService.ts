@@ -113,8 +113,13 @@ export class RoutingService {
     }
 
     const lang = language || this.currentLanguage;
-    const allowedModes = getAllowedModes(this.currentUser.activeRole);
+    let allowedModes = getAllowedModes(this.currentUser.activeRole);
     const interfaceConfig = ROLE_INTERFACE_CONFIG[this.currentUser.activeRole];
+
+    // Pour le rôle Admin, afficher uniquement les modes essentiels
+    if (this.currentUser.activeRole === UserRole.ADMIN) {
+      allowedModes = [AppMode.DASHBOARD, AppMode.ADMIN];
+    }
 
     return allowedModes.map(mode => ({
       mode,

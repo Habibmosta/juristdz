@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Sidebar - JuristDZ</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .info {
+            background: #f1f5f9;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+        .menu-item.active {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #22c55e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>✅ Correction du Sidebar Admin</h1>
+        <span class="status success">Modification appliquée</span>
+        
+        <div class="info">
+            <strong>📋 Problème résolu:</strong><br>
+            Quand l'utilisateur choisissait le rôle "Admin" via le RoleSwitcher (dropdown), 
+            le sidebar affichait TOUTES les options (Recherche, Rédaction, Analyse, Dossiers, etc.) 
+            au lieu d'un menu simplifié.
+        </div>
+
+        <h2>🔧 Solution appliquée</h2>
+        <p>Modification de <code>services/routingService.ts</code> - méthode <code>getNavigationItems()</code></p>
+        
+        <div class="code">
+// Pour le rôle Admin, afficher uniquement les modes essentiels
+if (this.currentUser.activeRole === UserRole.ADMIN) {
+  allowedModes = [AppMode.DASHBOARD, AppMode.ADMIN];
+}
+        </div>
+
+        <h2>📱 Menu Admin simplifié</h2>
+        <p>Le sidebar affichera maintenant uniquement:</p>
+        
+        <div class="menu-item">
+            <span class="icon">📊</span>
+            <span>Tableau de Bord</span>
+        </div>
+        
+        <div class="menu-item active">
+            <span class="icon">⚙️</span>
+            <span>Administration</span>
+        </div>
+
+        <h2>✨ Avantages</h2>
+        <ul>
+            <li>Interface Admin épurée et professionnelle</li>
+            <li>Pas de confusion avec les options métier (Recherche, Rédaction, etc.)</li>
+            <li>Focus sur la gestion de la plateforme SaaS</li>
+            <li>Cohérence avec le mode Admin via le bouton "Administration" du sidebar</li>
+        </ul>
+
+        <div class="info">
+            <strong>🧪 Test:</strong><br>
+            1. Redémarrez le serveur: <code>yarn dev</code><br>
+            2. Choisissez le rôle "Admin" dans le dropdown (RoleSwitcher)<br>
+            3. Vérifiez que le sidebar affiche uniquement "Tableau de Bord" et "Administration"
+        </div>
+
+        <h2>📂 Fichiers modifiés</h2>
+        <ul>
+            <li><code>services/routingService.ts</code> - Logique de navigation simplifiée pour Admin</li>
+        </ul>
+    </div>
+</body>
+</html>

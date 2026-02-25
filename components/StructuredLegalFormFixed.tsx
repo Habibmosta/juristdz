@@ -121,4 +121,14 @@ const StructuredLegalFormFixed: React.FC<StructuredLegalFormProps> = ({ template
         prenom: 'مثال: أحمد محمد',
         nomPere: 'مثال: بن علي',
         prenomPere: 'مثال: محمد',
-        adresse: 'مثال: 15 شارع ديدوش مراد، وسط
+        adresse: 'مثال: 15 شارع ديدوش مراد، وسط الجزائر',
+        commune: 'مثال: وسط الجزائر',
+        daira: 'مثال: سيدي امحمد',
+        numeroDocument: 'مثال: 1234567890123456',
+        telephoneCabinet: 'مثال: 021 XX XX XX',
+        lieuNaissance: 'مثال: الجزائر',
+        nationalite: 'مثال: جزائرية',
+        profession: 'مثال: أستاذ'
+      }
+    }
+  };

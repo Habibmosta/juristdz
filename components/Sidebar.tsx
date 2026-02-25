@@ -79,86 +79,132 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
           
-          <button
-            onClick={() => setMode(AppMode.DASHBOARD)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 ${
-              currentMode === AppMode.DASHBOARD 
-                ? 'bg-legal-gold text-white shadow-lg shadow-legal-gold/20' 
-                : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
-            }`}
-          >
-            <LayoutDashboard size={18} />
-            <span className="font-bold text-sm">{t.menu_dashboard}</span>
-          </button>
-
-          <div className="px-2 mb-2">
-             <p className={`text-[10px] font-bold uppercase tracking-widest ${
-               theme === 'light' ? 'text-slate-400' : 'text-slate-500'
-             }`}>
-               {isAr ? 'المساحة المهنية' : 'Suite Métier'}
-             </p>
-          </div>
-
-          {[
-            { mode: AppMode.CASES, label: t.menu_cases, icon: Briefcase },
-            { mode: AppMode.DRAFTING, label: t.menu_drafting, icon: FileText },
-            { mode: AppMode.ANALYSIS, label: t.menu_analysis, icon: ShieldCheck },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = currentMode === item.mode;
-            
-            return (
+          {/* Mode Admin: Menu simplifié */}
+          {currentMode === AppMode.ADMIN ? (
+            <>
               <button
-                key={item.mode}
-                onClick={() => setMode(item.mode)}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all group ${
-                  isActive 
+                onClick={() => setMode(AppMode.DASHBOARD)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 ${
+                  theme === 'light' ? 'text-slate-600 hover:bg-slate-50 border border-slate-200' : 'text-slate-400 hover:bg-slate-800/50 border border-slate-700'
+                }`}
+              >
+                <LayoutDashboard size={18} />
+                <span className="font-bold text-sm">{isAr ? 'العودة إلى لوحة التحكم' : 'Retour au Dashboard'}</span>
+              </button>
+
+              <div className="px-2 mb-2">
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                  theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+                }`}>
+                  {isAr ? 'إدارة المنصة' : 'Administration'}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setMode(AppMode.ADMIN)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all bg-red-600 text-white shadow-lg"
+              >
+                <Settings size={18} />
+                <span className="font-medium text-sm">{isAr ? 'إدارة SaaS' : 'Gestion SaaS'}</span>
+              </button>
+
+              <div className={`mt-6 p-4 rounded-xl ${theme === 'light' ? 'bg-red-50 border border-red-100' : 'bg-red-900/20 border border-red-800'}`}>
+                <div className="flex items-start gap-2 mb-2">
+                  <ShieldCheck size={16} className="text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-red-900 dark:text-red-200 mb-1">
+                      {isAr ? 'وضع المسؤول' : 'Mode Administrateur'}
+                    </p>
+                    <p className="text-[10px] text-red-700 dark:text-red-300 leading-relaxed">
+                      {isAr ? 'وصول كامل إلى إدارة المنظمات والاشتراكات والمستخدمين' : 'Accès complet à la gestion des organisations, abonnements et utilisateurs'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Mode Normal: Menu complet */
+            <>
+              <button
+                onClick={() => setMode(AppMode.DASHBOARD)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 ${
+                  currentMode === AppMode.DASHBOARD 
+                    ? 'bg-legal-gold text-white shadow-lg shadow-legal-gold/20' 
+                    : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+                }`}
+              >
+                <LayoutDashboard size={18} />
+                <span className="font-bold text-sm">{t.menu_dashboard}</span>
+              </button>
+
+              <div className="px-2 mb-2">
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                  theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+                }`}>
+                  {isAr ? 'المساحة المهنية' : 'Suite Métier'}
+                </p>
+              </div>
+
+              {[
+                { mode: AppMode.CASES, label: t.menu_cases, icon: Briefcase },
+                { mode: AppMode.DRAFTING, label: t.menu_drafting, icon: FileText },
+                { mode: AppMode.ANALYSIS, label: t.menu_analysis, icon: ShieldCheck },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = currentMode === item.mode;
+                
+                return (
+                  <button
+                    key={item.mode}
+                    onClick={() => setMode(item.mode)}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all group ${
+                      isActive 
+                        ? 'bg-legal-blue text-white shadow-lg' 
+                        : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={18} />
+                      <span className="font-medium text-sm">{item.label}</span>
+                    </div>
+                  </button>
+                );
+              })}
+
+              <div className="px-2 mt-6 mb-2">
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                  theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+                }`}>
+                  {isAr ? 'مساعد ذكي' : 'Assistant IA'}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setMode(AppMode.RESEARCH)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                  currentMode === AppMode.RESEARCH 
                     ? 'bg-legal-blue text-white shadow-lg' 
                     : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} />
-                  <span className="font-medium text-sm">{item.label}</span>
-                </div>
+                <Search size={18} />
+                <span className="font-medium text-sm">{t.menu_research}</span>
               </button>
-            );
-          })}
 
-          <div className="px-2 mt-6 mb-2">
-             <p className={`text-[10px] font-bold uppercase tracking-widest ${
-               theme === 'light' ? 'text-slate-400' : 'text-slate-500'
-             }`}>
-               {isAr ? 'مساعد ذكي' : 'Assistant IA'}
-             </p>
-          </div>
-
-          <button
-            onClick={() => setMode(AppMode.RESEARCH)}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-              currentMode === AppMode.RESEARCH 
-                ? 'bg-legal-blue text-white shadow-lg' 
-                : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
-            }`}
-          >
-            <Search size={18} />
-            <span className="font-medium text-sm">{t.menu_research}</span>
-          </button>
-
-          <div className={`pt-6 mt-6 border-t space-y-1 ${theme === 'light' ? 'border-slate-100' : 'border-slate-800/50'}`}>
-            {userStats.role === 'admin' && (
-              <button
-                onClick={() => setMode(AppMode.ADMIN)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                  currentMode === AppMode.ADMIN 
-                    ? 'bg-red-500 text-white shadow-lg' 
-                    : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
-                }`}
-              >
-                <Settings size={18} />
-                <span className="font-medium text-sm">{t.menu_admin}</span>
-              </button>
-            )}
+              <div className={`pt-6 mt-6 border-t space-y-1 ${theme === 'light' ? 'border-slate-100' : 'border-slate-800/50'}`}>
+                {userStats.role === 'admin' && (
+                  <button
+                    onClick={() => setMode(AppMode.ADMIN)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                      theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Settings size={18} />
+                    <span className="font-medium text-sm">{t.menu_admin}</span>
+                  </button>
+                )}
+            </>
+          )}
             <button onClick={() => setShowShareModal(true)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-500 hover:text-legal-gold transition-colors">
               <Share2 size={16} /> {t.menu_share}
             </button>

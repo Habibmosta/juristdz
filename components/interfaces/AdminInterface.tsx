@@ -28,8 +28,12 @@ import {
   HardDrive,
   Cpu,
   Wifi,
-  Lock
+  Lock,
+  Building,
+  CreditCard
 } from 'lucide-react';
+import OrganizationManagement from './admin/OrganizationManagement';
+import SubscriptionManagement from './admin/SubscriptionManagement';
 
 interface AdminInterfaceProps {
   user: EnhancedUserProfile;
@@ -78,6 +82,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
 }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
+  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'subscriptions'>('overview');
   
   // Mock data for system users
   const [utilisateurs] = useState<UtilisateurSysteme[]>([
@@ -232,8 +237,50 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
           </div>
         </div>
 
-        {/* System Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Navigation Tabs */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'overview'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <BarChart3 size={16} className="inline mr-2" />
+              {isAr ? 'نظرة عامة' : 'Vue d\'ensemble'}
+            </button>
+            <button
+              onClick={() => setActiveTab('organizations')}
+              className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'organizations'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Building size={16} className="inline mr-2" />
+              {isAr ? 'المنظمات' : 'Organisations'}
+            </button>
+            <button
+              onClick={() => setActiveTab('subscriptions')}
+              className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'subscriptions'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <CreditCard size={16} className="inline mr-2" />
+              {isAr ? 'الاشتراكات' : 'Abonnements'}
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            {/* System Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
@@ -620,6 +667,16 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
             <Settings size={48} className="text-red-200" />
           </div>
         </div>
+          </div>
+        )}
+
+        {activeTab === 'organizations' && (
+          <OrganizationManagement language={language} theme={theme} />
+        )}
+
+        {activeTab === 'subscriptions' && (
+          <SubscriptionManagement language={language} theme={theme} />
+        )}
       </div>
     </div>
   );

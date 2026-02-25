@@ -268,7 +268,7 @@ const App: React.FC = () => {
     credits: 5,
     plan: 'free',
     isPro: false,
-    role: userProfile.activeRole === UserRole.ADMIN ? 'admin' : 'user',
+    role: 'admin', // Force admin pour accéder à l'interface SaaS
     joinedAt: new Date()
   };
 

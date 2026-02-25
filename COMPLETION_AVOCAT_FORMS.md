@@ -1,211 +1,92 @@
-# ✅ MISSION ACCOMPLIE - Formulaires AVOCAT Complétés
+# ✅ Complétion des Données - 69 Wilayas d'Algérie
 
-## 🎉 RÉSUMÉ
+## 📊 État Actuel
 
-**TOUS les 15 formulaires pour le rôle AVOCAT ont été créés avec succès!**
+### Wilayas avec Données Complètes (8/69)
+Les wilayas suivantes ont des données détaillées avec `code_postal_prefix`:
+1. **16 - Alger** ✅
+2. **31 - Oran** ✅
+3. **25 - Constantine** ✅
+4. **23 - Annaba** ✅
+5. **09 - Blida** ✅
+6. **15 - Tizi Ouzou** ✅
+7. **06 - Béjaïa** ✅
+8. **19 - Sétif** ✅
 
-## 📋 LISTE COMPLÈTE DES FORMULAIRES
+### Wilayas avec Données Minimales (61/69)
+Les 61 wilayas restantes ont des données minimales sans `code_postal_prefix`:
+- Wilayas 01-08 (sauf 06, 09)
+- Wilayas 10-15 (sauf 15)
+- Wilayas 17-22 (sauf 19)
+- Wilayas 24-30 (sauf 25)
+- Wilayas 32-58
+- Nouvelles wilayas 59-69
 
-### 1. DROIT DE LA FAMILLE (4 formulaires)
+## 🎯 Objectif
 
-#### ✅ Requête Pension Alimentaire
-- Demandeur, Débiteur, Bénéficiaires
-- Revenus, Besoins, Montant demandé
-- Détails des besoins (scolarité, nourriture, santé)
+Ajouter le champ `code_postal_prefix` manquant pour toutes les 61 wilayas restantes afin d'avoir une structure de données cohérente.
 
-#### ✅ Requête de Divorce
-- Époux, Épouse
-- Date et lieu du mariage
-- Type de divorce (Khol, Tatliq, Mubarat)
-- Motifs détaillés
-- Nombre d'enfants
+## 📝 Structure de Données Requise
 
-#### ✅ Requête Garde d'Enfants
-- Demandeur (parent), Autre parent
-- Enfants (nombre, âges, détails)
-- Situation actuelle de garde
-- Type de garde demandée (exclusive, alternée, visite)
-- Motifs (intérêt de l'enfant)
+Chaque wilaya doit avoir:
+```typescript
+{
+  code: string,
+  name_fr: string,
+  name_ar: string,
+  code_postal_prefix: string,  // ← MANQUANT pour 61 wilayas
+  format_rc: string,
+  format_nif: string,
+  tribunaux: TribunalInfo[],
+  conservation_fonciere: ConservationFonciereInfo | ConservationFonciereInfo[],
+  barreau: BarreauInfo,
+  chambre_notaires: {...},
+  chambre_huissiers: {...},
+  specificites: string[]
+}
+```
 
-#### ✅ Requête en Succession
-- Défunt (nom, date et lieu de décès)
-- Liste des héritiers
-- Patrimoine (immobilier, mobilier, valeur)
-- Dettes éventuelles
-- Type de demande (partage, contestation, inventaire)
+## ✅ Plan d'Action
 
-### 2. DROIT CIVIL (4 formulaires)
+### Étape 1: Ajout du `code_postal_prefix`
+Pour chaque wilaya, le `code_postal_prefix` correspond au code de la wilaya:
+- Wilaya 01 → `code_postal_prefix: '01'`
+- Wilaya 02 → `code_postal_prefix: '02'`
+- etc.
 
-#### ✅ Conclusions Civiles
-- Tribunal, Numéro de dossier
-- Parties (Demandeur, Défendeur)
-- En fait (exposé des faits)
-- En droit (arguments juridiques)
-- Preuves
-- Par ces motifs (demandes)
+### Étape 2: Reformatage des Données
+Transformer les données minimales en format détaillé pour maintenir la cohérence.
 
-#### ✅ Assignation Civile
-- Huissier de justice
-- Demandeur, Défendeur (identités complètes)
-- Tribunal compétent
-- Objet du litige
-- Montant réclamé
-- Fondement juridique
+### Étape 3: Validation
+Vérifier que toutes les 69 wilayas ont:
+- ✅ `code_postal_prefix`
+- ✅ `format_rc`
+- ✅ `format_nif`
+- ✅ Tribunaux
+- ✅ Conservation foncière
+- ✅ Barreau
+- ✅ Chambres (notaires + huissiers)
 
-#### ✅ Requête Dommages-Intérêts
-- Victime (identité complète, profession)
-- Responsable (identité, adresse)
-- Faits (date, lieu, description de la faute)
-- Préjudices (matériel et moral)
-- Lien de causalité
-- Montant demandé avec détails du calcul
+## 🚀 Exécution
 
-#### ✅ Requête d'Expulsion
-- Bailleur (propriétaire)
-- Locataire
-- Contrat de bail (date, loyer, description du bien)
-- Motifs d'expulsion (non-paiement, dégradation, trouble, sous-location)
-- Détails des manquements
-- Mises en demeure
-
-### 3. DROIT PÉNAL (3 formulaires)
-
-#### ✅ Requête Pénale
-- Plaignant (identité, adresse)
-- Mis en cause (si connu)
-- Faits (date, lieu, description détaillée)
-- Qualification juridique (type d'infraction)
-- Articles de loi applicables
-- Préjudice subi
-- Preuves (témoins, documents, photos)
-
-#### ✅ Constitution de Partie Civile
-- Victime (identité complète, CIN)
-- Juridiction, Numéro de dossier
-- Nature de l'infraction
-- Description des faits
-- Préjudice matériel et moral
-- Montant demandé
-- Pièces jointes
-
-#### ✅ Mémoire de Défense Pénale
-- Juridiction, Numéro de dossier
-- Prévenu (identité)
-- Charges retenues (faits reprochés)
-- Moyens de défense (forme et fond)
-- Circonstances atténuantes
-- Demandes (relaxe, atténuation, sursis)
-
-### 4. DROIT COMMERCIAL (2 formulaires)
-
-#### ✅ Requête Commerciale
-- Tribunal de Commerce
-- Parties (sociétés/commerçants)
-- Numéros de registre de commerce
-- Type de contrat (vente, prestation, fourniture, partenariat)
-- Date du contrat
-- Objet du litige
-- Montant en litige
-- Demandes
-
-#### ✅ Requête en Faillite
-- Tribunal de Commerce
-- Entreprise débitrice (nom, RC, siège social)
-- Représentant légal
-- Situation financière (total dettes, actifs)
-- Description des difficultés
-- Créanciers (nombre, liste des principaux)
-- Type de procédure (redressement ou liquidation)
-
-### 5. DROIT ADMINISTRATIF (1 formulaire)
-
-#### ✅ Recours Administratif
-- Juridiction administrative
-- Requérant (identité, qualité)
-- Administration concernée
-- Acte contesté (nature, date, description)
-- Motifs d'illégalité (vice de forme, excès de pouvoir, violation de la loi)
-- Demandes (annulation, indemnisation)
-
-### 6. PROCÉDURES D'URGENCE (1 formulaire)
-
-#### ✅ Requête en Référé
-- Juge des référés
-- Demandeur, Défendeur
-- Nature de l'urgence (provision, conservation, cessation, expertise)
-- Justification de l'urgence
-- Faits
-- Mesures demandées
-
-## 🔧 CARACTÉRISTIQUES TECHNIQUES
-
-### Support Bilingue Complet
-- Tous les labels en Français ET Arabe
-- Tous les placeholders en Français ET Arabe
-- Tous les titres et sections bilingues
-
-### Validation des Données
-- Champs requis marqués avec astérisque (*)
-- Types d'input appropriés (text, date, number, textarea, select)
-- Validation HTML5 native
-
-### Interface Utilisateur
-- Texte visible: `text-slate-900 dark:text-slate-100`
-- Sections organisées avec bordures
-- Espacement cohérent
-- Design responsive
-
-### Gestion d'État
-- Pattern `setFormData(prev => ...)` pour éviter la perte de focus
-- Pas de re-render inutile
-- Performance optimisée
-
-## 📊 STATISTIQUES
-
-- **Fichier**: `components/forms/DynamicLegalForm.tsx`
-- **Lignes de code**: 2659 lignes
-- **Formulaires**: 15/15 (100%)
-- **Champs de saisie**: ~250 champs au total
-- **Support linguistique**: Français + Arabe
-- **Compilation**: ✅ Réussie sans erreurs
-- **Diagnostics TypeScript**: ✅ Aucune erreur
-
-## 🎯 UTILISATION
-
-Lorsqu'un utilisateur avec le rôle AVOCAT:
-1. Va dans "Rédaction d'Actes"
-2. Sélectionne un type de document (ex: "Requête de Divorce")
-3. Clique sur "Ouvrir le formulaire de saisie"
-4. Remplit le formulaire adapté au document choisi
-5. Valide pour générer le document avec toutes les informations
-
-## ✨ AVANTAGES
-
-1. **Précision**: Chaque formulaire collecte exactement les informations nécessaires
-2. **Efficacité**: Plus besoin de deviner quelles informations fournir
-3. **Conformité**: Formulaires basés sur la législation algérienne
-4. **Accessibilité**: Interface bilingue FR/AR
-5. **Professionnalisme**: Documents générés complets et structurés
-
-## 🚀 PROCHAINES ÉTAPES SUGGÉRÉES
-
-1. **Tester chaque formulaire** dans l'application
-2. **Vérifier la génération des documents** avec les données saisies
-3. **Créer les formulaires pour les autres rôles**:
-   - NOTAIRE (30 documents)
-   - HUISSIER (15 documents)
-   - MAGISTRAT (10 documents)
-   - JURISTE_ENTREPRISE (8 documents)
-
-## 📝 NOTES
-
-- Tous les formulaires suivent le même pattern pour faciliter la maintenance
-- Le code est modulaire et facile à étendre
-- Chaque formulaire peut être modifié indépendamment
-- La structure permet d'ajouter facilement de nouveaux champs
+Je vais maintenant mettre à jour le fichier `data/wilayaSpecificData.ts` pour ajouter le champ `code_postal_prefix` manquant à toutes les wilayas.
 
 ---
 
-**Date de complétion**: $(Get-Date -Format "dd/MM/yyyy HH:mm")
-**Statut**: ✅ TERMINÉ
-**Qualité**: ✅ Production-ready
+**Date**: 25 février 2026
+**Statut**: En cours
+
+
+## ✅ Mise à Jour en Cours
+
+### Étape 1: Ajout des wilayas 01-08 ✅
+- Ajout du champ `code_postal_prefix` pour les wilayas 01-08
+
+### Étape 2: Ajout des wilayas 10-32 ✅
+- Ajout des wilayas manquantes 10-14, 17-18, 20-22, 24, 26-30, 32
+
+### Étape 3: Ajout des wilayas 33-58 (en cours)
+- Ajout des wilayas manquantes 33-58
+
+### Étape 4: Mise à jour des nouvelles wilayas 59-69
+- Ajout du champ `code_postal_prefix` pour les nouvelles wilayas
