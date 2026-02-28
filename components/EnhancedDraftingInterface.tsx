@@ -194,9 +194,22 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     // Les remplacer par des mentions génériques plutôt que de les laisser vides
     result = result.replace(/\[DATE_CIN\]/g, '[date à préciser]');
     result = result.replace(/\[LIEU_CIN\]/g, '[lieu à préciser]');
+    result = result.replace(/\[LIEU_NAISSANCE\]/g, formData.demandeurLieuNaissance || '[lieu de naissance à préciser]');
+    result = result.replace(/\[LIEU\]/g, formData.selectedWilaya || formData.demandeurAdresse?.split(',')[0] || 'Alger');
     result = result.replace(/\[DATE\]/g, new Date().toLocaleDateString('fr-FR'));
     result = result.replace(/\[MOIS\]/g, new Date().toLocaleDateString('fr-FR', { month: 'long' }));
     result = result.replace(/\[ANNEE\]/g, new Date().getFullYear().toString());
+    
+    // Nettoyer les mentions d'avocat/notaire si le demandeur n'est pas un professionnel
+    result = result.replace(/\[Signature de l'avocat ou du notaire\]/g, '');
+    result = result.replace(/\[Adresse de l'avocat ou du notaire\]/g, '');
+    result = result.replace(/Avocat\/Notaire\s*\n/g, '');
+    
+    // Remplacer tous les autres placeholders restants par une mention à compléter
+    result = result.replace(/\[([A-Z_]+)\]/g, (match, placeholder) => {
+      console.warn(`Placeholder non remplacé: ${match}`);
+      return `[${placeholder.toLowerCase().replace(/_/g, ' ')} à compléter]`;
+    });
     
     return result;
   };
@@ -370,41 +383,48 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         prompt += `\n\nDétails spécifiques supplémentaires:\n${details}`;
       }
 
-      // 4. Si on a déjà du contenu (clauses), demander à l'IA de compléter
+      // 4. Instructions de génération
+      prompt += '\n\n=== INSTRUCTIONS DE GÉNÉRATION ===\n';
+      
       if (documentContent.trim()) {
-        prompt += `\n\nDocument de base déjà généré :\n${documentContent}`;
-        prompt += '\n\nVeuillez compléter ce document en ajoutant les sections manquantes et en assurant la cohérence juridique. Utilisez les informations fournies ci-dessus pour personnaliser le document.';
+        prompt += '⚠️ IMPORTANT: Un en-tête officiel a déjà été généré. NE GÉNÉREZ PAS d\'en-tête.\n';
+        prompt += 'Commencez directement par le corps du document (identification des parties, objet, etc.)\n\n';
       } else {
-        prompt += '\n\n=== INSTRUCTIONS DE GÉNÉRATION ===\n';
-        prompt += 'Rédigez un document juridique COMPLET et PROFESSIONNEL en respectant:\n';
-        prompt += '1. La forme légale algérienne\n';
-        prompt += '2. La structure du document (voir ci-dessous)\n';
-        prompt += '3. L\'utilisation de TOUTES les informations du formulaire\n';
-        prompt += '4. Un langage juridique formel et précis\n';
-        
-        // Ajouter la structure spécifique selon le template
-        if (selectedTemplate.structure) {
-          const structure = language === 'ar' ? selectedTemplate.structure_ar : selectedTemplate.structure;
-          if (structure && Array.isArray(structure)) {
-            prompt += '\n=== STRUCTURE ATTENDUE ===\n';
-            structure.forEach((section: string, index: number) => {
-              prompt += `${index + 1}. ${section}\n`;
-            });
-          }
-        }
-        
-        prompt += '\n=== RÈGLES IMPORTANTES ===\n';
-        prompt += '- Remplacez TOUS les placeholders par les vraies valeurs\n';
-        prompt += '- Utilisez les noms COMPLETS (ex: "Mohamed Benali" pas "M. Benali")\n';
-        prompt += '- Formatez les montants: "15 000 DA" ou "15.000,00 DA"\n';
-        prompt += '- Formatez les dates: "15 juin 2024" ou "15/06/2024"\n';
-        prompt += '- Soyez précis et professionnel\n';
-        prompt += '- Le document doit être prêt à être signé et déposé au tribunal\n';
-        
-        prompt += '\n=== EXEMPLE DE REMPLACEMENT ===\n';
-        prompt += 'INCORRECT: "Monsieur [NOM] [PRENOM]..."\n';
-        prompt += 'CORRECT: "Monsieur Mohamed Benali..." (en utilisant les vraies valeurs du formulaire)\n';
+        prompt += 'Générez un document juridique COMPLET avec en-tête officiel.\n\n';
       }
+      
+      prompt += 'Rédigez un document juridique PROFESSIONNEL en respectant:\n';
+      prompt += '1. La forme légale algérienne\n';
+      prompt += '2. La structure du document (voir ci-dessous)\n';
+      prompt += '3. L\'utilisation de TOUTES les informations du formulaire\n';
+      prompt += '4. Un langage juridique formel et précis\n';
+      prompt += '5. NE LAISSEZ AUCUN PLACEHOLDER - tout doit être rempli\n';
+      
+      // Ajouter la structure spécifique selon le template
+      if (selectedTemplate.structure) {
+        const structure = language === 'ar' ? selectedTemplate.structure_ar : selectedTemplate.structure;
+        if (structure && Array.isArray(structure)) {
+          prompt += '\n=== STRUCTURE ATTENDUE ===\n';
+          structure.forEach((section: string, index: number) => {
+            prompt += `${index + 1}. ${section}\n`;
+          });
+        }
+      }
+      
+      prompt += '\n=== RÈGLES CRITIQUES ===\n';
+      prompt += '- NE GÉNÉREZ PAS de placeholders entre crochets []\n';
+      prompt += '- Utilisez les noms COMPLETS (ex: "Habib Belkacemi" pas "[NOM] [PRENOM]")\n';
+      prompt += '- Formatez les montants: "120 000 DA" ou "120.000,00 DA"\n';
+      prompt += '- Formatez les dates: "04 février 1985" ou "04/02/1985"\n';
+      prompt += '- Pour la signature: indiquez "Fait à [ville], le [date]" puis "Signature du demandeur" (pas d\'avocat si c\'est le demandeur qui signe)\n';
+      prompt += '- Le document doit être prêt à être signé et déposé au tribunal\n';
+      prompt += '- Références juridiques précises (articles du Code civil, Code de procédure civile, etc.)\n';
+      
+      prompt += '\n=== EXEMPLE DE REMPLACEMENT ===\n';
+      prompt += '❌ INCORRECT: "Monsieur [NOM] [PRENOM], né le [DATE_NAISSANCE]"\n';
+      prompt += '✅ CORRECT: "Monsieur Habib Belkacemi, né le 04/02/1985"\n\n';
+      prompt += '❌ INCORRECT: "Wilaya de 06"\n';
+      prompt += '✅ CORRECT: "Wilaya de Béjaïa" ou "Tribunal de Béjaïa"\n';
 
       // 5. Générer avec l'IA
       const response = await sendMessageToGemini(prompt, [], AppMode.DRAFTING, language);
