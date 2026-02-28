@@ -3,6 +3,8 @@ import { sendMessageToGemini } from '../services/geminiService';
 import { autoTranslationService } from '../services/autoTranslationService';
 import { wilayaTemplateService } from '../services/wilayaTemplateService';
 import { clauseService } from '../services/clauseService';
+import { documentHeaderService } from '../services/documentHeaderService';
+import { documentSignatureService } from '../services/documentSignatureService';
 import { 
   AVOCAT_TEMPLATES, 
   NOTAIRE_TEMPLATES, 
@@ -12,22 +14,24 @@ import {
   ETUDIANT_TEMPLATES, 
   UI_TRANSLATIONS 
 } from '../constants';
-import { AppMode, Language, UserRole } from '../types';
+import { AppMode, Language, UserRole, EnhancedUserProfile, ProfessionalInfo } from '../types';
 import { 
   FileText, Download, CheckCircle, ChevronRight, PenTool, Eye, 
   Printer, Share2, Check, Edit3, Save, Scale, Languages,
-  MapPin, BookOpen, Plus, Layers
+  MapPin, BookOpen, Plus, Layers, User, AlertCircle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import WilayaSelector from './WilayaSelector';
 import ClauseSelector from './ClauseSelector';
 import TemplateContribution from './TemplateContribution';
 import DynamicLegalForm from './forms/DynamicLegalForm';
+import ProfessionalProfileForm from './ProfessionalProfileForm';
 
 interface EnhancedDraftingInterfaceProps {
   language: Language;
   userRole?: UserRole;
   userId: string;
+  user?: EnhancedUserProfile; // Profil utilisateur complet
 }
 
 type ConfigStep = 'template' | 'wilaya' | 'clauses' | 'details';
@@ -35,13 +39,31 @@ type ConfigStep = 'template' | 'wilaya' | 'clauses' | 'details';
 const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({ 
   language, 
   userRole = UserRole.AVOCAT,
-  userId 
+  userId,
+  user
 }) => {
   const t = UI_TRANSLATIONS[language];
   
   // Configuration steps
   const [currentStep, setCurrentStep] = useState<ConfigStep>('template');
   const [showContribution, setShowContribution] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  
+  // Mock user profile if not provided (for backward compatibility)
+  const [userProfile, setUserProfile] = useState<EnhancedUserProfile>(user || {
+    id: userId,
+    email: 'user@example.com',
+    firstName: 'Utilisateur',
+    lastName: 'Test',
+    profession: userRole,
+    roles: [userRole],
+    activeRole: userRole,
+    languages: [language],
+    specializations: [],
+    isActive: true,
+    emailVerified: true,
+    mfaEnabled: false
+  });
   
   // Template selection
   const getTemplatesForRole = (role: UserRole) => {
@@ -317,8 +339,68 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     }
   };
 
+  const handleSaveProfessionalInfo = async (professionalInfo: ProfessionalInfo) => {
+    try {
+      // TODO: Sauvegarder dans la base de données
+      // await updateUserProfile(userProfile.id, { professionalInfo });
+      
+      setUserProfile({ ...userProfile, professionalInfo });
+      setShowProfileModal(false);
+      
+      // Message de confirmation
+      alert(language === 'ar' ? 
+        'تم حفظ معلوماتك المهنية بنجاح' :
+        'Vos informations professionnelles ont été enregistrées avec succès'
+      );
+    } catch (error) {
+      console.error('Error saving professional info:', error);
+      alert(language === 'ar' ? 
+        'حدث خطأ أثناء حفظ المعلومات' :
+        'Erreur lors de l\'enregistrement des informations'
+      );
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedTemplate) return;
+    
+    // VÉRIFICATION DU PROFIL PROFESSIONNEL
+    if (!userProfile.professionalInfo) {
+      alert(language === 'ar' ? 
+        'يرجى إكمال معلوماتك المهنية أولاً لإنشاء وثائق قانونية صحيحة' :
+        'Veuillez compléter votre profil professionnel avant de générer des documents juridiques'
+      );
+      setShowProfileModal(true);
+      return;
+    }
+    
+    // Vérifier les champs obligatoires selon le rôle
+    const info = userProfile.professionalInfo;
+    let missingFields: string[] = [];
+    
+    if (userProfile.profession === UserRole.AVOCAT) {
+      if (!info.barreauInscription) missingFields.push(language === 'ar' ? 'نقابة المحامين' : 'Barreau');
+      if (!info.numeroInscription) missingFields.push(language === 'ar' ? 'رقم التسجيل' : 'N° inscription');
+      if (!info.cabinetAddress) missingFields.push(language === 'ar' ? 'عنوان المكتب' : 'Adresse cabinet');
+      if (!info.cabinetPhone) missingFields.push(language === 'ar' ? 'الهاتف' : 'Téléphone');
+    } else if (userProfile.profession === UserRole.NOTAIRE) {
+      if (!info.chambreNotariale) missingFields.push(language === 'ar' ? 'الغرفة الوطنية' : 'Chambre Notariale');
+      if (!info.numeroMatricule) missingFields.push(language === 'ar' ? 'رقم القيد' : 'N° matricule');
+      if (!info.etudeAddress) missingFields.push(language === 'ar' ? 'عنوان المكتب' : 'Adresse étude');
+    } else if (userProfile.profession === UserRole.HUISSIER) {
+      if (!info.chambreHuissiers) missingFields.push(language === 'ar' ? 'الغرفة الوطنية' : 'Chambre Huissiers');
+      if (!info.numeroAgrement) missingFields.push(language === 'ar' ? 'رقم الاعتماد' : 'N° agrément');
+      if (!info.bureauAddress) missingFields.push(language === 'ar' ? 'عنوان المكتب' : 'Adresse bureau');
+    }
+    
+    if (missingFields.length > 0) {
+      alert(
+        (language === 'ar' ? 'حقول مفقودة: ' : 'Champs manquants: ') + 
+        missingFields.join(', ')
+      );
+      setShowProfileModal(true);
+      return;
+    }
     
     setMobileTab('preview');
     setIsGenerating(true);
@@ -327,15 +409,34 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       let basePrompt = language === 'ar' ? selectedTemplate.prompt_ar : selectedTemplate.prompt;
       let documentContent = '';
 
-      // 1. Ajouter l'en-tête spécifique à la wilaya
-      if (selectedWilaya && selectedTribunal) {
-        const header = wilayaTemplateService.generateDocumentHeader(
-          selectedWilaya,
-          selectedTribunal,
-          language
-        );
-        documentContent += header + '\n\n';
+      // 1. GÉNÉRER L'EN-TÊTE PROFESSIONNEL COMPLET
+      // Déterminer le destinataire selon le type de document
+      let destinataire: string = 'president_tribunal';
+      if (selectedTemplateId.includes('refere')) {
+        destinataire = 'juge_referes';
+      } else if (selectedTemplateId.includes('penal') || selectedTemplateId.includes('plainte')) {
+        destinataire = 'procureur';
+      } else if (selectedTemplateId.includes('acte')) {
+        destinataire = 'qui_de_droit';
       }
+      
+      // Générer l'en-tête professionnel
+      const professionalHeader = documentHeaderService.generateDocumentHeader({
+        documentType: selectedTemplateId.includes('requete') ? 'requete' : 
+                      selectedTemplateId.includes('assignation') ? 'assignation' :
+                      selectedTemplateId.includes('acte') ? 'acte' :
+                      selectedTemplateId.includes('exploit') ? 'exploit' : 'conclusions',
+        professional: userProfile,
+        wilaya: selectedWilaya,
+        tribunal: selectedTribunal,
+        destinataire: destinataire,
+        objet: language === 'ar' ? selectedTemplate.name_ar : selectedTemplate.name,
+        reference: structuredFormData.reference,
+        date: new Date(),
+        language: language
+      });
+      
+      documentContent = professionalHeader;
 
       // 2. Ajouter les clauses sélectionnées
       if (selectedClauses.length > 0) {
@@ -347,7 +448,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         };
         
         const clausesText = clauseService.generateDocumentWithClauses(clauseTemplate, language);
-        documentContent += clausesText + '\n\n';
+        documentContent += '\n\n' + clausesText;
       }
 
       // 3. Construire le prompt avec les données structurées
@@ -506,6 +607,28 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         finalDocument = replacePlaceholdersWithFormData(finalDocument, structuredFormData);
       }
 
+      // 9. GÉNÉRER LA SIGNATURE PROFESSIONNELLE
+      const lieu = selectedWilaya || 
+                   userProfile.professionalInfo?.wilayaExercice || 
+                   userProfile.professionalInfo?.cabinetAddress?.split(',').pop()?.trim() || 
+                   'Alger';
+      
+      const piecesJointes = documentSignatureService.generateStandardPiecesJointes(
+        selectedTemplateId,
+        language
+      );
+      
+      const signatureBlock = documentSignatureService.generateSignatureBlock({
+        professional: userProfile,
+        date: new Date(),
+        lieu: lieu,
+        language: language,
+        includePiecesJointes: true,
+        piecesJointes: piecesJointes
+      });
+      
+      finalDocument = finalDocument + '\n\n' + signatureBlock;
+
       setOriginalDoc(finalDocument);
       setOriginalDocLang(language);
       setGeneratedDoc(finalDocument);
@@ -554,13 +677,22 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
                 <Languages size={16} className="animate-pulse text-blue-500" />
               )}
             </h2>
-            <button
-              onClick={() => setShowContribution(true)}
-              className="p-2 bg-legal-blue text-white rounded-lg hover:opacity-90"
-              title={language === 'ar' ? 'مساهمة بنموذج' : 'Contribuer un template'}
-            >
-              <Plus size={16} />
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="p-2 bg-legal-gold text-white rounded-lg hover:opacity-90"
+                title={language === 'ar' ? 'المعلومات المهنية' : 'Profil Professionnel'}
+              >
+                <User size={16} />
+              </button>
+              <button
+                onClick={() => setShowContribution(true)}
+                className="p-2 bg-legal-blue text-white rounded-lg hover:opacity-90"
+                title={language === 'ar' ? 'مساهمة بنموذج' : 'Contribuer un template'}
+              >
+                <Plus size={16} />
+              </button>
+            </div>
           </div>
           
           {/* Progress Steps */}
@@ -856,6 +988,20 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
           }}
           onClose={() => setShowFormModal(false)}
         />
+      )}
+
+      {/* Modal Profil Professionnel */}
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <ProfessionalProfileForm
+              user={userProfile}
+              language={language}
+              onSave={handleSaveProfessionalInfo}
+              onClose={() => setShowProfileModal(false)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
