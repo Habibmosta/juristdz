@@ -1,0 +1,227 @@
+// FORMULAIRE 3: CONTRAT DE MARIAGE
+
+case 'contrat_mariage':
+  return (
+    <div className="space-y-4">
+      <h3 className="font-bold text-lg mb-4">
+        {isAr ? 'عقد زواج' : 'Contrat de Mariage'}
+      </h3>
+      
+      {/* Notaire */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3">{isAr ? 'الموثق' : 'Notaire'}</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'اللقب' : 'Nom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.notaireNom || ''}
+              onChange={(e) => handleChange('notaireNom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'الاسم' : 'Prénom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.notairePrenom || ''}
+              onChange={(e) => handleChange('notairePrenom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'مكتب التوثيق' : 'Étude notariale'} *
+          </label>
+          <input
+            type="text"
+            value={formData.etudeNotariale || ''}
+            onChange={(e) => handleChange('etudeNotariale', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Époux */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3">{isAr ? 'الزوج' : 'Époux'}</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'اللقب' : 'Nom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.epouxNom || ''}
+              onChange={(e) => handleChange('epouxNom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'الاسم' : 'Prénom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.epouxPrenom || ''}
+              onChange={(e) => handleChange('epouxPrenom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'تاريخ الميلاد' : 'Date de naissance'} *
+            </label>
+            <input
+              type="date"
+              value={formData.epouxDateNaissance || ''}
+              onChange={(e) => handleChange('epouxDateNaissance', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'رقم بطاقة التعريف' : 'Numéro CIN'} *
+            </label>
+            <input
+              type="text"
+              value={formData.epouxCIN || ''}
+              onChange={(e) => handleChange('epouxCIN', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              maxLength={18}
+              required
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'العنوان' : 'Adresse'} *
+          </label>
+          <input
+            type="text"
+            value={formData.epouxAdresse || ''}
+            onChange={(e) => handleChange('epouxAdresse', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Épouse */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3">{isAr ? 'الزوجة' : 'Épouse'}</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'اللقب' : 'Nom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.epouseNom || ''}
+              onChange={(e) => handleChange('epouseNom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'الاسم' : 'Prénom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.epousePrenom || ''}
+              onChange={(e) => handleChange('epousePrenom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'تاريخ الميلاد' : 'Date de naissance'} *
+            </label>
+            <input
+              type="date"
+              value={formData.epouseDateNaissance || ''}
+              onChange={(e) => handleChange('epouseDateNaissance', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'رقم بطاقة التعريف' : 'Numéro CIN'} *
+            </label>
+            <input
+              type="text"
+              value={formData.epouseCIN || ''}
+              onChange={(e) => handleChange('epouseCIN', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              maxLength={18}
+              required
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'العنوان' : 'Adresse'} *
+          </label>
+          <input
+            type="text"
+            value={formData.epouseAdresse || ''}
+            onChange={(e) => handleChange('epouseAdresse', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Régime Matrimonial */}
+      <div>
+        <h4 className="font-semibold mb-3">{isAr ? 'النظام المالي للزواج' : 'Régime Matrimonial'}</h4>
+        <div>
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'نوع النظام' : 'Type de régime'} *
+          </label>
+          <select
+            value={formData.regimeMatrimonial || ''}
+            onChange={(e) => handleChange('regimeMatrimonial', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          >
+            <option value="">{isAr ? 'اختر' : 'Sélectionner'}</option>
+            <option value="separation">{isAr ? 'فصل الأموال' : 'Séparation de biens'}</option>
+            <option value="communaute">{isAr ? 'اشتراك الأموال' : 'Communauté de biens'}</option>
+            <option value="participation">{isAr ? 'المشاركة في المكاسب' : 'Participation aux acquêts'}</option>
+          </select>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'شروط خاصة' : 'Clauses particulières'}
+          </label>
+          <textarea
+            value={formData.clausesParticulieres || ''}
+            onChange={(e) => handleChange('clausesParticulieres', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            rows={4}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+
