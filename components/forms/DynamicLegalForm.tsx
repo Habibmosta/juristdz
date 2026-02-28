@@ -4397,8 +4397,392 @@ case 'acte_vente_immobiliere':
   );
 
 
-// FORMULAIRE 2: TESTAMENT AUTHENTIQUE
+// FORMULAIRE 2: ACTE DE VENTE MOBILIÈRE
+case 'acte_vente_mobiliere':
+case 'acte_vente_fonds_commerce':
+  return (
+    <div className="space-y-4">
+      <h3 className="font-bold text-lg mb-4">
+        {templateId === 'acte_vente_fonds_commerce' 
+          ? (isAr ? 'عقد بيع محل تجاري' : 'Acte de Vente de Fonds de Commerce')
+          : (isAr ? 'عقد بيع منقول' : 'Acte de Vente Mobilière')}
+      </h3>
+      
+      {/* VENDEUR (CÉDANT) */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3 text-legal-gold">
+          {isAr ? 'البائع (المتنازل)' : 'Vendeur (Cédant)'}
+        </h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'اللقب' : 'Nom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.vendeurNom || ''}
+              onChange={(e) => handleChange('vendeurNom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'الاسم' : 'Prénom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.vendeurPrenom || ''}
+              onChange={(e) => handleChange('vendeurPrenom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'تاريخ الميلاد' : 'Date de naissance'} *
+            </label>
+            <input
+              type="date"
+              value={formData.vendeurDateNaissance || ''}
+              onChange={(e) => handleChange('vendeurDateNaissance', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'مكان الميلاد' : 'Lieu de naissance'} *
+            </label>
+            <input
+              type="text"
+              value={formData.vendeurLieuNaissance || ''}
+              onChange={(e) => handleChange('vendeurLieuNaissance', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'رقم بطاقة التعريف' : 'N° CIN'} *
+            </label>
+            <input
+              type="text"
+              value={formData.vendeurCin || ''}
+              onChange={(e) => handleChange('vendeurCin', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'تاريخ الإصدار' : 'Date de délivrance'}
+            </label>
+            <input
+              type="date"
+              value={formData.vendeurCinDate || ''}
+              onChange={(e) => handleChange('vendeurCinDate', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'العنوان' : 'Adresse'} *
+          </label>
+          <input
+            type="text"
+            value={formData.vendeurAdresse || ''}
+            onChange={(e) => handleChange('vendeurAdresse', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          />
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'المهنة' : 'Profession'}
+          </label>
+          <input
+            type="text"
+            value={formData.vendeurProfession || ''}
+            onChange={(e) => handleChange('vendeurProfession', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+          />
+        </div>
+      </div>
 
+      {/* ACHETEUR (CESSIONNAIRE) */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3 text-legal-gold">
+          {isAr ? 'المشتري (المتنازل له)' : 'Acheteur (Cessionnaire)'}
+        </h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'اللقب' : 'Nom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.acheteurNom || ''}
+              onChange={(e) => handleChange('acheteurNom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'الاسم' : 'Prénom'} *
+            </label>
+            <input
+              type="text"
+              value={formData.acheteurPrenom || ''}
+              onChange={(e) => handleChange('acheteurPrenom', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'تاريخ الميلاد' : 'Date de naissance'} *
+            </label>
+            <input
+              type="date"
+              value={formData.acheteurDateNaissance || ''}
+              onChange={(e) => handleChange('acheteurDateNaissance', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'مكان الميلاد' : 'Lieu de naissance'} *
+            </label>
+            <input
+              type="text"
+              value={formData.acheteurLieuNaissance || ''}
+              onChange={(e) => handleChange('acheteurLieuNaissance', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'رقم بطاقة التعريف' : 'N° CIN'} *
+            </label>
+            <input
+              type="text"
+              value={formData.acheteurCin || ''}
+              onChange={(e) => handleChange('acheteurCin', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'تاريخ الإصدار' : 'Date de délivrance'}
+            </label>
+            <input
+              type="date"
+              value={formData.acheteurCinDate || ''}
+              onChange={(e) => handleChange('acheteurCinDate', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'العنوان' : 'Adresse'} *
+          </label>
+          <input
+            type="text"
+            value={formData.acheteurAdresse || ''}
+            onChange={(e) => handleChange('acheteurAdresse', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          />
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'المهنة' : 'Profession'}
+          </label>
+          <input
+            type="text"
+            value={formData.acheteurProfession || ''}
+            onChange={(e) => handleChange('acheteurProfession', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+          />
+        </div>
+      </div>
+
+      {/* BIEN VENDU */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3 text-legal-gold">
+          {isAr ? 'المال المبيع' : 'Bien Vendu'}
+        </h4>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'نوع المال' : 'Type de bien'} *
+          </label>
+          <select
+            value={formData.typeBien || ''}
+            onChange={(e) => handleChange('typeBien', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            required
+          >
+            <option value="">{isAr ? 'اختر النوع' : 'Sélectionner'}</option>
+            <option value="vehicule">{isAr ? 'مركبة' : 'Véhicule'}</option>
+            <option value="fonds_commerce">{isAr ? 'محل تجاري' : 'Fonds de commerce'}</option>
+            <option value="materiel">{isAr ? 'معدات' : 'Matériel'}</option>
+            <option value="mobilier">{isAr ? 'أثاث' : 'Mobilier'}</option>
+            <option value="autre">{isAr ? 'أخرى' : 'Autre'}</option>
+          </select>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'وصف المال' : 'Description du bien'} *
+          </label>
+          <textarea
+            value={formData.descriptionBien || ''}
+            onChange={(e) => handleChange('descriptionBien', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            rows={4}
+            placeholder={isAr ? 'وصف تفصيلي للمال المبيع...' : 'Description détaillée du bien vendu...'}
+            required
+          />
+        </div>
+        {formData.typeBien === 'fonds_commerce' && (
+          <>
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+                {isAr ? 'موقع المحل' : 'Emplacement du fonds'} *
+              </label>
+              <input
+                type="text"
+                value={formData.emplacementFonds || ''}
+                onChange={(e) => handleChange('emplacementFonds', e.target.value)}
+                className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                required
+              />
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+                {isAr ? 'المساحة (م²)' : 'Surface (m²)'}
+              </label>
+              <input
+                type="number"
+                value={formData.surfaceFonds || ''}
+                onChange={(e) => handleChange('surfaceFonds', e.target.value)}
+                className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+                {isAr ? 'نشاط المحل' : 'Activité du fonds'}
+              </label>
+              <input
+                type="text"
+                value={formData.activiteFonds || ''}
+                onChange={(e) => handleChange('activiteFonds', e.target.value)}
+                className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                placeholder={isAr ? 'مثال: مطعم، محل بقالة، صيدلية...' : 'Ex: Restaurant, épicerie, pharmacie...'}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* PRIX ET CONDITIONS */}
+      <div className="border-b pb-4">
+        <h4 className="font-semibold mb-3 text-legal-gold">
+          {isAr ? 'الثمن والشروط' : 'Prix et Conditions'}
+        </h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'الثمن (دج)' : 'Prix (DA)'} *
+            </label>
+            <input
+              type="number"
+              value={formData.prixVente || ''}
+              onChange={(e) => handleChange('prixVente', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+              {isAr ? 'طريقة الدفع' : 'Mode de paiement'} *
+            </label>
+            <select
+              value={formData.modePaiement || ''}
+              onChange={(e) => handleChange('modePaiement', e.target.value)}
+              className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              required
+            >
+              <option value="">{isAr ? 'اختر' : 'Sélectionner'}</option>
+              <option value="comptant">{isAr ? 'نقدا' : 'Comptant'}</option>
+              <option value="cheque">{isAr ? 'شيك' : 'Chèque'}</option>
+              <option value="virement">{isAr ? 'تحويل بنكي' : 'Virement bancaire'}</option>
+              <option value="echelonne">{isAr ? 'على دفعات' : 'Échelonné'}</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'أجل التسليم (أيام)' : 'Délai de livraison (jours)'}
+          </label>
+          <input
+            type="number"
+            value={formData.delaiLivraison || ''}
+            onChange={(e) => handleChange('delaiLivraison', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            placeholder="15"
+          />
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'مدة الضمان (سنوات)' : 'Durée de garantie (années)'}
+          </label>
+          <input
+            type="number"
+            value={formData.dureeGarantie || ''}
+            onChange={(e) => handleChange('dureeGarantie', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            placeholder="2"
+          />
+        </div>
+      </div>
+
+      {/* INFORMATIONS COMPLÉMENTAIRES */}
+      <div>
+        <h4 className="font-semibold mb-3 text-legal-gold">
+          {isAr ? 'معلومات إضافية' : 'Informations Complémentaires'}
+        </h4>
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">
+            {isAr ? 'ملاحظات' : 'Observations'}
+          </label>
+          <textarea
+            value={formData.observations || ''}
+            onChange={(e) => handleChange('observations', e.target.value)}
+            className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            rows={3}
+            placeholder={isAr ? 'أي معلومات إضافية...' : 'Toute information complémentaire...'}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+// FORMULAIRE 3: TESTAMENT AUTHENTIQUE
 case 'testament_authentique':
   return (
     <div className="space-y-4">
