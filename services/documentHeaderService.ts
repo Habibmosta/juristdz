@@ -219,7 +219,12 @@ ${this.getRoleName(professional.profession, language)}`;
     const info = professional.professionalInfo;
     
     if (wilaya) {
-      return wilaya;
+      // Convertir le code wilaya en nom
+      const wilayaData = wilayaTemplateService.getWilayaVariables(wilaya);
+      if (wilayaData) {
+        return wilayaData.wilaya_name_fr;
+      }
+      return wilaya; // Fallback si pas trouvé
     }
     
     if (info?.wilayaExercice) {
