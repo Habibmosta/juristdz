@@ -32,3 +32,49 @@ server/.env
 *.sw?
 
 .vercel
+
+# Documentation et fichiers temporaires de travail
+*.md.backup
+temp_*.txt
+*_TEMP.txt
+*.ps1
+*.py
+generate_*.py
+integrate-*.ps1
+create-*.ps1
+
+# Fichiers de documentation de travail (garder seulement README.md principal)
+DEPLOIEMENT_*.md
+ETAT_*.md
+FINALISATION_*.md
+FORMULAIRES_*.md
+GUIDE_*.md
+INDEX_*.md
+INTEGRATION_*.md
+PLAN_*.md
+PROGRESSION_*.md
+RAPPORT_*.md
+README_INTEGRATION.md
+README_FORMULAIRES.md
+REALITE_*.md
+RECAP_*.md
+RESUME_*.md
+SITUATION_*.md
+SOLUTION_*.md
+START_HERE.md
+SUCCES_*.md
+SYNTHESE_*.md
+VALIDATION_*.md
+AMELIORATION_*.md
+COMPLETION_*.md
+STATUT_*.md
+TOUS_*.md
+TERMINE.md
+TRAVAIL_*.md
+
+# Fichiers de formulaires temporaires
+components/forms/*.txt
+components/forms/*.backup
+components/forms/HuissierForms.tsx
+components/forms/HuissierForms_Part1.tsx
+components/forms/NotaireForms_Clean.txt
