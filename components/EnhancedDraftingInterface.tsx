@@ -190,6 +190,17 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       result = result.replace(/\s*at \[LIEU_CIN\]/g, '');
     }
     
+    // Nettoyer les en-têtes vides générés par l'IA
+    // Pattern: "Monsieur/Madame, né(e) le à, de nationalité..."
+    const emptyHeaderPattern = /^Monsieur\/Madame[^.]*?profession\.\s*/i;
+    result = result.replace(emptyHeaderPattern, '');
+    
+    // Nettoyer les lignes avec des champs vides consécutifs
+    // Pattern: "né(e) le à" ou "délivrée le à"
+    result = result.replace(/né\(e\)\s+le\s+à/gi, '');
+    result = result.replace(/délivrée?\s+le\s+à/gi, '');
+    result = result.replace(/,\s+profession\./gi, '');
+    
     // Nettoyer les placeholders restants qui n'ont pas de valeur
     // Les remplacer par des mentions génériques plutôt que de les laisser vides
     result = result.replace(/\[DATE_CIN\]/gi, '');
@@ -432,9 +443,12 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       
       if (documentContent.trim()) {
         prompt += '⚠️ IMPORTANT: Un en-tête officiel a déjà été généré. NE GÉNÉREZ PAS d\'en-tête.\n';
-        prompt += 'Commencez directement par le corps du document (identification des parties, objet, etc.)\n\n';
+        prompt += 'Commencez directement par le titre du document (ex: "ACTE DE VENTE DE FONDS DE COMMERCE")\n';
+        prompt += 'Puis identifiez les parties avec leurs informations COMPLÈTES.\n\n';
       } else {
-        prompt += 'Générez un document juridique COMPLET avec en-tête officiel.\n\n';
+        prompt += 'Générez un document juridique COMPLET.\n';
+        prompt += 'Commencez par le titre du document (ex: "ACTE DE VENTE DE FONDS DE COMMERCE")\n';
+        prompt += 'Puis identifiez les parties avec leurs informations COMPLÈTES.\n\n';
       }
       
       prompt += 'Rédigez un document juridique PROFESSIONNEL en respectant:\n';
@@ -457,6 +471,8 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       
       prompt += '\n=== RÈGLES CRITIQUES ===\n';
       prompt += '- NE GÉNÉREZ PAS de placeholders entre crochets []\n';
+      prompt += '- NE GÉNÉREZ PAS d\'en-tête générique type "Monsieur/Madame, né(e) le à"\n';
+      prompt += '- COMMENCEZ DIRECTEMENT par le titre du document (ex: "ACTE DE VENTE")\n';
       prompt += '- Utilisez les noms COMPLETS (ex: "Habib Belkacemi" pas "[NOM] [PRENOM]")\n';
       prompt += '- Formatez les montants: "120 000 DA" ou "120.000,00 DA"\n';
       prompt += '- Formatez les dates: "04 février 1985" ou "04/02/1985"\n';
