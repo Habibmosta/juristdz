@@ -96,7 +96,7 @@ export class AutoTranslationService {
   }
 
   /**
-   * SIMPLIFIED: Translate content using simple fallback system
+   * SIMPLIFIED: Translate content using Gemini API
    */
   async translateContent(
     content: string, 
@@ -106,19 +106,97 @@ export class AutoTranslationService {
     const sourceLang = fromLang || this.detectLanguage(content);
     const targetLang = toLang || this.currentLanguage;
 
-    console.log(`🌐 AutoTranslationService: Simple translateContent ${sourceLang} -> ${targetLang}`);
+    console.log(`🌐 AutoTranslationService: translateContent ${sourceLang} -> ${targetLang}`);
     console.log(`🌐 Content preview: "${content.substring(0, 100)}..."`);
 
-    // Clean the input content aggressively
-    const cleanedInput = this.cleanMixedContent(content);
-    
     if (sourceLang === targetLang) {
-      console.log(`🌐 Same language, returning cleaned content`);
-      return cleanedInput;
+      console.log(`🌐 Same language, returning original content`);
+      return content;
     }
 
-    // Use simple fallback translation
-    return this.getUltraCleanFallbackTranslation(cleanedInput, sourceLang, targetLang);
+    // Use Gemini API for real translation
+    try {
+      const translatedDoc = await this.translateWithGemini(content, sourceLang, targetLang);
+      
+      // Verify quality
+      if (this.verifyTranslationQuality(translatedDoc, targetLang)) {
+        console.log(`🌐 Translation quality verified ✓`);
+        return translatedDoc;
+      } else {
+        console.warn(`🌐 Translation quality check failed, using fallback`);
+        return this.getUltraCleanFallbackTranslation(content, sourceLang, targetLang);
+      }
+    } catch (error) {
+      console.error(`🌐 Translation error:`, error);
+      return this.getUltraCleanFallbackTranslation(content, sourceLang, targetLang);
+    }
+  }
+
+  /**
+   * Translate content using Gemini API
+   */
+  private async translateWithGemini(
+    content: string,
+    fromLang: Language,
+    toLang: Language
+  ): Promise<string> {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('Gemini API key not configured');
+    }
+
+    const sourceLangName = fromLang === 'ar' ? 'arabe' : 'français';
+    const targetLangName = toLang === 'ar' ? 'arabe' : 'français';
+
+    const prompt = `Tu es un traducteur juridique professionnel spécialisé dans le droit algérien.
+
+TÂCHE: Traduire ce document juridique du ${sourceLangName} vers le ${targetLangName}.
+
+RÈGLES CRITIQUES:
+1. Traduire TOUT le contenu sans exception
+2. Conserver EXACTEMENT la structure et la mise en forme
+3. Conserver les numéros, dates, montants, noms propres
+4. Traduire les termes juridiques avec précision
+5. NE PAS ajouter de commentaires ou d'explications
+6. NE PAS mélanger les langues - UNIQUEMENT du ${targetLangName}
+7. Conserver les séparateurs (━━━), les sauts de ligne, les espaces
+8. Traduire les formules notariales correctement
+
+DOCUMENT À TRADUIRE:
+
+${content}
+
+TRADUCTION EN ${targetLangName.toUpperCase()}:`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 8192,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    if (!translatedText) {
+      throw new Error('Empty translation response');
+    }
+
+    return translatedText.trim();
   }
 
   /**
