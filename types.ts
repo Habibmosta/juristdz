@@ -37,6 +37,38 @@ export interface RoleRouteConfig {
   restrictedFeatures?: string[];
 }
 
+// Professional information for document generation
+export interface ProfessionalInfo {
+  // Pour Avocat
+  barreauInscription?: string;      // "Barreau d'Alger"
+  numeroInscription?: string;       // "A/12345/2020"
+  cabinetName?: string;             // "Cabinet Maître Belkacemi"
+  cabinetAddress?: string;          // "15 Rue Didouche Mourad, Alger"
+  cabinetPhone?: string;            // "+213 21 XX XX XX"
+  cabinetEmail?: string;            // "contact@cabinet-belkacemi.dz"
+  
+  // Pour Notaire
+  chambreNotariale?: string;        // "Chambre des Notaires d'Alger"
+  numeroMatricule?: string;         // "N/456/2018"
+  etudeNotariale?: string;          // "Étude Notariale Benali"
+  etudeAddress?: string;            // "8 Boulevard Zighout Youcef, Alger"
+  etudePhone?: string;              // "+213 21 YY YY YY"
+  etudeEmail?: string;              // "contact@notaire-benali.dz"
+  
+  // Pour Huissier
+  chambreHuissiers?: string;        // "Chambre des Huissiers d'Oran"
+  numeroAgrement?: string;          // "H/789/2019"
+  bureauHuissier?: string;          // "Bureau d'Huissier Khelifi"
+  bureauAddress?: string;           // "42 Rue Larbi Ben M'hidi, Oran"
+  bureauPhone?: string;             // "+213 41 ZZ ZZ ZZ"
+  bureauEmail?: string;             // "contact@huissier-khelifi.dz"
+  
+  // Commun
+  wilayaExercice?: string;          // Wilaya principale d'exercice
+  anneesExperience?: number;        // Années d'expérience
+  specialites?: string[];           // Spécialités juridiques
+}
+
 // Enhanced user profile for role-based access
 export interface EnhancedUserProfile {
   id: string;
@@ -55,6 +87,9 @@ export interface EnhancedUserProfile {
   isActive: boolean;
   emailVerified: boolean;
   mfaEnabled: boolean;
+  
+  // Informations professionnelles pour génération de documents
+  professionalInfo?: ProfessionalInfo;
 }
 
 export interface Case {
