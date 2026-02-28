@@ -405,9 +405,89 @@ export const NOTAIRE_TEMPLATES: DocumentTemplate[] = [
     name_ar: 'عقد بيع منقول',
     description: 'Vente de biens meubles (véhicules, fonds de commerce).',
     description_ar: 'بيع أموال منقولة (مركبات، محل تجاري).',
-    prompt: 'Rédige un acte de vente mobilière selon le droit algérien : ',
+    prompt: `Rédigez un ACTE DE VENTE MOBILIÈRE conforme aux standards algériens.
+
+⚠️ IMPORTANT: Un en-tête professionnel a déjà été généré. NE GÉNÉREZ PAS d'en-tête.
+
+COMMENCEZ DIRECTEMENT PAR:
+
+L'an [année en toutes lettres]
+Le [date en toutes lettres]
+
+PAR-DEVANT NOUS, Maître [Nom du Notaire], Notaire à [Ville], soussigné,
+
+ONT COMPARU:
+
+MONSIEUR/MADAME [Prénom Nom COMPLET du vendeur]
+Né(e) le [date en toutes lettres] à [lieu complet]
+Demeurant à [adresse complète]
+Titulaire de la carte d'identité nationale n° [numéro exact]
+délivrée le [date] à [lieu]
+De nationalité algérienne
+Profession: [profession]
+
+Ci-après dénommé "LE VENDEUR"
+
+D'UNE PART,
+
+ET:
+
+MONSIEUR/MADAME [Prénom Nom COMPLET de l'acheteur]
+Né(e) le [date en toutes lettres] à [lieu complet]
+Demeurant à [adresse complète]
+Titulaire de la carte d'identité nationale n° [numéro exact]
+délivrée le [date] à [lieu]
+De nationalité algérienne
+Profession: [profession]
+
+Ci-après dénommé "L'ACHETEUR"
+
+D'AUTRE PART,
+
+LESQUELS ONT DÉCLARÉ ET RECONNU CE QUI SUIT:
+
+ARTICLE PREMIER - OBJET DE LA VENTE
+Le vendeur déclare vendre à l'acheteur qui accepte:
+[Description précise et complète du bien]
+
+ARTICLE DEUX - PRIX
+La présente vente est consentie et acceptée moyennant le prix principal de:
+[Montant en chiffres] Dinars Algériens ([Montant EN TOUTES LETTRES])
+
+Que l'acheteur s'oblige à payer au vendeur [modalités de paiement], dont quittance.
+
+ARTICLE TROIS - GARANTIES
+[Clauses de garantie conformes au Code Civil]
+
+ARTICLE QUATRE - DÉLIVRANCE
+Le vendeur s'oblige à délivrer le bien vendu dans un délai de [délai] à compter de la signature des présentes.
+
+DONT ACTE
+
+Fait et passé à [Ville]
+Le [date en toutes lettres]
+
+Et après lecture faite, les parties ont signé avec Nous, Notaire.
+
+⚠️ RÈGLES ABSOLUES:
+1. Dates EN TOUTES LETTRES: "quinze mars deux mille un" (pas "15/03/2001")
+2. Montants EN CHIFFRES ET EN TOUTES LETTRES: "300 000 DA (TROIS CENT MILLE DINARS ALGÉRIENS)"
+3. Choisir "MONSIEUR" ou "MADAME" selon le prénom (pas "Monsieur/Madame")
+4. AUCUN placeholder vide [] - utilisez les données fournies
+5. Formules notariales OBLIGATOIRES (PAR-DEVANT NOUS, ONT COMPARU, DONT ACTE)
+6. PAS de répétitions - une seule section de signatures
+7. Articles numérotés en toutes lettres (PREMIER, DEUX, TROIS, QUATRE)`,
     prompt_ar: 'قم بتحرير عقد بيع منقول وفق القانون الجزائري: ',
-    structure: ["Parties", "Bien vendu", "Prix", "Garanties", "Livraison"],
+    structure: [
+      "Formule d'ouverture (L'an... PAR-DEVANT NOUS)",
+      "Comparution (ONT COMPARU)",
+      "Article Premier - Objet de la vente",
+      "Article Deux - Prix",
+      "Article Trois - Garanties",
+      "Article Quatre - Délivrance",
+      "Clôture (DONT ACTE)",
+      "Signatures"
+    ],
     structure_ar: ["الأطراف", "المال المبيع", "الثمن", "الضمانات", "التسليم"],
     inputGuide: "Bien mobilier, État, Prix, Garanties.",
     inputGuide_ar: "المال المنقول، الحالة، الثمن، الضمانات.",

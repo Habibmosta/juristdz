@@ -113,6 +113,65 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   const componentId = `enhanced-drafting-${userRole}`;
   const selectedTemplate = availableTemplates.find(t => t.id === selectedTemplateId) || availableTemplates[0];
 
+  // Traduction automatique quand la langue change
+  useEffect(() => {
+    console.log('🌐 [useEffect] Language changed to:', language);
+    console.log('🌐 [useEffect] Original doc exists:', !!originalDoc);
+    console.log('🌐 [useEffect] Original doc lang:', originalDocLang);
+    console.log('🌐 [useEffect] Is translating:', isTranslating);
+    
+    const translateDocument = async () => {
+      // Ne traduire que si un document a été généré
+      if (!originalDoc) {
+        console.log('🌐 [useEffect] No original document, skipping translation');
+        return;
+      }
+      
+      // Ne pas traduire si on est déjà dans la langue d'origine
+      if (language === originalDocLang) {
+        console.log('🌐 [useEffect] Same as original language, restoring original');
+        if (generatedDoc !== originalDoc) {
+          setGeneratedDoc(originalDoc);
+          setIsDocTranslated(false);
+        }
+        return;
+      }
+      
+      // Ne pas retraduire si déjà en cours
+      if (isTranslating) {
+        console.log('🌐 [useEffect] Translation already in progress, skipping');
+        return;
+      }
+      
+      // Traduire le document
+      console.log(`🌐 [useEffect] Starting translation: ${originalDocLang} → ${language}`);
+      setIsTranslating(true);
+      
+      try {
+        const translatedDoc = await autoTranslationService.translateContent(
+          originalDoc,
+          originalDocLang,
+          language
+        );
+        
+        console.log('🌐 [useEffect] Translation completed successfully');
+        console.log('🌐 [useEffect] Translated doc preview:', translatedDoc.substring(0, 200));
+        
+        setGeneratedDoc(translatedDoc);
+        setIsDocTranslated(true);
+      } catch (error) {
+        console.error('🌐 [useEffect] Translation error:', error);
+        // En cas d'erreur, garder le document original
+        setGeneratedDoc(originalDoc);
+        setIsDocTranslated(false);
+      } finally {
+        setIsTranslating(false);
+      }
+    };
+    
+    translateDocument();
+  }, [language, originalDoc, originalDocLang]); // Pas de dépendance sur generatedDoc ou isTranslating pour éviter la boucle
+
   // Helper function to replace placeholders with form data
   const replacePlaceholdersWithFormData = (document: string, formData: any): string => {
     let result = document;
@@ -438,21 +497,39 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       
       documentContent = professionalHeader;
 
-      // 2. Ajouter les clauses sélectionnées
-      if (selectedClauses.length > 0) {
-        const clauseTemplate = {
-          documentType: selectedTemplateId,
-          selectedClauseIds: selectedClauses,
-          variables: { ...clauseVariables, ...structuredFormData },
-          customClauses: []
-        };
-        
-        const clausesText = clauseService.generateDocumentWithClauses(clauseTemplate, language);
-        documentContent += '\n\n' + clausesText;
-      }
+      // 2. NE PAS ajouter les clauses automatiquement - elles seront générées par l'IA avec les bonnes données
+      // Les clauses avec placeholders vides causent des problèmes
+      // L'IA générera les clauses correctement remplies à partir du template et des données du formulaire
 
       // 3. Construire le prompt avec les données structurées
       let prompt = basePrompt;
+      
+      // INSTRUCTIONS UNIVERSELLES POUR TOUS LES DOCUMENTS
+      prompt += '\n\n=== INSTRUCTIONS UNIVERSELLES ===\n';
+      prompt += '⚠️ IMPORTANT: Un en-tête professionnel a déjà été généré ci-dessus.\n';
+      prompt += 'NE GÉNÉREZ PAS d\'en-tête, de coordonnées professionnelles, ou de destinataire.\n';
+      prompt += 'COMMENCEZ DIRECTEMENT par le contenu du document.\n\n';
+      
+      prompt += '🎯 OBJECTIF: Générer un document PROFESSIONNEL prêt à être signé et déposé.\n\n';
+      
+      prompt += '📋 RÈGLES ABSOLUES (TOUS DOCUMENTS):\n';
+      prompt += '1. Utilisez UNIQUEMENT les données RÉELLES fournies dans le formulaire\n';
+      prompt += '2. NE GÉNÉREZ JAMAIS de placeholders vides [] - INTERDIT\n';
+      prompt += '3. Identités COMPLÈTES: "Monsieur [Prénom Nom], né le [date] à [lieu], CIN n° [numéro], demeurant à [adresse], profession: [profession]"\n';
+      prompt += '4. Dates: Format "JJ/MM/AAAA" ou en toutes lettres selon le type de document\n';
+      prompt += '5. Montants: TOUJOURS en chiffres ET en toutes lettres (ex: "300 000 DA (TROIS CENT MILLE DINARS ALGÉRIENS)")\n';
+      prompt += '6. Références juridiques: Articles EXACTS du code applicable\n';
+      prompt += '7. Ton professionnel adapté au destinataire\n';
+      prompt += '8. Structure claire avec sections numérotées\n';
+      prompt += '9. UNE SEULE section de signatures à la fin (pas de répétitions)\n';
+      prompt += '10. Pièces jointes: Liste numérotée et précise\n\n';
+      
+      prompt += '❌ INTERDICTIONS STRICTES:\n';
+      prompt += '- JAMAIS de "Monsieur/Madame" indécis - choisissez selon le prénom\n';
+      prompt += '- JAMAIS de "né(e) le à" vide - utilisez les vraies données\n';
+      prompt += '- JAMAIS de "Dinars Algériens ()" vide - montant complet requis\n';
+      prompt += '- JAMAIS de répétitions (signatures 3 fois, etc.)\n';
+      prompt += '- JAMAIS d\'en-tête générique si un en-tête professionnel existe déjà\n\n';
       
       if (Object.keys(structuredFormData).length > 0) {
         prompt += '\n\n=== INFORMATIONS COMPLÈTES DU FORMULAIRE ===\n';
@@ -580,12 +657,17 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       prompt += '- Pour la signature: indiquez "Fait à [ville], le [date]" puis "Signature du demandeur" (pas d\'avocat si c\'est le demandeur qui signe)\n';
       prompt += '- Le document doit être prêt à être signé et déposé au tribunal\n';
       prompt += '- Références juridiques précises (articles du Code civil, Code de procédure civile, etc.)\n';
+      prompt += '- NE RÉPÉTEZ PAS les sections - une seule fois chaque partie\n';
+      prompt += '- NE GÉNÉREZ PAS plusieurs blocs de signatures - un seul suffit à la fin\n';
+      prompt += '- Si le template demande une structure notariale (PAR-DEVANT NOUS, ONT COMPARU, DONT ACTE), respectez-la EXACTEMENT\n';
       
       prompt += '\n=== EXEMPLE DE REMPLACEMENT ===\n';
       prompt += '❌ INCORRECT: "Monsieur [NOM] [PRENOM], né le [DATE_NAISSANCE]"\n';
       prompt += '✅ CORRECT: "Monsieur Habib Belkacemi, né le 04/02/1985"\n\n';
       prompt += '❌ INCORRECT: "Wilaya de 06"\n';
-      prompt += '✅ CORRECT: "Wilaya de Béjaïa" ou "Tribunal de Béjaïa"\n';
+      prompt += '✅ CORRECT: "Wilaya de Béjaïa" ou "Tribunal de Béjaïa"\n\n';
+      prompt += '❌ INCORRECT: Répéter 3 fois "Signature du vendeur"\n';
+      prompt += '✅ CORRECT: Une seule section de signatures à la fin\n';
 
       // 5. Générer avec l'IA
       const response = await sendMessageToGemini(prompt, [], AppMode.DRAFTING, language);

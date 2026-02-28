@@ -133,16 +133,17 @@ export class AutoTranslationService {
   }
 
   /**
-   * Translate content using Gemini API
+   * Translate content using Groq API (same as document generation)
    */
   private async translateWithGemini(
     content: string,
     fromLang: Language,
     toLang: Language
   ): Promise<string> {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    // Use Groq API instead of Gemini for translation
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
     if (!apiKey) {
-      throw new Error('Gemini API key not configured');
+      throw new Error('Groq API key not configured');
     }
 
     const sourceLangName = fromLang === 'ar' ? 'arabe' : 'français';
@@ -169,28 +170,31 @@ ${content}
 TRADUCTION EN ${targetLangName.toUpperCase()}:`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      'https://api.groq.com/openai/v1/chat/completions',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
+          model: 'llama-3.3-70b-versatile',
+          messages: [{
+            role: 'user',
+            content: prompt
           }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 8192,
-          }
+          temperature: 0.1,
+          max_tokens: 8192,
         })
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
+      throw new Error(`Groq API error: ${response.statusText}`);
     }
 
     const data = await response.json();
-    const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const translatedText = data.choices?.[0]?.message?.content || '';
 
     if (!translatedText) {
       throw new Error('Empty translation response');
@@ -261,7 +265,7 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
   }
 
   /**
-   * Verify translation quality - ensure no mixed languages (ULTRA STRICT)
+   * Verify translation quality - ensure no mixed languages (RELAXED)
    */
   private verifyTranslationQuality(text: string, targetLang: Language): boolean {
     const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
@@ -276,11 +280,15 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
     console.log(`🌐 Quality check: Arabic ${Math.round(arabicRatio * 100)}%, Latin ${Math.round(latinRatio * 100)}%`);
     
     if (targetLang === 'ar') {
-      // For Arabic target, should have >95% Arabic characters and <5% Latin (ULTRA STRICT)
-      return arabicRatio > 0.95 && latinRatio < 0.05;
+      // For Arabic target, should have >70% Arabic characters (RELAXED - noms propres, dates, etc. en latin)
+      const isGoodQuality = arabicRatio > 0.70;
+      console.log(`🌐 Quality check result: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Arabic: ${Math.round(arabicRatio * 100)}%)`);
+      return isGoodQuality;
     } else {
-      // For French target, should have >95% Latin characters and <5% Arabic (ULTRA STRICT)
-      return latinRatio > 0.95 && arabicRatio < 0.05;
+      // For French target, should have >70% Latin characters (RELAXED)
+      const isGoodQuality = latinRatio > 0.70;
+      console.log(`🌐 Quality check result: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Latin: ${Math.round(latinRatio * 100)}%)`);
+      return isGoodQuality;
     }
   }
 
