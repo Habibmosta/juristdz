@@ -607,11 +607,30 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         finalDocument = replacePlaceholdersWithFormData(finalDocument, structuredFormData);
       }
 
+      // 8.5. POST-TRAITEMENT: Convertir les codes wilaya en noms
+      if (selectedWilaya) {
+        const wilayaData = wilayaTemplateService.getWilayaVariables(selectedWilaya);
+        if (wilayaData) {
+          // Remplacer "Wilaya de XX" par "Wilaya de [Nom]"
+          finalDocument = finalDocument.replace(/Wilaya de \d{2}/g, `Wilaya de ${wilayaData.wilaya_name_fr}`);
+          // Remplacer "Fait à XX" par "Fait à [Nom]"
+          finalDocument = finalDocument.replace(/Fait à \d{2}/g, `Fait à ${wilayaData.wilaya_name_fr}`);
+          // Remplacer juste le code seul suivi d'une virgule
+          finalDocument = finalDocument.replace(new RegExp(`^${selectedWilaya},`, 'gm'), `${wilayaData.wilaya_name_fr},`);
+        }
+      }
+
       // 9. GÉNÉRER LA SIGNATURE PROFESSIONNELLE
-      const lieu = selectedWilaya || 
-                   userProfile.professionalInfo?.wilayaExercice || 
-                   userProfile.professionalInfo?.cabinetAddress?.split(',').pop()?.trim() || 
-                   'Alger';
+      // Convertir le code wilaya en nom
+      let lieu = 'Alger'; // Fallback
+      if (selectedWilaya) {
+        const wilayaData = wilayaTemplateService.getWilayaVariables(selectedWilaya);
+        lieu = wilayaData?.wilaya_name_fr || selectedWilaya;
+      } else if (userProfile.professionalInfo?.wilayaExercice) {
+        lieu = userProfile.professionalInfo.wilayaExercice;
+      } else if (userProfile.professionalInfo?.cabinetAddress) {
+        lieu = userProfile.professionalInfo.cabinetAddress.split(',').pop()?.trim() || 'Alger';
+      }
       
       const piecesJointes = documentSignatureService.generateStandardPiecesJointes(
         selectedTemplateId,
