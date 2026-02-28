@@ -192,23 +192,63 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     
     // Nettoyer les placeholders restants qui n'ont pas de valeur
     // Les remplacer par des mentions génériques plutôt que de les laisser vides
-    result = result.replace(/\[DATE_CIN\]/g, '[date à préciser]');
-    result = result.replace(/\[LIEU_CIN\]/g, '[lieu à préciser]');
-    result = result.replace(/\[LIEU_NAISSANCE\]/g, formData.demandeurLieuNaissance || '[lieu de naissance à préciser]');
-    result = result.replace(/\[LIEU\]/g, formData.selectedWilaya || formData.demandeurAdresse?.split(',')[0] || 'Alger');
-    result = result.replace(/\[DATE\]/g, new Date().toLocaleDateString('fr-FR'));
-    result = result.replace(/\[MOIS\]/g, new Date().toLocaleDateString('fr-FR', { month: 'long' }));
-    result = result.replace(/\[ANNEE\]/g, new Date().getFullYear().toString());
+    result = result.replace(/\[DATE_CIN\]/gi, '');
+    result = result.replace(/\[LIEU_CIN\]/gi, '');
+    result = result.replace(/\[LIEU_NAISSANCE\]/gi, formData.demandeurLieuNaissance || formData.defendeurLieuNaissance || '');
+    result = result.replace(/\[LIEU\]/gi, formData.selectedWilaya || formData.demandeurAdresse?.split(',')[0] || 'Alger');
+    result = result.replace(/\[DATE\]/gi, new Date().toLocaleDateString('fr-FR'));
+    result = result.replace(/\[MOIS\]/gi, new Date().toLocaleDateString('fr-FR', { month: 'long' }));
+    result = result.replace(/\[ANNEE\]/gi, new Date().getFullYear().toString());
     
     // Nettoyer les mentions d'avocat/notaire si le demandeur n'est pas un professionnel
-    result = result.replace(/\[Signature de l'avocat ou du notaire\]/g, '');
-    result = result.replace(/\[Adresse de l'avocat ou du notaire\]/g, '');
+    result = result.replace(/\[Signature de l'avocat ou du notaire\]/gi, '');
+    result = result.replace(/\[Adresse de l'avocat ou du notaire\]/gi, '');
     result = result.replace(/Avocat\/Notaire\s*\n/g, '');
     
-    // Remplacer tous les autres placeholders restants par une mention à compléter
-    result = result.replace(/\[([A-Z_]+)\]/g, (match, placeholder) => {
-      console.warn(`Placeholder non remplacé: ${match}`);
-      return `[${placeholder.toLowerCase().replace(/_/g, ' ')} à compléter]`;
+    // Nettoyer les placeholders spécifiques aux enfants et garde
+    if (formData.nomEnfant && formData.prenomEnfant) {
+      result = result.replace(/\[noms? enfants?\]/gi, `${formData.prenomEnfant} ${formData.nomEnfant}`);
+      result = result.replace(/\[nom enfant\]/gi, `${formData.prenomEnfant} ${formData.nomEnfant}`);
+    } else {
+      result = result.replace(/\[noms? enfants?\]/gi, '');
+      result = result.replace(/\[nom enfant\]/gi, '');
+    }
+    
+    // Parent gardien
+    if (formData.demandeurNom && formData.demandeurPrenom) {
+      result = result.replace(/\[parent gardien\]/gi, `${formData.demandeurPrenom} ${formData.demandeurNom}`);
+    } else {
+      result = result.replace(/\[parent gardien\]/gi, 'le parent demandeur');
+    }
+    
+    // Modalités de visite
+    if (formData.modalitesVisite) {
+      result = result.replace(/\[modalites visite\]/gi, formData.modalitesVisite);
+    } else {
+      result = result.replace(/\[modalites visite\]/gi, 'selon les modalités à définir par le tribunal');
+    }
+    
+    // Nettoyer les phrases avec placeholders vides entre crochets
+    result = result.replace(/\s*\[[\w\s]+à compléter\]\s*/gi, ' ');
+    result = result.replace(/\s*\[[\w\s]+à préciser\]\s*/gi, ' ');
+    
+    // Nettoyer les doubles espaces et espaces avant ponctuation
+    result = result.replace(/\s+/g, ' ');
+    result = result.replace(/\s+([,;.!?])/g, '$1');
+    
+    // Supprimer les lignes vides multiples
+    result = result.replace(/\n\s*\n\s*\n/g, '\n\n');
+    
+    // CRITIQUE: Supprimer TOUS les placeholders restants entre crochets
+    // Ceci est la dernière ligne de défense
+    result = result.replace(/\[([^\]]+)\]/g, (match, content) => {
+      // Si c'est un placeholder de type variable, on le supprime
+      if (content.match(/^[A-Z_\s]+$/i) || content.includes('à compléter') || content.includes('à préciser')) {
+        console.warn(`🚨 Placeholder supprimé: ${match}`);
+        return '';
+      }
+      // Sinon on le garde (pourrait être du contenu légitime)
+      return match;
     });
     
     return result;
@@ -355,27 +395,31 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         });
         
         prompt += '\n\n⚠️ INSTRUCTIONS CRITIQUES POUR LA GÉNÉRATION:\n';
-        prompt += '1. Remplacez TOUS les placeholders [NOM], [PRENOM], [DATE_NAISSANCE], etc. par les VRAIES valeurs ci-dessus\n';
-        prompt += '2. Utilisez les noms COMPLETS: "Prénom Nom" (ex: "Djillali Ahmed" pas "[NOM] [PRENOM]")\n';
-        prompt += '3. Pour les dates: utilisez le format "JJ/MM/AAAA" (ex: "05/12/2001" pas "[DATE_NAISSANCE]")\n';
-        prompt += '4. Pour les CIN: utilisez le numéro exact fourni (ex: "65498645" pas "[CIN]")\n';
-        prompt += '5. Pour les adresses: utilisez l\'adresse complète fournie (pas "[ADRESSE]")\n';
-        prompt += '6. Pour les professions: utilisez la profession exacte (ex: "comptable" pas "[PROFESSION]")\n';
-        prompt += '7. Si une information n\'est pas fournie, utilisez une formulation générique mais NE LAISSEZ PAS de placeholder vide\n';
-        prompt += '8. Le document DOIT être prêt à être signé - AUCUN placeholder ne doit rester\n';
-        prompt += '9. N\'UTILISEZ JAMAIS de crochets [ ] dans le document final\n';
-        prompt += '10. Chaque mention d\'une personne doit utiliser son identité COMPLÈTE avec les vraies valeurs\n';
+        prompt += '1. NE GÉNÉREZ JAMAIS de texte entre crochets [ ] - c\'est INTERDIT\n';
+        prompt += '2. Remplacez TOUS les placeholders par les VRAIES valeurs fournies ci-dessus\n';
+        prompt += '3. Utilisez les noms COMPLETS: "Prénom Nom" (ex: "Djillali Ahmed" pas "[NOM] [PRENOM]")\n';
+        prompt += '4. Pour les dates: format "JJ/MM/AAAA" (ex: "21/06/1990" pas "[DATE_NAISSANCE]")\n';
+        prompt += '5. Pour les CIN: numéro exact (ex: "65312321" pas "[CIN]")\n';
+        prompt += '6. Pour les adresses: adresse complète (ex: "Tamourassen" pas "[ADRESSE]")\n';
+        prompt += '7. Pour les professions: profession exacte (ex: "taxieur" pas "[PROFESSION]")\n';
+        prompt += '8. VÉRIFIEZ le genre: si le prénom est féminin (Fatima, Khadija), utilisez "Madame", "sa fille", "elle"\n';
+        prompt += '9. VÉRIFIEZ les âges: calculez correctement l\'âge à partir de la date de naissance\n';
+        prompt += '10. Si une info manque, utilisez une formulation générique SANS crochets\n';
+        prompt += '11. Le document DOIT être prêt à signer - ZÉRO placeholder autorisé\n';
+        prompt += '12. RELISEZ votre document: si vous voyez [ ], c\'est une ERREUR GRAVE\n';
         
         prompt += '\n=== EXEMPLES DE REMPLACEMENT CORRECT ===\n';
         prompt += '❌ INCORRECT: "Monsieur [NOM] [PRENOM], né(e) le [DATE_NAISSANCE]"\n';
-        prompt += '✅ CORRECT: "Monsieur Djillali Ahmed, né le 05/12/2001"\n\n';
-        prompt += '❌ INCORRECT: "titulaire de la carte d\'identité nationale n° [CIN]"\n';
-        prompt += '✅ CORRECT: "titulaire de la carte d\'identité nationale n° 65498645"\n\n';
-        prompt += '❌ INCORRECT: "demeurant à [ADRESSE], profession [PROFESSION]"\n';
-        prompt += '✅ CORRECT: "demeurant à la Rue 72, Tigditt, comptable"\n\n';
-        prompt += '❌ INCORRECT: "décédé le [DATE_DECES]"\n';
-        prompt += '✅ CORRECT: "décédé le 04/02/2026"\n\n';
-        prompt += 'RÈGLE D\'OR: Si vous voyez des crochets [ ] dans votre document, c\'est une ERREUR. Remplacez-les par les vraies valeurs!\n';
+        prompt += '✅ CORRECT: "Monsieur Djillali Ahmed, né le 21/06/1990"\n\n';
+        prompt += '❌ INCORRECT: "son fils, Fatima" (incohérence de genre)\n';
+        prompt += '✅ CORRECT: "sa fille, Fatima" (Fatima est un prénom féminin)\n\n';
+        prompt += '❌ INCORRECT: "âgée de 5 ans, née le 05/12/2001" (incohérence d\'âge)\n';
+        prompt += '✅ CORRECT: "âgée de 23 ans, née le 05/12/2001" (en 2026)\n\n';
+        prompt += '❌ INCORRECT: "[noms enfants à compléter]"\n';
+        prompt += '✅ CORRECT: "Fatima" (utilisez le vrai nom fourni)\n\n';
+        prompt += '❌ INCORRECT: "Monsieur/Madame" (indécis)\n';
+        prompt += '✅ CORRECT: "Monsieur" ou "Madame" (choisissez selon le prénom)\n\n';
+        prompt += '\n🚨 RÈGLE D\'OR: AUCUN CROCHET [ ] N\'EST AUTORISÉ DANS LE DOCUMENT FINAL!\n';
       }
       
       // Détails supplémentaires

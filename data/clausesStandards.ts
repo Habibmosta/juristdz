@@ -350,10 +350,25 @@ export function getMandatoryClauses(documentType: string): Clause[] {
 export function populateClause(clause: Clause, variables: { [key: string]: string }, language: 'fr' | 'ar'): string {
   let text = language === 'ar' ? clause.text_ar : clause.text_fr;
   
+  // Remplacer les variables fournies
   Object.entries(variables).forEach(([key, value]) => {
-    const regex = new RegExp(`\\[${key}\\]`, 'g');
-    text = text.replace(regex, value);
+    if (value && value !== '') {
+      const regex = new RegExp(`\\[${key}\\]`, 'gi');
+      text = text.replace(regex, value);
+    }
   });
+  
+  // CRITIQUE: Nettoyer TOUS les placeholders restants
+  // Supprimer les placeholders vides plutôt que de les laisser
+  text = text.replace(/\[[\w\s_-]+\]/g, (match) => {
+    console.warn(`🚨 Placeholder non rempli dans clause supprimé: ${match}`);
+    return '';
+  });
+  
+  // Nettoyer les espaces multiples et espaces avant ponctuation
+  text = text.replace(/\s+/g, ' ');
+  text = text.replace(/\s+([,;.!?])/g, '$1');
+  text = text.trim();
   
   return text;
 }
