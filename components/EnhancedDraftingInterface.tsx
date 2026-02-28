@@ -468,34 +468,36 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       let basePrompt = language === 'ar' ? selectedTemplate.prompt_ar : selectedTemplate.prompt;
       let documentContent = '';
 
-      // 1. GÉNÉRER L'EN-TÊTE PROFESSIONNEL COMPLET
-      // Déterminer le destinataire selon le type de document
-      let destinataire: string = 'president_tribunal';
-      if (selectedTemplateId.includes('refere')) {
-        destinataire = 'juge_referes';
-      } else if (selectedTemplateId.includes('penal') || selectedTemplateId.includes('plainte')) {
-        destinataire = 'procureur';
-      } else if (selectedTemplateId.includes('acte')) {
-        destinataire = 'qui_de_droit';
+      // 1. GÉNÉRER L'EN-TÊTE PROFESSIONNEL COMPLET (seulement si profil complet)
+      if (userProfile.professionalInfo) {
+        // Déterminer le destinataire selon le type de document
+        let destinataire: string = 'president_tribunal';
+        if (selectedTemplateId.includes('refere')) {
+          destinataire = 'juge_referes';
+        } else if (selectedTemplateId.includes('penal') || selectedTemplateId.includes('plainte')) {
+          destinataire = 'procureur';
+        } else if (selectedTemplateId.includes('acte')) {
+          destinataire = 'qui_de_droit';
+        }
+        
+        // Générer l'en-tête professionnel
+        const professionalHeader = documentHeaderService.generateDocumentHeader({
+          documentType: selectedTemplateId.includes('requete') ? 'requete' : 
+                        selectedTemplateId.includes('assignation') ? 'assignation' :
+                        selectedTemplateId.includes('acte') ? 'acte' :
+                        selectedTemplateId.includes('exploit') ? 'exploit' : 'conclusions',
+          professional: userProfile,
+          wilaya: selectedWilaya,
+          tribunal: selectedTribunal,
+          destinataire: destinataire,
+          objet: language === 'ar' ? selectedTemplate.name_ar : selectedTemplate.name,
+          reference: structuredFormData.reference,
+          date: new Date(),
+          language: language
+        });
+        
+        documentContent = professionalHeader;
       }
-      
-      // Générer l'en-tête professionnel
-      const professionalHeader = documentHeaderService.generateDocumentHeader({
-        documentType: selectedTemplateId.includes('requete') ? 'requete' : 
-                      selectedTemplateId.includes('assignation') ? 'assignation' :
-                      selectedTemplateId.includes('acte') ? 'acte' :
-                      selectedTemplateId.includes('exploit') ? 'exploit' : 'conclusions',
-        professional: userProfile,
-        wilaya: selectedWilaya,
-        tribunal: selectedTribunal,
-        destinataire: destinataire,
-        objet: language === 'ar' ? selectedTemplate.name_ar : selectedTemplate.name,
-        reference: structuredFormData.reference,
-        date: new Date(),
-        language: language
-      });
-      
-      documentContent = professionalHeader;
 
       // 2. NE PAS ajouter les clauses automatiquement - elles seront générées par l'IA avec les bonnes données
       // Les clauses avec placeholders vides causent des problèmes
@@ -506,41 +508,49 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       
       // INSTRUCTIONS UNIVERSELLES POUR TOUS LES DOCUMENTS
       prompt += '\n\n=== INSTRUCTIONS UNIVERSELLES ===\n';
-      prompt += '⚠️ IMPORTANT: Un en-tête professionnel a déjà été généré ci-dessus.\n';
-      prompt += 'NE GÉNÉREZ PAS d\'en-tête, de coordonnées professionnelles, ou de destinataire.\n';
-      prompt += 'COMMENCEZ DIRECTEMENT par le contenu du document.\n\n';
       
-      prompt += '🎯 OBJECTIF: Générer un document PROFESSIONNEL prêt à être signé et déposé.\n\n';
+      if (documentContent.trim()) {
+        prompt += '⚠️ IMPORTANT: Un en-tête professionnel a déjà été généré ci-dessus.\n';
+        prompt += 'NE GÉNÉREZ PAS d\'en-tête, de coordonnées professionnelles, ou de destinataire.\n';
+        prompt += 'COMMENCEZ DIRECTEMENT par le contenu du document.\n\n';
+      }
+      
+      prompt += '🎯 OBJECTIF: Générer UN SEUL document PROFESSIONNEL prêt à être signé et déposé.\n\n';
       
       prompt += '📋 RÈGLES ABSOLUES (TOUS DOCUMENTS):\n';
-      prompt += '1. Utilisez UNIQUEMENT les données RÉELLES fournies dans le formulaire\n';
-      prompt += '2. NE GÉNÉREZ JAMAIS de placeholders vides [] - INTERDIT\n';
-      prompt += '3. Identités COMPLÈTES: "Monsieur [Prénom Nom], né le [date] à [lieu], CIN n° [numéro], demeurant à [adresse], profession: [profession]"\n';
-      prompt += '4. Dates: Format "JJ/MM/AAAA" ou en toutes lettres selon le type de document\n';
-      prompt += '5. Montants: TOUJOURS en chiffres ET en toutes lettres (ex: "300 000 DA (TROIS CENT MILLE DINARS ALGÉRIENS)")\n';
-      prompt += '6. Références juridiques: Articles EXACTS du code applicable\n';
-      prompt += '7. Ton professionnel adapté au destinataire\n';
-      prompt += '8. Structure claire avec sections numérotées\n';
-      prompt += '9. UNE SEULE section de signatures à la fin (pas de répétitions)\n';
-      prompt += '10. Pièces jointes: Liste numérotée et précise\n\n';
+      prompt += '1. Utilisez UNIQUEMENT les données RÉELLES fournies dans le formulaire ci-dessous\n';
+      prompt += '2. NE GÉNÉREZ JAMAIS de placeholders vides [] - INTERDIT ABSOLU\n';
+      prompt += '3. Si une donnée manque, OMETTEZ la mention plutôt que de laisser un placeholder vide\n';
+      prompt += '4. Identités COMPLÈTES: "Monsieur [Prénom Nom], né le [date] à [lieu], CIN n° [numéro], demeurant à [adresse], profession: [profession]"\n';
+      prompt += '5. Dates: Format "JJ/MM/AAAA" ou en toutes lettres selon le type de document\n';
+      prompt += '6. Montants: TOUJOURS en chiffres ET en toutes lettres (ex: "300 000 DA (TROIS CENT MILLE DINARS ALGÉRIENS)")\n';
+      prompt += '7. Références juridiques: Articles EXACTS du code applicable\n';
+      prompt += '8. Ton professionnel adapté au destinataire\n';
+      prompt += '9. Structure claire avec sections numérotées\n';
+      prompt += '10. UNE SEULE section de signatures à la fin (pas de répétitions)\n';
+      prompt += '11. Pièces jointes: Liste numérotée et précise\n';
+      prompt += '12. GÉNÉREZ UN SEUL DOCUMENT - pas de répétitions ou de versions multiples\n\n';
       
       prompt += '❌ INTERDICTIONS STRICTES:\n';
       prompt += '- JAMAIS de "Monsieur/Madame" indécis - choisissez selon le prénom\n';
-      prompt += '- JAMAIS de "né(e) le à" vide - utilisez les vraies données\n';
+      prompt += '- JAMAIS de "né(e) le à" vide - utilisez les vraies données ou omettez\n';
       prompt += '- JAMAIS de "Dinars Algériens ()" vide - montant complet requis\n';
-      prompt += '- JAMAIS de répétitions (signatures 3 fois, etc.)\n';
-      prompt += '- JAMAIS d\'en-tête générique si un en-tête professionnel existe déjà\n\n';
+      prompt += '- JAMAIS de répétitions (2 actes dans le même document, signatures 3 fois, etc.)\n';
+      prompt += '- JAMAIS d\'en-tête générique si un en-tête professionnel existe déjà\n';
+      prompt += '- JAMAIS de sections vides avec juste des placeholders\n';
+      prompt += '- JAMAIS de texte générique type "Monsieur/Madame, de nationalité algérienne, titulaire de la carte..."\n\n';
       
       if (Object.keys(structuredFormData).length > 0) {
-        prompt += '\n\n=== INFORMATIONS COMPLÈTES DU FORMULAIRE ===\n';
-        prompt += '⚠️ UTILISEZ CES INFORMATIONS EXACTES - NE LAISSEZ AUCUN PLACEHOLDER VIDE\n\n';
+        prompt += '\n\n=== ⚠️ DONNÉES DU FORMULAIRE - UTILISEZ UNIQUEMENT CES INFORMATIONS ⚠️ ===\n';
+        prompt += '🚨 RÈGLE CRITIQUE: Si une information n\'est PAS listée ci-dessous, NE L\'INVENTEZ PAS\n';
+        prompt += '🚨 Si un champ est vide ci-dessous, OMETTEZ-LE du document (ne mettez pas de placeholder)\n\n';
         
         // Créer des groupes logiques de données
         const dataGroups: { [key: string]: { [key: string]: any } } = {};
         
         Object.entries(structuredFormData).forEach(([key, value]) => {
           if (value && value !== '') {
-            // Extraire le préfixe (demandeur, defendeur, etc.)
+            // Extraire le préfixe (demandeur, defendeur, vendeur, acheteur, etc.)
             const match = key.match(/^([a-z]+[A-Z][a-z]+)/);
             const prefix = match ? match[1] : 'general';
             
@@ -554,18 +564,27 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
           }
         });
         
-        // Afficher les données par groupe
+        // Afficher les données par groupe avec formatage clair
         Object.entries(dataGroups).forEach(([groupName, fields]) => {
           // Formater le nom du groupe
           const readableGroupName = groupName
             .replace(/([a-z])([A-Z])/g, '$1 $2')
             .replace(/^./, str => str.toUpperCase());
           
-          prompt += `--- ${readableGroupName} ---\n`;
+          prompt += `━━━ ${readableGroupName.toUpperCase()} ━━━\n`;
           
           // Construire l'identité complète si on a nom et prénom
           if (fields['Nom'] && fields['Prenom']) {
-            prompt += `Identité complète: ${fields['Prenom']} ${fields['Nom']}\n`;
+            const prenom = fields['Prenom'];
+            const nom = fields['Nom'];
+            
+            // Déterminer le genre selon le prénom
+            const prenomsFeminins = ['fatima', 'khadija', 'aicha', 'amina', 'sarah', 'leila', 'nadia', 'samira', 'malika', 'zohra'];
+            const isFeminin = prenomsFeminins.some(p => prenom.toLowerCase().includes(p));
+            const civilite = isFeminin ? 'Madame' : 'Monsieur';
+            
+            prompt += `✅ Identité complète: ${civilite} ${prenom} ${nom}\n`;
+            prompt += `✅ Civilité à utiliser: ${civilite} (${isFeminin ? 'féminin' : 'masculin'})\n`;
           }
           
           // Afficher tous les champs
@@ -576,7 +595,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
               .trim();
             
             if (readableFieldName && readableFieldName !== 'Nom' && readableFieldName !== 'Prenom') {
-              prompt += `${readableFieldName}: ${fieldValue}\n`;
+              prompt += `✅ ${readableFieldName}: ${fieldValue}\n`;
             }
           });
           
@@ -584,31 +603,34 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         });
         
         prompt += '\n\n⚠️ INSTRUCTIONS CRITIQUES POUR LA GÉNÉRATION:\n';
-        prompt += '1. NE GÉNÉREZ JAMAIS de texte entre crochets [ ] - c\'est INTERDIT\n';
-        prompt += '2. Remplacez TOUS les placeholders par les VRAIES valeurs fournies ci-dessus\n';
-        prompt += '3. Utilisez les noms COMPLETS: "Prénom Nom" (ex: "Djillali Ahmed" pas "[NOM] [PRENOM]")\n';
-        prompt += '4. Pour les dates: format "JJ/MM/AAAA" (ex: "21/06/1990" pas "[DATE_NAISSANCE]")\n';
-        prompt += '5. Pour les CIN: numéro exact (ex: "65312321" pas "[CIN]")\n';
-        prompt += '6. Pour les adresses: adresse complète (ex: "Tamourassen" pas "[ADRESSE]")\n';
-        prompt += '7. Pour les professions: profession exacte (ex: "taxieur" pas "[PROFESSION]")\n';
-        prompt += '8. VÉRIFIEZ le genre: si le prénom est féminin (Fatima, Khadija), utilisez "Madame", "sa fille", "elle"\n';
-        prompt += '9. VÉRIFIEZ les âges: calculez correctement l\'âge à partir de la date de naissance\n';
-        prompt += '10. Si une info manque, utilisez une formulation générique SANS crochets\n';
-        prompt += '11. Le document DOIT être prêt à signer - ZÉRO placeholder autorisé\n';
-        prompt += '12. RELISEZ votre document: si vous voyez [ ], c\'est une ERREUR GRAVE\n';
+        prompt += '1. 🚫 NE GÉNÉREZ JAMAIS de texte entre crochets [ ] - c\'est INTERDIT ABSOLU\n';
+        prompt += '2. ✅ Utilisez UNIQUEMENT les données listées ci-dessus (marquées avec ✅)\n';
+        prompt += '3. ✅ Utilisez les noms COMPLETS: "Prénom Nom" (ex: "Habib Belkacemi" pas "[NOM] [PRENOM]")\n';
+        prompt += '4. ✅ Pour les dates: format "JJ/MM/AAAA" (ex: "04/02/1985" pas "[DATE_NAISSANCE]")\n';
+        prompt += '5. ✅ Pour les CIN: numéro exact (ex: "845613165" pas "[CIN]")\n';
+        prompt += '6. ✅ Pour les adresses: adresse complète (ex: "54, rue Hales Said" pas "[ADRESSE]")\n';
+        prompt += '7. ✅ Pour les professions: profession exacte (ex: "Retraite" pas "[PROFESSION]")\n';
+        prompt += '8. ✅ Utilisez la civilité indiquée (Monsieur/Madame) - ne mettez JAMAIS "Monsieur/Madame"\n';
+        prompt += '9. ✅ VÉRIFIEZ les âges: calculez correctement l\'âge à partir de la date de naissance (nous sommes en 2026)\n';
+        prompt += '10. 🚫 Si une info manque dans la liste ci-dessus, OMETTEZ-LA complètement (ne mettez pas de placeholder)\n';
+        prompt += '11. ✅ Le document DOIT être prêt à signer - ZÉRO placeholder autorisé\n';
+        prompt += '12. 🔍 RELISEZ votre document: si vous voyez [ ], c\'est une ERREUR GRAVE - recommencez\n';
+        prompt += '13. 🚫 NE GÉNÉREZ QU\'UN SEUL DOCUMENT - pas de répétitions ou de versions multiples\n';
+        prompt += '14. 🚫 NE GÉNÉREZ PAS de sections vides avec des placeholders génériques\n';
         
         prompt += '\n=== EXEMPLES DE REMPLACEMENT CORRECT ===\n';
         prompt += '❌ INCORRECT: "Monsieur [NOM] [PRENOM], né(e) le [DATE_NAISSANCE]"\n';
-        prompt += '✅ CORRECT: "Monsieur Djillali Ahmed, né le 21/06/1990"\n\n';
+        prompt += '✅ CORRECT: "Monsieur Habib Belkacemi, né le 04/02/1985"\n\n';
+        prompt += '❌ INCORRECT: "Monsieur/Madame, de nationalité algérienne, titulaire de la carte..."\n';
+        prompt += '✅ CORRECT: "Monsieur Habib Belkacemi, né le 04/02/1985 à Mostaganem..."\n\n';
+        prompt += '❌ INCORRECT: "Dinars Algériens ()"\n';
+        prompt += '✅ CORRECT: "1 500 000 DA (UN MILLION CINQ CENT MILLE DINARS ALGÉRIENS)"\n\n';
+        prompt += '❌ INCORRECT: Générer 2 actes dans le même document\n';
+        prompt += '✅ CORRECT: UN SEUL acte complet avec toutes les informations\n\n';
         prompt += '❌ INCORRECT: "son fils, Fatima" (incohérence de genre)\n';
         prompt += '✅ CORRECT: "sa fille, Fatima" (Fatima est un prénom féminin)\n\n';
-        prompt += '❌ INCORRECT: "âgée de 5 ans, née le 05/12/2001" (incohérence d\'âge)\n';
-        prompt += '✅ CORRECT: "âgée de 23 ans, née le 05/12/2001" (en 2026)\n\n';
-        prompt += '❌ INCORRECT: "[noms enfants à compléter]"\n';
-        prompt += '✅ CORRECT: "Fatima" (utilisez le vrai nom fourni)\n\n';
-        prompt += '❌ INCORRECT: "Monsieur/Madame" (indécis)\n';
-        prompt += '✅ CORRECT: "Monsieur" ou "Madame" (choisissez selon le prénom)\n\n';
         prompt += '\n🚨 RÈGLE D\'OR: AUCUN CROCHET [ ] N\'EST AUTORISÉ DANS LE DOCUMENT FINAL!\n';
+        prompt += '🚨 RÈGLE D\'OR 2: UN SEUL DOCUMENT - PAS DE RÉPÉTITIONS!\n';
       }
       
       // Détails supplémentaires
@@ -622,19 +644,21 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       if (documentContent.trim()) {
         prompt += '⚠️ IMPORTANT: Un en-tête officiel a déjà été généré. NE GÉNÉREZ PAS d\'en-tête.\n';
         prompt += 'Commencez directement par le titre du document (ex: "ACTE DE VENTE DE FONDS DE COMMERCE")\n';
-        prompt += 'Puis identifiez les parties avec leurs informations COMPLÈTES.\n\n';
+        prompt += 'Puis identifiez les parties avec leurs informations COMPLÈTES listées ci-dessus.\n\n';
       } else {
-        prompt += 'Générez un document juridique COMPLET.\n';
+        prompt += 'Générez UN SEUL document juridique COMPLET.\n';
         prompt += 'Commencez par le titre du document (ex: "ACTE DE VENTE DE FONDS DE COMMERCE")\n';
-        prompt += 'Puis identifiez les parties avec leurs informations COMPLÈTES.\n\n';
+        prompt += 'Puis identifiez les parties avec leurs informations COMPLÈTES listées ci-dessus.\n\n';
       }
       
-      prompt += 'Rédigez un document juridique PROFESSIONNEL en respectant:\n';
+      prompt += 'Rédigez UN SEUL document juridique PROFESSIONNEL en respectant:\n';
       prompt += '1. La forme légale algérienne\n';
       prompt += '2. La structure du document (voir ci-dessous)\n';
-      prompt += '3. L\'utilisation de TOUTES les informations du formulaire\n';
+      prompt += '3. L\'utilisation de TOUTES les informations du formulaire (et SEULEMENT celles-ci)\n';
       prompt += '4. Un langage juridique formel et précis\n';
-      prompt += '5. NE LAISSEZ AUCUN PLACEHOLDER - tout doit être rempli\n';
+      prompt += '5. NE LAISSEZ AUCUN PLACEHOLDER - tout doit être rempli avec les vraies données\n';
+      prompt += '6. NE GÉNÉREZ QU\'UN SEUL DOCUMENT - pas de répétitions\n';
+      prompt += '7. NE GÉNÉREZ PAS de sections vides ou génériques\n';
       
       // Ajouter la structure spécifique selon le template
       if (selectedTemplate.structure) {
@@ -699,6 +723,35 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
           finalDocument = finalDocument.replace(/Fait à \d{2}/g, `Fait à ${wilayaData.wilaya_name_fr}`);
           // Remplacer juste le code seul suivi d'une virgule
           finalDocument = finalDocument.replace(new RegExp(`^${selectedWilaya},`, 'gm'), `${wilayaData.wilaya_name_fr},`);
+        }
+      }
+
+      // 8.6. POST-TRAITEMENT: Supprimer les sections vides génériques
+      // Pattern: "Monsieur/Madame, né(e) le à, de nationalité..."
+      finalDocument = finalDocument.replace(/Monsieur\/Madame[^.]*?profession\.\s*/gi, '');
+      
+      // Supprimer les lignes avec des champs vides consécutifs
+      finalDocument = finalDocument.replace(/né\(e\)\s+le\s+à/gi, '');
+      finalDocument = finalDocument.replace(/délivrée?\s+le\s+à/gi, '');
+      finalDocument = finalDocument.replace(/,\s+profession\./gi, '');
+      
+      // Supprimer les montants vides
+      finalDocument = finalDocument.replace(/Dinars Algériens \(\)\s*/gi, '');
+      finalDocument = finalDocument.replace(/\(\s*\)\s*Dinars Algériens/gi, '');
+      
+      // 8.7. POST-TRAITEMENT: Détecter et supprimer les répétitions de documents
+      // Si on trouve 2 fois "PAR-DEVANT NOUS" ou "ACTE DE VENTE", c'est une répétition
+      const parDevantCount = (finalDocument.match(/PAR-DEVANT NOUS/gi) || []).length;
+      if (parDevantCount > 1) {
+        console.warn('🚨 Répétition détectée: plusieurs documents générés');
+        // Garder seulement la première occurrence (du début jusqu'à la première signature)
+        const firstSignatureIndex = finalDocument.indexOf('Signature du vendeur');
+        if (firstSignatureIndex > 0) {
+          // Trouver la fin du premier document (avant le deuxième "PAR-DEVANT NOUS")
+          const secondParDevantIndex = finalDocument.indexOf('PAR-DEVANT NOUS', finalDocument.indexOf('PAR-DEVANT NOUS') + 1);
+          if (secondParDevantIndex > 0) {
+            finalDocument = finalDocument.substring(0, secondParDevantIndex);
+          }
         }
       }
 
