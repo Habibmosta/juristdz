@@ -25,40 +25,40 @@ DROP POLICY IF EXISTS "Users can view own subscription" ON public.subscriptions;
 
 -- Policies for profiles
 CREATE POLICY "Users can view own profile" ON public.profiles
-  FOR SELECT USING (id = auth.uid());
+  FOR SELECT USING (id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can update own profile" ON public.profiles
-  FOR UPDATE USING (id = auth.uid());
+  FOR UPDATE USING (id::text = (auth.uid())::text);
 
 -- Policies for cases
 CREATE POLICY "Users can view own cases" ON public.cases
-  FOR SELECT USING (user_id = auth.uid());
+  FOR SELECT USING (user_id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can create own cases" ON public.cases
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+  FOR INSERT WITH CHECK (user_id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can update own cases" ON public.cases
-  FOR UPDATE USING (user_id = auth.uid());
+  FOR UPDATE USING (user_id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can delete own cases" ON public.cases
-  FOR DELETE USING (user_id = auth.uid());
+  FOR DELETE USING (user_id::text = (auth.uid())::text);
 
 -- Policies for documents
 CREATE POLICY "Users can view own documents" ON public.documents
-  FOR SELECT USING (user_id = auth.uid());
+  FOR SELECT USING (user_id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can create own documents" ON public.documents
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+  FOR INSERT WITH CHECK (user_id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can update own documents" ON public.documents
-  FOR UPDATE USING (user_id = auth.uid());
+  FOR UPDATE USING (user_id::text = (auth.uid())::text);
 
 CREATE POLICY "Users can delete own documents" ON public.documents
-  FOR DELETE USING (user_id = auth.uid());
+  FOR DELETE USING (user_id::text = (auth.uid())::text);
 
 -- Policies for subscriptions
 CREATE POLICY "Users can view own subscription" ON public.subscriptions
-  FOR SELECT USING (user_id = auth.uid());
+  FOR SELECT USING (user_id::text = (auth.uid())::text);
 
 -- Function to check if user is admin
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -69,7 +69,7 @@ AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid()
+    WHERE id::text = (auth.uid())::text
     AND is_admin = true
   );
 END;
