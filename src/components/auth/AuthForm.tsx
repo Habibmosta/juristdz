@@ -1,0 +1,392 @@
+import React, { useState } from 'react';
+import { Mail, Lock, User, Phone, Building, Hash, Briefcase, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+interface AuthFormProps {
+  onSuccess: () => void;
+}
+
+type AuthMode = 'signin' | 'signup';
+type Profession = 'avocat' | 'notaire' | 'huissier' | 'magistrat' | 'etudiant' | 'juriste_entreprise';
+
+const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
+  const [mode, setMode] = useState<AuthMode>('signin');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // Form fields
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [profession, setProfession] = useState<Profession>('avocat');
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  const professions: { value: Profession; label: string; icon: string }[] = [
+    { value: 'avocat', label: 'Avocat', icon: '⚖️' },
+    { value: 'notaire', label: 'Notaire', icon: '📜' },
+    { value: 'huissier', label: 'Huissier de Justice', icon: '📋' },
+    { value: 'magistrat', label: 'Magistrat', icon: '👨‍⚖️' },
+    { value: 'etudiant', label: 'Étudiant en Droit', icon: '🎓' },
+    { value: 'juriste_entreprise', label: 'Juriste d\'Entreprise', icon: '💼' }
+  ];
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) throw signInError;
+
+      if (data.user) {
+        setSuccess('Connexion réussie!');
+        setTimeout(() => onSuccess(), 1000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erreur de connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Create auth user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            profession,
+            registration_number: registrationNumber,
+            organization_name: organizationName,
+            phone_number: phoneNumber
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (authData.user) {
+        // 2. Update profile with additional info
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            first_name: firstName,
+            last_name: lastName,
+            profession,
+            registration_number: registrationNumber,
+            organization_name: organizationName,
+            phone_number: phoneNumber
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+        }
+
+        setSuccess('Compte créé avec succès! Connexion en cours...');
+        setTimeout(() => onSuccess(), 2000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la création du compte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-legal-gold to-amber-600 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">⚖️</span>
+            </div>
+            <h1 className="text-3xl font-bold text-white">JuristDZ</h1>
+          </div>
+          <p className="text-slate-400">Assistant IA Juridique Algérien</p>
+        </div>
+
+        {/* Auth Card */}
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 p-8 shadow-2xl">
+          {/* Mode Toggle */}
+          <div className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-xl">
+            <button
+              onClick={() => setMode('signin')}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                mode === 'signin'
+                  ? 'bg-legal-gold text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Connexion
+            </button>
+            <button
+              onClick={() => setMode('signup')}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                mode === 'signup'
+                  ? 'bg-legal-gold text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Inscription
+            </button>
+          </div>
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-red-200 text-sm">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-900/20 border border-green-800 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-green-200 text-sm">{success}</p>
+            </div>
+          )}
+
+          {/* Sign In Form */}
+          {mode === 'signin' && (
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="maitre@barreau.dz"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Connexion...
+                  </>
+                ) : (
+                  'Se connecter'
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Sign Up Form */}
+          {mode === 'signup' && (
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Prénom
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                      placeholder="Ahmed"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Nom
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="Benali"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Profession
+                </label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <select
+                    value={profession}
+                    onChange={(e) => setProfession(e.target.value as Profession)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent appearance-none cursor-pointer"
+                    required
+                  >
+                    {professions.map((prof) => (
+                      <option key={prof.value} value={prof.value}>
+                        {prof.icon} {prof.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Email professionnel
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="maitre@barreau.dz"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Minimum 6 caractères</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    N° Inscription
+                  </label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={registrationNumber}
+                      onChange={(e) => setRegistrationNumber(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                      placeholder="A/12345/2024"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Téléphone
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                      placeholder="+213 555 123 456"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Cabinet/Organisation
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="Cabinet Benali & Associés"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Création du compte...
+                  </>
+                ) : (
+                  'Créer mon compte'
+                )}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-slate-500 text-sm mt-6">
+          En vous connectant, vous acceptez nos conditions d'utilisation
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default AuthForm;

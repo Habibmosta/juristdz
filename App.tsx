@@ -8,15 +8,20 @@ import AdminDashboard from './components/AdminDashboard';
 import Documentation from './components/Documentation';
 import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
+import AuthForm from './components/auth/AuthForm';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
 import { autoTranslationService } from './services/autoTranslationService';
 import { demoSetup } from './services/demoSetup';
 import { getDefaultMode } from './config/roleRouting';
+import { useAuth } from './hooks/useAuth';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 const App: React.FC = () => {
+  // Use Supabase authentication
+  const { user, profile, loading: authLoading, signOut } = useAuth();
+  
   const [currentMode, setMode] = useState<AppMode>(AppMode.DASHBOARD);
   const [language, setLanguage] = useState<Language>('fr');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -24,7 +29,6 @@ const App: React.FC = () => {
     return (saved as 'light' | 'dark') || 'dark';
   });
   
-  const [userProfile, setUserProfile] = useState<EnhancedUserProfile | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [translationSystemReady, setTranslationSystemReady] = useState(false);
@@ -42,105 +46,16 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Initialize SAAS Demo Environment
-        console.log('🚀 Initializing SAAS Demo Environment...');
-        const demoInitialized = await demoSetup.initializeDemo();
-        
-        if (demoInitialized) {
-          console.log('✅ SAAS Demo Environment ready');
-        } else {
-          console.warn('⚠️ SAAS Demo Environment failed, continuing with legacy mode');
-        }
-        
-        // DISABLED: Complex translation systems that cause conflicts
-        // console.log('🚀 Initializing Pure Translation System...');
-        // await initializePureTranslationSystem();
-        
-        // DISABLED: Content interceptors that cause issues
-        // console.log('🧹 Activating Content Interceptor...');
-        // contentInterceptor.setEnabled(true);
-        
-        // DISABLED: Emergency cleaners that cause infinite loops
-        // console.log('🚨 ACTIVATING EMERGENCY CONTENT CLEANER...');
-        // console.log('🔥 ACTIVATING RADICAL CONTENT CLEANER - NUCLEAR OPTION...');
-        // console.log('🔧 ACTIVATING SIDEBAR LANGUAGE FIXER...');
-        
+        // Initialize translation system
         setTranslationSystemReady(true);
         console.log('✅ Simple translation system ready');
 
-        let userId = localStorage.getItem('juristdz_user_id');
-        if (!userId) {
-          userId = 'USR-' + Math.floor(Math.random() * 1000000);
-          localStorage.setItem('juristdz_user_id', userId);
-        }
-
-        // Try to get existing profile
-        const profile = await databaseService.getProfile(userId);
-        
-        let enhancedProfile: EnhancedUserProfile;
-        
+        // If user is authenticated, initialize routing
         if (profile) {
-          // Convert legacy profile to enhanced profile
-          enhancedProfile = {
-            id: profile.id,
-            email: profile.email,
-            firstName: 'Maître',
-            lastName: 'Demo',
-            profession: mapLegacyRole(profile.role),
-            registrationNumber: 'ALG-2024-001',
-            barreauId: 'BARREAU-ALGER',
-            organizationName: 'Cabinet Demo',
-            phoneNumber: '+213 555 123 456',
-            languages: ['fr', 'ar'],
-            specializations: ['Droit Civil', 'Droit Commercial'],
-            roles: [UserRole.AVOCAT, UserRole.NOTAIRE, UserRole.HUISSIER, UserRole.MAGISTRAT, UserRole.ETUDIANT, UserRole.JURISTE_ENTREPRISE, UserRole.ADMIN], // Demo: tous les rôles
-            activeRole: UserRole.AVOCAT, // Toujours commencer par Avocat
-            isActive: true,
-            emailVerified: true,
-            mfaEnabled: false
-          };
-        } else {
-          // Create new enhanced profile
-          enhancedProfile = {
-            id: userId,
-            email: 'maitre.demo@barreau.dz',
-            firstName: 'Maître',
-            lastName: 'Demo',
-            profession: UserRole.AVOCAT,
-            registrationNumber: 'ALG-2024-001',
-            barreauId: 'BARREAU-ALGER',
-            organizationName: 'Cabinet Demo',
-            phoneNumber: '+213 555 123 456',
-            languages: ['fr', 'ar'],
-            specializations: ['Droit Civil', 'Droit Commercial'],
-            roles: [UserRole.AVOCAT, UserRole.NOTAIRE, UserRole.HUISSIER, UserRole.MAGISTRAT, UserRole.ETUDIANT, UserRole.JURISTE_ENTREPRISE, UserRole.ADMIN], // Demo: tous les rôles
-            activeRole: UserRole.AVOCAT,
-            isActive: true,
-            emailVerified: true,
-            mfaEnabled: false
-          };
-
-          // Save legacy profile for backward compatibility
-          const legacyProfile: UserStats = {
-            id: userId,
-            email: enhancedProfile.email,
-            credits: 5,
-            plan: 'free',
-            isPro: false,
-            role: 'admin',
-            joinedAt: new Date()
-          };
-          await databaseService.upsertProfile(legacyProfile);
+          routingService.setCurrentUser(profile);
+          const defaultMode = getDefaultMode(profile.activeRole);
+          setMode(defaultMode);
         }
-
-        setUserProfile(enhancedProfile);
-        
-        // Initialize routing service
-        routingService.setCurrentUser(enhancedProfile);
-        
-        // Set default mode for user's role
-        const defaultMode = getDefaultMode(enhancedProfile.activeRole);
-        setMode(defaultMode);
         
         setIsDataLoaded(true);
       } catch (error) {
@@ -151,7 +66,7 @@ const App: React.FC = () => {
     };
 
     initApp();
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -166,14 +81,13 @@ const App: React.FC = () => {
   };
 
   const handleRoleSwitch = (newRole: UserRole) => {
-    if (!userProfile) return;
+    if (!profile) return;
     
     const updatedProfile = {
-      ...userProfile,
+      ...profile,
       activeRole: newRole
     };
     
-    setUserProfile(updatedProfile);
     routingService.setCurrentUser(updatedProfile);
   };
 
@@ -200,37 +114,30 @@ const App: React.FC = () => {
     console.log('Legacy setUserPlan called:', userId, isPro);
   };
 
-  // Helper function to map legacy roles to new UserRole enum
-  function mapLegacyRole(legacyRole: string): UserRole {
-    switch (legacyRole) {
-      case 'admin':
-        return UserRole.ADMIN;
-      case 'user':
-        return UserRole.AVOCAT;
-      case 'tester':
-        return UserRole.ETUDIANT;
-      default:
-        return UserRole.AVOCAT;
-    }
-  }
-
   // Loading state
-  if (!isDataLoaded || !translationSystemReady) {
+  if (authLoading || !isDataLoaded || !translationSystemReady) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white">
         <Loader2 className="w-12 h-12 text-legal-gold animate-spin mb-4" />
         <p className="font-serif italic text-slate-400">Initialisation Cabinet JuristDZ...</p>
         {!translationSystemReady ? (
-          <p className="text-xs text-slate-500 mt-2">Configuration du système de traduction pure...</p>
+          <p className="text-xs text-slate-500 mt-2">Configuration du système de traduction...</p>
+        ) : authLoading ? (
+          <p className="text-xs text-slate-500 mt-2">Vérification de l'authentification...</p>
         ) : (
-          <p className="text-xs text-slate-500 mt-2">Configuration du système de routage par rôle...</p>
+          <p className="text-xs text-slate-500 mt-2">Configuration du système de routage...</p>
         )}
       </div>
     );
   }
 
+  // Show auth form if not authenticated
+  if (!user || !profile) {
+    return <AuthForm onSuccess={() => {}} />;
+  }
+
   // Error state
-  if (authError || !userProfile) {
+  if (authError) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white p-8">
         <div className="max-w-md w-full bg-slate-900 rounded-2xl p-8 border border-slate-800">
@@ -246,7 +153,7 @@ const App: React.FC = () => {
           
           <div className="bg-red-900/10 border border-red-800 rounded-xl p-4 mb-6">
             <p className="text-red-200 text-sm">
-              {authError || 'Profil utilisateur non disponible'}
+              {authError}
             </p>
           </div>
           
@@ -263,8 +170,8 @@ const App: React.FC = () => {
 
   // Convert enhanced profile to legacy UserStats for backward compatibility
   const legacyUserStats: UserStats = {
-    id: userProfile.id,
-    email: userProfile.email,
+    id: profile.id,
+    email: profile.email,
     credits: 5,
     plan: 'free',
     isPro: false,
@@ -274,7 +181,7 @@ const App: React.FC = () => {
 
   return (
     <RoleBasedLayout
-      user={userProfile}
+      user={profile}
       currentMode={currentMode}
       language={language}
       theme={theme}
@@ -287,7 +194,7 @@ const App: React.FC = () => {
         <Dashboard 
           language={language} 
           user={legacyUserStats} 
-          enhancedUser={userProfile}
+          enhancedUser={profile}
           setMode={setMode} 
           showSpecializedInterface={true}
           theme={theme}
@@ -304,14 +211,14 @@ const App: React.FC = () => {
       {currentMode === AppMode.RESEARCH && (
         <ChatInterface 
           language={language} 
-          userId={userProfile.id} 
+          userId={profile.id} 
         />
       )}
       {currentMode === AppMode.DRAFTING && (
         <EnhancedDraftingInterface 
           language={language} 
-          userRole={userProfile.activeRole}
-          userId={userProfile.id}
+          userRole={profile.activeRole}
+          userId={profile.id}
         />
       )}
       {currentMode === AppMode.ANALYSIS && (
