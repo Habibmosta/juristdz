@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, User, Mail, Lock, Briefcase, Calendar } from 'lucide-react';
+import { X, User, Mail, Lock, Briefcase, Calendar, Eye, EyeOff } from 'lucide-react';
 
 interface CreateUserModalProps {
   onClose: () => void;
@@ -20,6 +20,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuc
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +28,10 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuc
     setError('');
 
     try {
-      // 1. Créer l'utilisateur avec signUp (pas besoin de clé admin)
+      // Sauvegarder la session admin actuelle
+      const { data: { session: adminSession } } = await supabase.auth.getSession();
+      
+      // 1. Créer l'utilisateur avec signUp
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -36,7 +40,8 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuc
             first_name: formData.firstName,
             last_name: formData.lastName,
             profession: formData.profession
-          }
+          },
+          emailRedirectTo: undefined // Pas de redirection
         }
       });
 
@@ -73,6 +78,14 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuc
         });
 
       if (subError) throw subError;
+
+      // 4. IMPORTANT: Restaurer la session admin
+      if (adminSession) {
+        await supabase.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token
+        });
+      }
 
       onSuccess();
     } catch (err: any) {
@@ -167,15 +180,29 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuc
                 <Lock className="w-4 h-4 inline mr-2" />
                 Mot de passe
               </label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-legal-gold"
-                placeholder="Minimum 6 caractères"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-4 py-3 pr-12 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-legal-gold"
+                  placeholder="Minimum 6 caractères"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                  title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>

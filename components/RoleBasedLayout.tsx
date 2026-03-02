@@ -3,6 +3,7 @@ import { AppMode, UserRole, Language, EnhancedUserProfile } from '../types';
 import { routingService, NavigationItem } from '../services/routingService';
 import RoleBasedNavigation from './RoleBasedNavigation';
 import RoleSwitcher from './RoleSwitcher';
+import { useAuth } from '../src/hooks/useAuth';
 import { 
   Scale, 
   Wifi, 
@@ -15,7 +16,10 @@ import {
   X,
   Menu,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  User as UserIcon,
+  ChevronDown
 } from 'lucide-react';
 import { UI_TRANSLATIONS } from '../constants';
 
@@ -55,7 +59,9 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
+  const { signOut } = useAuth();
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
 
@@ -243,6 +249,67 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
+
+          {/* Mobile User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
+                theme === 'light' 
+                  ? 'hover:bg-slate-100 active:bg-slate-200' 
+                  : 'hover:bg-slate-800 active:bg-slate-700'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full bg-legal-gold flex items-center justify-center text-white font-bold text-sm">
+                {user.firstName?.[0] || user.email[0].toUpperCase()}
+              </div>
+            </button>
+
+            {/* Mobile Dropdown Menu */}
+            {showUserMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowUserMenu(false)}
+                />
+                <div className={`absolute ${isAr ? 'left-0' : 'right-0'} top-full mt-2 w-64 rounded-xl shadow-2xl border z-50 ${
+                  theme === 'light' 
+                    ? 'bg-white border-slate-200' 
+                    : 'bg-slate-900 border-slate-800'
+                }`}>
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-legal-gold flex items-center justify-center text-white font-bold text-lg">
+                        {user.firstName?.[0] || user.email[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">
+                          {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={async () => {
+                        await signOut();
+                        setShowUserMenu(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        theme === 'light'
+                          ? 'hover:bg-red-50 text-red-600'
+                          : 'hover:bg-red-900/20 text-red-400'
+                      }`}
+                    >
+                      <LogOut size={18} />
+                      <span className="font-medium">{isAr ? 'تسجيل الخروج' : 'Déconnexion'}</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -360,6 +427,61 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
         {/* Desktop Footer Controls */}
         {!isDesktopSidebarCollapsed && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+            {/* User Profile Section */}
+            <div className="mb-4 relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                  theme === 'light'
+                    ? 'hover:bg-slate-100 active:bg-slate-200'
+                    : 'hover:bg-slate-800 active:bg-slate-700'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-full bg-legal-gold flex items-center justify-center text-white font-bold">
+                  {user.firstName?.[0] || user.email[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="font-bold text-sm truncate">
+                    {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                </div>
+                <ChevronDown size={16} className={`transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Desktop Dropdown Menu */}
+              {showUserMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowUserMenu(false)}
+                  />
+                  <div className={`absolute ${isAr ? 'right-0' : 'left-0'} bottom-full mb-2 w-full rounded-xl shadow-2xl border z-50 ${
+                    theme === 'light' 
+                      ? 'bg-white border-slate-200' 
+                      : 'bg-slate-900 border-slate-800'
+                  }`}>
+                    <div className="p-2">
+                      <button
+                        onClick={async () => {
+                          await signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          theme === 'light'
+                            ? 'hover:bg-red-50 text-red-600'
+                            : 'hover:bg-red-900/20 text-red-400'
+                        }`}
+                      >
+                        <LogOut size={18} />
+                        <span className="font-medium">{isAr ? 'تسجيل الخروج' : 'Déconnexion'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="flex items-center justify-between mb-4">
               <button 
                 onClick={onThemeToggle}

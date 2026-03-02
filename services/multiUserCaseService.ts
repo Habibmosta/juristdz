@@ -1,5 +1,5 @@
 import { Case } from '../types';
-import { supabase } from './supabaseClient';
+import { supabase } from '../src/lib/supabase';
 import { authService } from './authService';
 
 /**

@@ -1,5 +1,5 @@
 
-import { supabase } from './supabaseClient';
+import { supabase } from '../src/lib/supabase';
 import { UserStats, Transaction, LicenseKey, Message, UserFeedback } from '../types';
 
 const storage = {

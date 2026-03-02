@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from '../src/lib/supabase';
 import { UserRole } from '../types';
 
 export interface TemplateField {

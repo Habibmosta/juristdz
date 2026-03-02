@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Users, Plus, Edit2, CheckCircle, XCircle, Search } from 'lucide-react';
+import { Users, Plus, Edit2, CheckCircle, XCircle, Search, Trash2, Filter } from 'lucide-react';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
 
@@ -22,6 +22,17 @@ interface User {
     is_active: boolean;
   };
 }
+
+// Couleurs par profession
+const PROFESSION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  avocat: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Avocat' },
+  notaire: { bg: 'bg-purple-500/20', text: 'text-purple-400', label: 'Notaire' },
+  huissier: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Huissier' },
+  magistrat: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Magistrat' },
+  etudiant: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Étudiant' },
+  juriste_entreprise: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', label: 'Juriste' },
+  admin: { bg: 'bg-legal-gold/20', text: 'text-legal-gold', label: 'Admin' }
+};
 
 // Composant StatCard
 const StatCard: React.FC<{
@@ -52,8 +63,9 @@ const StatCard: React.FC<{
 const UserRow: React.FC<{
   user: User;
   onEdit: () => void;
+  onDelete: () => void;
   onRefresh: () => void;
-}> = ({ user, onEdit, onRefresh }) => {
+}> = ({ user, onEdit, onDelete, onRefresh }) => {
   const toggleActive = async () => {
     try {
       const { error } = await supabase
@@ -68,6 +80,8 @@ const UserRow: React.FC<{
     }
   };
 
+  const professionColor = PROFESSION_COLORS[user.profession] || PROFESSION_COLORS.avocat;
+
   return (
     <tr className="hover:bg-slate-800/50 transition-colors">
       <td className="px-6 py-4">
@@ -77,8 +91,8 @@ const UserRow: React.FC<{
         </div>
       </td>
       <td className="px-6 py-4">
-        <span className="px-3 py-1 bg-slate-800 rounded-full text-sm capitalize">
-          {user.profession}
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${professionColor.bg} ${professionColor.text}`}>
+          {professionColor.label}
         </span>
       </td>
       <td className="px-6 py-4">
@@ -128,6 +142,13 @@ const UserRow: React.FC<{
               <CheckCircle className="w-4 h-4 text-green-400" />
             )}
           </button>
+          <button
+            onClick={onDelete}
+            className="p-2 hover:bg-red-900/50 rounded-lg transition-colors"
+            title="Supprimer"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </button>
         </div>
       </td>
     </tr>
@@ -141,6 +162,12 @@ export const AdminUserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  
+  // Filtres
+  const [filterProfession, setFilterProfession] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPlan, setFilterPlan] = useState<string>('all');
 
   useEffect(() => {
     loadUsers();
@@ -176,10 +203,73 @@ export const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDeleteUser = async (user: User) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${user.first_name} ${user.last_name}?\n\nCette action est irréversible et supprimera:\n- Le profil utilisateur\n- L'abonnement\n- Tous les dossiers\n- Tous les documents`)) {
+      return;
+    }
+
+    try {
+      // 1. Supprimer les documents
+      const { error: docsError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (docsError) console.error('Erreur suppression documents:', docsError);
+
+      // 2. Supprimer les dossiers
+      const { error: casesError } = await supabase
+        .from('cases')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (casesError) console.error('Erreur suppression dossiers:', casesError);
+
+      // 3. Supprimer l'abonnement
+      const { error: subError } = await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (subError) console.error('Erreur suppression abonnement:', subError);
+
+      // 4. Supprimer le profil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 5. Supprimer l'utilisateur auth (optionnel, nécessite service_role)
+      // Note: Cela nécessiterait la clé service_role, on laisse l'utilisateur dans auth.users
+
+      alert('Utilisateur supprimé avec succès!');
+      loadUsers();
+    } catch (error: any) {
+      console.error('Erreur suppression utilisateur:', error);
+      alert('Erreur lors de la suppression: ' + error.message);
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    // Filtre par recherche
+    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filtre par profession
+    const matchesProfession = filterProfession === 'all' || user.profession === filterProfession;
+    
+    // Filtre par statut
+    const matchesStatus = filterStatus === 'all' || 
+      (filterStatus === 'active' && user.is_active) ||
+      (filterStatus === 'inactive' && !user.is_active);
+    
+    // Filtre par plan
+    const matchesPlan = filterPlan === 'all' || user.subscription?.plan === filterPlan;
+    
+    return matchesSearch && matchesProfession && matchesStatus && matchesPlan;
+  });
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
@@ -228,7 +318,8 @@ export const AdminUserManagement: React.FC = () => {
           />
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
+          {/* Barre de recherche */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -238,6 +329,58 @@ export const AdminUserManagement: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-legal-gold"
             />
+          </div>
+
+          {/* Filtres */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-slate-400" />
+              <span className="text-sm text-slate-400 font-medium">Filtres:</span>
+            </div>
+
+            {/* Filtre Profession */}
+            <select
+              value={filterProfession}
+              onChange={(e) => setFilterProfession(e.target.value)}
+              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-legal-gold"
+            >
+              <option value="all">Toutes les professions</option>
+              <option value="avocat">Avocat</option>
+              <option value="notaire">Notaire</option>
+              <option value="huissier">Huissier</option>
+              <option value="magistrat">Magistrat</option>
+              <option value="etudiant">Étudiant</option>
+              <option value="juriste_entreprise">Juriste d'Entreprise</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            {/* Filtre Statut */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-legal-gold"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="active">Actifs</option>
+              <option value="inactive">Inactifs</option>
+            </select>
+
+            {/* Filtre Plan */}
+            <select
+              value={filterPlan}
+              onChange={(e) => setFilterPlan(e.target.value)}
+              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-legal-gold"
+            >
+              <option value="all">Tous les plans</option>
+              <option value="free">Gratuit</option>
+              <option value="pro">Pro</option>
+              <option value="cabinet">Cabinet</option>
+            </select>
+
+            {/* Compteur résultats */}
+            <span className="text-sm text-slate-400 ml-auto">
+              {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''}
+            </span>
           </div>
         </div>
 
@@ -265,9 +408,17 @@ export const AdminUserManagement: React.FC = () => {
                     key={user.id}
                     user={user}
                     onEdit={() => setSelectedUser(user)}
+                    onDelete={() => handleDeleteUser(user)}
                     onRefresh={loadUsers}
                   />
                 ))}
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                      Aucun utilisateur trouvé
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

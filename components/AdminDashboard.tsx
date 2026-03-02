@@ -17,12 +17,7 @@ import { UI_TRANSLATIONS } from '../constants';
 import OrganizationManagement from './interfaces/admin/OrganizationManagement';
 import SubscriptionManagement from './interfaces/admin/SubscriptionManagement';
 import { AdminUserManagement } from '../src/components/admin';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '../src/lib/supabase';
 
 interface AdminDashboardProps {
   language: Language;
