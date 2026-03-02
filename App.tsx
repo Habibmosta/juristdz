@@ -8,14 +8,14 @@ import AdminDashboard from './components/AdminDashboard';
 import Documentation from './components/Documentation';
 import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
-import AuthForm from './components/auth/AuthForm';
+import AuthForm from './src/components/auth/AuthForm';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
 import { autoTranslationService } from './services/autoTranslationService';
 import { demoSetup } from './services/demoSetup';
 import { getDefaultMode } from './config/roleRouting';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './src/hooks/useAuth';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 const App: React.FC = () => {
