@@ -61,77 +61,80 @@
     <div id="config-info"></div>
     
     <h2>Tests Automatiques</h2>
-    <button onclick="runAllTests()">▶️ Lancer tous les tests</button>
+    <button id="btnRunTests">▶️ Lancer tous les tests</button>
     <button onclick="location.reload()">🔄 Rafraîchir</button>
     
     <div id="results"></div>
 
     <h2>Actions Admin</h2>
-    <button onclick="createAdminAccount()">👤 Créer le compte admin</button>
-    <button onclick="createTestAccounts()">👥 Créer des comptes de test</button>
+    <button id="btnCreateAdmin">👤 Créer le compte admin</button>
+    <button id="btnCreateTests">👥 Créer des comptes de test</button>
     
     <div id="admin-results"></div>
 
     <script>
-        // Configuration Supabase
+        console.log('📜 Script chargé');
+
+        
+        // Configuration
         const SUPABASE_URL = 'https://fcteljnmcdelbratudnc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdGVsam5tY2RlbGJyYXR1ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTkzMDQsImV4cCI6MjA4NTE5NTMwNH0.jbWM24_1ernpGVHS7i32Jx0W9K7yx8WdCLqq42tzwOo';
-
-        let supabase = null;
         
-        // Vérifier si Supabase est chargé
+        let supabaseClient = null;
+        
+        // Initialiser Supabase
         function initSupabase() {
+            console.log('🔄 Initialisation Supabase...');
+            
             if (typeof window.supabase === 'undefined') {
-                console.error('❌ Supabase library not loaded!');
-                document.getElementById('config-info').innerHTML = `
-                    <div class="test-result error">
-                        <strong>❌ ERREUR: Bibliothèque Supabase non chargée</strong><br>
-                        La bibliothèque Supabase n'a pas pu être chargée depuis le CDN.<br>
-                        Vérifiez votre connexion internet et rechargez la page.
-                    </div>
-                `;
+                console.error('❌ Bibliothèque Supabase non chargée');
+                showError('config-info', 'Bibliothèque Supabase non chargée. Vérifiez votre connexion internet.');
                 return false;
             }
             
             try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('✅ Supabase client created successfully');
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Client Supabase créé');
+                showConfig();
                 return true;
             } catch (error) {
-                console.error('❌ Error creating Supabase client:', error);
-                document.getElementById('config-info').innerHTML = `
-                    <div class="test-result error">
-                        <strong>❌ ERREUR: Impossible de créer le client Supabase</strong><br>
-                        ${error.message}
-                    </div>
-                `;
+                console.error('❌ Erreur:', error);
+                showError('config-info', error.message);
                 return false;
             }
         }
-
+        
         // Afficher la configuration
-        function displayConfig() {
-            if (!supabase) {
-                return;
-            }
-            
+        function showConfig() {
             document.getElementById('config-info').innerHTML = `
                 <div class="test-result warning">
                     <strong>📋 Configuration Supabase</strong><br>
                     URL: ${SUPABASE_URL}<br>
                     Clé: ${SUPABASE_ANON_KEY.substring(0, 50)}...<br>
-                    <span style="color: #10B981;">✅ Client Supabase initialisé</span>
+                    <span style="color: #10B981;">✅ Client initialisé</span>
                 </div>
             `;
         }
-
+        
+        // Afficher une erreur
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="test-result error">
+                    <strong>❌ ERREUR</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+        
+        // Ajouter un résultat
         function addResult(message, type = 'success') {
             const div = document.createElement('div');
             div.className = `test-result ${type}`;
             div.innerHTML = message;
             document.getElementById('results').appendChild(div);
         }
-
+        
+        // Ajouter un résultat admin
         function addAdminResult(message, type = 'success') {
             const div = document.createElement('div');
             div.className = `test-result ${type}`;
@@ -139,9 +142,11 @@
             document.getElementById('admin-results').appendChild(div);
         }
 
+        
+        // Test de connexion
         async function testConnection() {
             try {
-                const { data, error } = await supabase.from('profiles').select('count');
+                const { data, error } = await supabaseClient.from('profiles').select('count');
                 if (error) throw error;
                 addResult('✅ <strong>Connexion Supabase</strong>: OK', 'success');
                 return true;
@@ -150,12 +155,13 @@
                 return false;
             }
         }
-
+        
+        // Test d'une table
         async function testTable(tableName) {
             try {
-                const { data, error } = await supabase.from(tableName).select('*').limit(1);
+                const { data, error } = await supabaseClient.from(tableName).select('*').limit(1);
                 if (error) throw error;
-                addResult(`✅ <strong>Table "${tableName}"</strong>: Existe (${data.length} enregistrement(s))`, 'success');
+                addResult(`✅ <strong>Table "${tableName}"</strong>: Existe`, 'success');
                 return true;
             } catch (error) {
                 if (error.message.includes('does not exist')) {
@@ -166,10 +172,11 @@
                 return false;
             }
         }
-
+        
+        // Test d'une fonction
         async function testFunction(functionName) {
             try {
-                const { data, error } = await supabase.rpc(functionName);
+                const { data, error } = await supabaseClient.rpc(functionName);
                 if (error) throw error;
                 addResult(`✅ <strong>Fonction "${functionName}"</strong>: Existe`, 'success');
                 return true;
@@ -182,42 +189,39 @@
                 return false;
             }
         }
-
+        
+        // Lancer tous les tests
         async function runAllTests() {
-            if (!supabase) {
-                addResult('❌ <strong>Erreur:</strong> Client Supabase non initialisé. Rechargez la page.', 'error');
+            if (!supabaseClient) {
+                addResult('❌ Client Supabase non initialisé', 'error');
                 return;
             }
             
             document.getElementById('results').innerHTML = '<h3>🔍 Tests en cours...</h3>';
             
-            // Test 1: Connexion
             await testConnection();
-            
-            // Test 2: Tables
             await testTable('profiles');
             await testTable('cases');
             await testTable('documents');
             await testTable('subscriptions');
-            
-            // Test 3: Fonctions
             await testFunction('is_admin');
             await testFunction('check_document_quota');
             
             addResult('<strong>✅ Tests terminés!</strong>', 'success');
         }
 
+        
+        // Créer le compte admin
         async function createAdminAccount() {
-            if (!supabase) {
-                addAdminResult('❌ <strong>Erreur:</strong> Client Supabase non initialisé. Rechargez la page.', 'error');
+            if (!supabaseClient) {
+                addAdminResult('❌ Client Supabase non initialisé', 'error');
                 return;
             }
             
             document.getElementById('admin-results').innerHTML = '<h3>👤 Création du compte admin...</h3>';
             
             try {
-                // Créer le compte
-                const { data: authData, error: signUpError } = await supabase.auth.signUp({
+                const { data, error } = await supabaseClient.auth.signUp({
                     email: 'admin@juristdz.com',
                     password: 'Admin2024!JuristDZ',
                     options: {
@@ -228,21 +232,21 @@
                         }
                     }
                 });
-
-                if (signUpError) throw signUpError;
-
+                
+                if (error) throw error;
+                
                 addAdminResult(`✅ <strong>Compte admin créé!</strong><br>
                     Email: admin@juristdz.com<br>
                     Mot de passe: Admin2024!JuristDZ<br>
-                    ID: ${authData.user.id}`, 'success');
-
+                    ID: ${data.user.id}`, 'success');
+                
                 addAdminResult(`⚠️ <strong>Action requise:</strong><br>
                     Allez dans Supabase SQL Editor et exécutez:<br>
                     <pre>UPDATE public.profiles SET is_admin = true WHERE email = 'admin@juristdz.com';</pre>`, 'warning');
-
+                
             } catch (error) {
                 if (error.message.includes('already registered')) {
-                    addAdminResult(`⚠️ <strong>Compte admin existe déjà</strong><br>
+                    addAdminResult(`⚠️ <strong>Compte existe déjà</strong><br>
                         Email: admin@juristdz.com<br>
                         Mot de passe: Admin2024!JuristDZ`, 'warning');
                 } else {
@@ -250,10 +254,11 @@
                 }
             }
         }
-
+        
+        // Créer les comptes de test
         async function createTestAccounts() {
-            if (!supabase) {
-                addAdminResult('❌ <strong>Erreur:</strong> Client Supabase non initialisé. Rechargez la page.', 'error');
+            if (!supabaseClient) {
+                addAdminResult('❌ Client Supabase non initialisé', 'error');
                 return;
             }
             
@@ -265,10 +270,10 @@
                 { email: 'mohamed.ziani@test.dz', firstName: 'Mohamed', lastName: 'Ziani', profession: 'notaire' },
                 { email: 'karim.djahid@test.dz', firstName: 'Karim', lastName: 'Djahid', profession: 'huissier' }
             ];
-
+            
             for (const account of accounts) {
                 try {
-                    const { data, error } = await supabase.auth.signUp({
+                    const { data, error } = await supabaseClient.auth.signUp({
                         email: account.email,
                         password: 'test123',
                         options: {
@@ -279,14 +284,14 @@
                             }
                         }
                     });
-
+                    
                     if (error) throw error;
-
+                    
                     addAdminResult(`✅ <strong>${account.firstName} ${account.lastName}</strong><br>
                         Email: ${account.email}<br>
                         Mot de passe: test123<br>
                         Profession: ${account.profession}`, 'success');
-
+                    
                 } catch (error) {
                     if (error.message.includes('already registered')) {
                         addAdminResult(`⚠️ <strong>${account.firstName} ${account.lastName}</strong>: Compte existe déjà`, 'warning');
@@ -295,27 +300,30 @@
                     }
                 }
             }
-
-            addAdminResult('<strong>✅ Création des comptes terminée!</strong>', 'success');
+            
+            addAdminResult('<strong>✅ Création terminée!</strong>', 'success');
         }
-
-        // Lancer les tests au chargement
-        window.onload = () => {
-            console.log('🔄 Page loaded, initializing...');
-            if (initSupabase()) {
-                displayConfig();
-                console.log('✅ Ready to run tests');
-                // Auto-run tests
-                setTimeout(() => {
-                    runAllTests();
-                }, 500);
-            } else {
-                console.error('❌ Failed to initialize Supabase');
-            }
-        };
         
-        // Debug: Log when script loads
-        console.log('📜 Script loaded successfully');
+        // Initialisation au chargement
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🔄 Page chargée');
+            
+            if (initSupabase()) {
+                console.log('✅ Prêt');
+                
+                // Attacher les événements
+                document.getElementById('btnRunTests').addEventListener('click', runAllTests);
+                document.getElementById('btnCreateAdmin').addEventListener('click', createAdminAccount);
+                document.getElementById('btnCreateTests').addEventListener('click', createTestAccounts);
+                
+                // Lancer les tests automatiquement
+                setTimeout(runAllTests, 500);
+            } else {
+                console.error('❌ Échec initialisation');
+            }
+        });
+        
+        console.log('✅ Script prêt');
     </script>
 </body>
 </html>
