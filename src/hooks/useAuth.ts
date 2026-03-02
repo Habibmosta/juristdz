@@ -127,6 +127,8 @@ export const useAuth = () => {
 // Helper function to map profession to UserRole
 function mapProfessionToRole(profession: string): UserRole {
   switch (profession.toLowerCase()) {
+    case 'admin':
+      return UserRole.ADMIN;
     case 'avocat':
       return UserRole.AVOCAT;
     case 'notaire':
@@ -140,6 +142,7 @@ function mapProfessionToRole(profession: string): UserRole {
     case 'juriste_entreprise':
       return UserRole.JURISTE_ENTREPRISE;
     default:
+      console.warn(`Unknown profession: ${profession}, defaulting to AVOCAT`);
       return UserRole.AVOCAT;
   }
 }
