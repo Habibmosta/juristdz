@@ -1,20 +1,19 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- SCRIPT SQL: Création des Tables JuristDZ
+-- SCRIPT SQL SIMPLIFIÉ: Création des Tables JuristDZ
 -- ═══════════════════════════════════════════════════════════════════════════
--- À exécuter dans Supabase SQL Editor
--- Temps d'exécution: ~30 secondes
+-- Version sans trigger (plus simple, moins d'erreurs possibles)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create profiles table (extends auth.users)
+-- Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   first_name TEXT,
   last_name TEXT,
-  profession TEXT NOT NULL CHECK (profession IN ('avocat', 'notaire', 'huissier', 'magistrat', 'etudiant', 'juriste_entreprise')),
+  profession TEXT NOT NULL DEFAULT 'avocat' CHECK (profession IN ('avocat', 'notaire', 'huissier', 'magistrat', 'etudiant', 'juriste_entreprise')),
   registration_number TEXT,
   barreau_id TEXT,
   organization_name TEXT,
@@ -77,39 +76,50 @@ ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Policies for profiles
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
 -- Policies for cases
+DROP POLICY IF EXISTS "Users can view own cases" ON public.cases;
 CREATE POLICY "Users can view own cases" ON public.cases
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create own cases" ON public.cases;
 CREATE POLICY "Users can create own cases" ON public.cases
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own cases" ON public.cases;
 CREATE POLICY "Users can update own cases" ON public.cases
   FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own cases" ON public.cases;
 CREATE POLICY "Users can delete own cases" ON public.cases
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Policies for documents
+DROP POLICY IF EXISTS "Users can view own documents" ON public.documents;
 CREATE POLICY "Users can view own documents" ON public.documents
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create own documents" ON public.documents;
 CREATE POLICY "Users can create own documents" ON public.documents
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own documents" ON public.documents;
 CREATE POLICY "Users can update own documents" ON public.documents
   FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own documents" ON public.documents;
 CREATE POLICY "Users can delete own documents" ON public.documents
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Policies for subscriptions
+DROP POLICY IF EXISTS "Users can view own subscription" ON public.subscriptions;
 CREATE POLICY "Users can view own subscription" ON public.subscriptions
   FOR SELECT USING (auth.uid() = user_id);
 
@@ -166,36 +176,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger to create profile on user signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, first_name, last_name, profession)
-  VALUES (
-    NEW.id::uuid,
-    NEW.email::text,
-    COALESCE((NEW.raw_user_meta_data->>'first_name')::text, ''),
-    COALESCE((NEW.raw_user_meta_data->>'last_name')::text, ''),
-    COALESCE((NEW.raw_user_meta_data->>'profession')::text, 'avocat')
-  );
-  
-  INSERT INTO public.subscriptions (user_id, plan, status)
-  VALUES (NEW.id::uuid, 'free', 'active');
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FIN DU SCRIPT
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Tables créées: profiles, cases, documents, subscriptions
 -- Fonctions créées: is_admin, check_document_quota, increment_document_usage
--- Trigger créé: on_auth_user_created
+-- Note: Les profils et subscriptions seront créés manuellement via l'interface
 -- ═══════════════════════════════════════════════════════════════════════════
