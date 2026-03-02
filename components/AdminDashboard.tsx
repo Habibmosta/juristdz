@@ -16,6 +16,7 @@ import {
 import { UI_TRANSLATIONS } from '../constants';
 import OrganizationManagement from './interfaces/admin/OrganizationManagement';
 import SubscriptionManagement from './interfaces/admin/SubscriptionManagement';
+import { AdminUserManagement } from '../src/components/admin';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -46,7 +47,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
-  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'subscriptions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'organizations' | 'subscriptions'>('overview');
   const [stats, setStats] = useState({
     totalOrganizations: 0,
     activeSubscriptions: 0,
@@ -140,6 +141,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <BarChart3 size={16} className="inline mr-2" />
               {isAr ? 'نظرة عامة' : 'Vue d\'ensemble'}
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'users'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Users size={16} className="inline mr-2" />
+              {isAr ? 'المستخدمين' : 'Utilisateurs'}
             </button>
             <button
               onClick={() => setActiveTab('organizations')}
@@ -321,6 +333,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'users' && (
+          <AdminUserManagement />
         )}
 
         {activeTab === 'organizations' && (
