@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase - JuristDZ</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #1a3a1a;
+            border-color: #10B981;
+        }
+        .error {
+            background: #3a1a1a;
+            border-color: #DC2626;
+        }
+        .warning {
+            background: #3a3a1a;
+            border-color: #D97706;
+        }
+        button {
+            background: #D97706;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #B45309;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        h1 { color: #D97706; }
+        h2 { color: #10B981; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Configuration Supabase - JuristDZ</h1>
+    
+    <div id="config-info"></div>
+    
+    <h2>Tests Automatiques</h2>
+    <button onclick="runAllTests()">▶️ Lancer tous les tests</button>
+    <button onclick="location.reload()">🔄 Rafraîchir</button>
+    
+    <div id="results"></div>
+
+    <h2>Actions Admin</h2>
+    <button onclick="createAdminAccount()">👤 Créer le compte admin</button>
+    <button onclick="createTestAccounts()">👥 Créer des comptes de test</button>
+    
+    <div id="admin-results"></div>
+
+    <script>
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://fcteljnmcdelbratudnc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdGVsam5tY2RlbGJyYXR1ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTkzMDQsImV4cCI6MjA4NTE5NTMwNH0.jbWM24_1ernpGVHS7i32Jx0W9K7yx8WdCLqq42tzwOo';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Afficher la configuration
+        document.getElementById('config-info').innerHTML = `
+            <div class="test-result warning">
+                <strong>📋 Configuration Supabase</strong><br>
+                URL: ${SUPABASE_URL}<br>
+                Clé: ${SUPABASE_ANON_KEY.substring(0, 50)}...
+            </div>
+        `;
+
+        function addResult(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            document.getElementById('results').appendChild(div);
+        }
+
+        function addAdminResult(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            document.getElementById('admin-results').appendChild(div);
+        }
+
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase.from('profiles').select('count');
+                if (error) throw error;
+                addResult('✅ <strong>Connexion Supabase</strong>: OK', 'success');
+                return true;
+            } catch (error) {
+                addResult(`❌ <strong>Connexion Supabase</strong>: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testTable(tableName) {
+            try {
+                const { data, error } = await supabase.from(tableName).select('*').limit(1);
+                if (error) throw error;
+                addResult(`✅ <strong>Table "${tableName}"</strong>: Existe (${data.length} enregistrement(s))`, 'success');
+                return true;
+            } catch (error) {
+                if (error.message.includes('does not exist')) {
+                    addResult(`❌ <strong>Table "${tableName}"</strong>: N'existe pas`, 'error');
+                } else {
+                    addResult(`⚠️ <strong>Table "${tableName}"</strong>: ${error.message}`, 'warning');
+                }
+                return false;
+            }
+        }
+
+        async function testFunction(functionName) {
+            try {
+                const { data, error } = await supabase.rpc(functionName);
+                if (error) throw error;
+                addResult(`✅ <strong>Fonction "${functionName}"</strong>: Existe`, 'success');
+                return true;
+            } catch (error) {
+                if (error.message.includes('does not exist')) {
+                    addResult(`❌ <strong>Fonction "${functionName}"</strong>: N'existe pas`, 'error');
+                } else {
+                    addResult(`⚠️ <strong>Fonction "${functionName}"</strong>: ${error.message}`, 'warning');
+                }
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            document.getElementById('results').innerHTML = '<h3>🔍 Tests en cours...</h3>';
+            
+            // Test 1: Connexion
+            await testConnection();
+            
+            // Test 2: Tables
+            await testTable('profiles');
+            await testTable('cases');
+            await testTable('documents');
+            await testTable('subscriptions');
+            
+            // Test 3: Fonctions
+            await testFunction('is_admin');
+            await testFunction('check_document_quota');
+            
+            addResult('<strong>✅ Tests terminés!</strong>', 'success');
+        }
+
+        async function createAdminAccount() {
+            document.getElementById('admin-results').innerHTML = '<h3>👤 Création du compte admin...</h3>';
+            
+            try {
+                // Créer le compte
+                const { data: authData, error: signUpError } = await supabase.auth.signUp({
+                    email: 'admin@juristdz.com',
+                    password: 'Admin2024!JuristDZ',
+                    options: {
+                        data: {
+                            first_name: 'Admin',
+                            last_name: 'JuristDZ',
+                            profession: 'avocat'
+                        }
+                    }
+                });
+
+                if (signUpError) throw signUpError;
+
+                addAdminResult(`✅ <strong>Compte admin créé!</strong><br>
+                    Email: admin@juristdz.com<br>
+                    Mot de passe: Admin2024!JuristDZ<br>
+                    ID: ${authData.user.id}`, 'success');
+
+                addAdminResult(`⚠️ <strong>Action requise:</strong><br>
+                    Allez dans Supabase SQL Editor et exécutez:<br>
+                    <pre>UPDATE public.profiles SET is_admin = true WHERE email = 'admin@juristdz.com';</pre>`, 'warning');
+
+            } catch (error) {
+                if (error.message.includes('already registered')) {
+                    addAdminResult(`⚠️ <strong>Compte admin existe déjà</strong><br>
+                        Email: admin@juristdz.com<br>
+                        Mot de passe: Admin2024!JuristDZ`, 'warning');
+                } else {
+                    addAdminResult(`❌ <strong>Erreur:</strong> ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function createTestAccounts() {
+            document.getElementById('admin-results').innerHTML = '<h3>👥 Création des comptes de test...</h3>';
+            
+            const accounts = [
+                { email: 'ahmed.benali@test.dz', firstName: 'Ahmed', lastName: 'Benali', profession: 'avocat' },
+                { email: 'sarah.khelifi@test.dz', firstName: 'Sarah', lastName: 'Khelifi', profession: 'avocat' },
+                { email: 'mohamed.ziani@test.dz', firstName: 'Mohamed', lastName: 'Ziani', profession: 'notaire' },
+                { email: 'karim.djahid@test.dz', firstName: 'Karim', lastName: 'Djahid', profession: 'huissier' }
+            ];
+
+            for (const account of accounts) {
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email: account.email,
+                        password: 'test123',
+                        options: {
+                            data: {
+                                first_name: account.firstName,
+                                last_name: account.lastName,
+                                profession: account.profession
+                            }
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    addAdminResult(`✅ <strong>${account.firstName} ${account.lastName}</strong><br>
+                        Email: ${account.email}<br>
+                        Mot de passe: test123<br>
+                        Profession: ${account.profession}`, 'success');
+
+                } catch (error) {
+                    if (error.message.includes('already registered')) {
+                        addAdminResult(`⚠️ <strong>${account.firstName} ${account.lastName}</strong>: Compte existe déjà`, 'warning');
+                    } else {
+                        addAdminResult(`❌ <strong>${account.firstName} ${account.lastName}</strong>: ${error.message}`, 'error');
+                    }
+                }
+            }
+
+            addAdminResult('<strong>✅ Création des comptes terminée!</strong>', 'success');
+        }
+
+        // Lancer les tests au chargement
+        window.onload = () => {
+            runAllTests();
+        };
+    </script>
+</body>
+</html>
