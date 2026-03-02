@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Supabase - JuristDZ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #D97706;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .card h2 {
+            color: #10B981;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .step {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #D97706;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .step-number {
+            display: inline-block;
+            background: #D97706;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .code-block {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .code-block code {
+            color: #10B981;
+        }
+        .warning {
+            background: rgba(217, 119, 6, 0.1);
+            border-left: 4px solid #D97706;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .error {
+            background: rgba(220, 38, 38, 0.1);
+            border-left: 4px solid #DC2626;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .credentials {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid #10B981;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .credentials strong {
+            color: #10B981;
+        }
+        a {
+            color: #D97706;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .button {
+            display: inline-block;
+            background: #D97706;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #B45309;
+            text-decoration: none;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            color: #D97706;
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Configuration Supabase - JuristDZ</h1>
+        
+        <div class="card">
+            <h2>📊 État Actuel</h2>
+            <div class="success">
+                <strong>✅ Ce qui fonctionne:</strong><br>
+                • Application React se lance correctement<br>
+                • Clés Supabase configurées dans .env.local<br>
+                • Code d'authentification créé
+            </div>
+            <div class="error">
+                <strong>❌ Ce qui manque:</strong><br>
+                • Tables Supabase à créer<br>
+                • Compte admin à créer<br>
+                • Comptes de test à créer
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ Configuration Rapide (15 minutes)</h2>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Ouvrir Supabase Dashboard</strong>
+                <p style="margin-top: 10px;">
+                    <a href="https://supabase.com/dashboard" target="_blank" class="button">
+                        🌐 Ouvrir Supabase Dashboard
+                    </a>
+                </p>
+                <p style="margin-top: 10px; color: #888;">
+                    Connectez-vous et sélectionnez votre projet: <strong>fcteljnmcdelbratudnc</strong>
+                </p>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Créer les Tables de Base</strong>
+                <p style="margin-top: 10px;">
+                    1. Dans le menu gauche, cliquer sur <strong>"SQL Editor"</strong><br>
+                    2. Cliquer sur <strong>"New query"</strong><br>
+                    3. Copier-coller le script ci-dessous<br>
+                    4. Cliquer sur <strong>"Run"</strong>
+                </p>
+                <div class="code-block">
+<code>-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create profiles table
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  first_name TEXT,
+  last_name TEXT,
+  profession TEXT NOT NULL CHECK (profession IN ('avocat', 'notaire', 'huissier', 'magistrat', 'etudiant', 'juriste_entreprise')),
+  registration_number TEXT,
+  barreau_id TEXT,
+  organization_name TEXT,
+  phone_number TEXT,
+  languages TEXT[] DEFAULT ARRAY['fr'],
+  specializations TEXT[],
+  is_active BOOLEAN DEFAULT true,
+  is_admin BOOLEAN DEFAULT false,
+  email_verified BOOLEAN DEFAULT false,
+  mfa_enabled BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create cases table
+CREATE TABLE IF NOT EXISTS public.cases (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  title TEXT NOT NULL,
+  client_name TEXT NOT NULL,
+  description TEXT,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'closed', 'archived')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create documents table
+CREATE TABLE IF NOT EXISTS public.documents (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  case_id UUID REFERENCES public.cases(id),
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  document_type TEXT NOT NULL,
+  language TEXT DEFAULT 'fr',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create subscriptions table
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'cabinet')),
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired')),
+  documents_used INTEGER DEFAULT 0,
+  documents_limit INTEGER DEFAULT 5,
+  cases_limit INTEGER DEFAULT 3,
+  is_active BOOLEAN DEFAULT true,
+  notes TEXT,
+  expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '30 days'),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Policies for profiles
+CREATE POLICY "Users can view own profile" ON public.profiles
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Policies for cases
+CREATE POLICY "Users can view own cases" ON public.cases
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own cases" ON public.cases
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own cases" ON public.cases
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Policies for documents
+CREATE POLICY "Users can view own documents" ON public.documents
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own documents" ON public.documents
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Policies for subscriptions
+CREATE POLICY "Users can view own subscription" ON public.subscriptions
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Function to check if user is admin
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
+    AND is_admin = true
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to check document quota
+CREATE OR REPLACE FUNCTION public.check_document_quota(user_id_param UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+  subscription_record RECORD;
+BEGIN
+  SELECT * INTO subscription_record
+  FROM public.subscriptions
+  WHERE user_id = user_id_param
+  AND status = 'active'
+  AND is_active = true
+  LIMIT 1;
+  
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+  
+  IF subscription_record.expires_at IS NOT NULL 
+     AND subscription_record.expires_at < NOW() THEN
+    RETURN false;
+  END IF;
+  
+  IF subscription_record.documents_limit = -1 THEN
+    RETURN true;
+  END IF;
+  
+  RETURN subscription_record.documents_used < subscription_record.documents_limit;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;</code>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Créer le Compte Admin</strong>
+                <p style="margin-top: 10px;">
+                    1. Dans le menu gauche, aller dans <strong>"Authentication"</strong> → <strong>"Users"</strong><br>
+                    2. Cliquer sur <strong>"Add user"</strong> → <strong>"Create new user"</strong><br>
+                    3. Remplir:
+                </p>
+                <div class="credentials">
+                    <strong>Email:</strong> admin@juristdz.com<br>
+                    <strong>Password:</strong> Admin2024!JuristDZ<br>
+                    <strong>Auto Confirm User:</strong> ✅ (cocher cette case)
+                </div>
+                <p style="margin-top: 10px;">
+                    4. Cliquer sur <strong>"Create user"</strong><br>
+                    5. Retourner dans <strong>"SQL Editor"</strong> et exécuter:
+                </p>
+                <div class="code-block">
+<code>UPDATE public.profiles
+SET is_admin = true
+WHERE email = 'admin@juristdz.com';</code>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Créer les Comptes de Test</strong>
+                <p style="margin-top: 10px;">
+                    Répéter l'étape 3 pour chaque compte de test:
+                </p>
+                <div class="credentials">
+                    <strong>Avocat 1:</strong><br>
+                    Email: ahmed.benali@test.dz<br>
+                    Password: test123<br>
+                    Auto Confirm: ✅
+                </div>
+                <div class="credentials">
+                    <strong>Avocat 2:</strong><br>
+                    Email: sarah.khelifi@test.dz<br>
+                    Password: test123<br>
+                    Auto Confirm: ✅
+                </div>
+                <div class="credentials">
+                    <strong>Notaire:</strong><br>
+                    Email: mohamed.ziani@test.dz<br>
+                    Password: test123<br>
+                    Auto Confirm: ✅
+                </div>
+                <div class="credentials">
+                    <strong>Huissier:</strong><br>
+                    Email: karim.djahid@test.dz<br>
+                    Password: test123<br>
+                    Auto Confirm: ✅
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Tester la Connexion</strong>
+                <p style="margin-top: 10px;">
+                    1. Ouvrir votre application: <a href="http://localhost:5173" target="_blank">http://localhost:5173</a><br>
+                    2. Se connecter avec le compte admin:<br>
+                </p>
+                <div class="credentials">
+                    <strong>Email:</strong> admin@juristdz.com<br>
+                    <strong>Mot de passe:</strong> Admin2024!JuristDZ
+                </div>
+                <p style="margin-top: 10px;">
+                    3. ✅ Vous devriez être connecté!
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✅ Checklist</h2>
+            <ul class="checklist">
+                <li>Tables Supabase créées (profiles, cases, documents, subscriptions)</li>
+                <li>Compte admin créé (admin@juristdz.com)</li>
+                <li>Droits admin activés (is_admin = true)</li>
+                <li>Comptes de test créés (4 comptes)</li>
+                <li>Test de connexion admin réussi</li>
+                <li>Test de connexion utilisateur réussi</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>🆘 Besoin d'Aide?</h2>
+            <div class="warning">
+                <strong>Erreur: "relation does not exist"</strong><br>
+                → Les tables n'existent pas. Suivre l'Étape 2.
+            </div>
+            <div class="warning">
+                <strong>Erreur: "Invalid login credentials"</strong><br>
+                → Le compte n'existe pas. Suivre l'Étape 3.
+            </div>
+            <div class="warning">
+                <strong>L'application ne se lance pas</strong><br>
+                → Vérifier que "npm run dev" est en cours d'exécution.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

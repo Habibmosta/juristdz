@@ -77,16 +77,53 @@
         const SUPABASE_URL = 'https://fcteljnmcdelbratudnc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdGVsam5tY2RlbGJyYXR1ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTkzMDQsImV4cCI6MjA4NTE5NTMwNH0.jbWM24_1ernpGVHS7i32Jx0W9K7yx8WdCLqq42tzwOo';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabase = null;
+        
+        // Vérifier si Supabase est chargé
+        function initSupabase() {
+            if (typeof window.supabase === 'undefined') {
+                console.error('❌ Supabase library not loaded!');
+                document.getElementById('config-info').innerHTML = `
+                    <div class="test-result error">
+                        <strong>❌ ERREUR: Bibliothèque Supabase non chargée</strong><br>
+                        La bibliothèque Supabase n'a pas pu être chargée depuis le CDN.<br>
+                        Vérifiez votre connexion internet et rechargez la page.
+                    </div>
+                `;
+                return false;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client created successfully');
+                return true;
+            } catch (error) {
+                console.error('❌ Error creating Supabase client:', error);
+                document.getElementById('config-info').innerHTML = `
+                    <div class="test-result error">
+                        <strong>❌ ERREUR: Impossible de créer le client Supabase</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+                return false;
+            }
+        }
 
         // Afficher la configuration
-        document.getElementById('config-info').innerHTML = `
-            <div class="test-result warning">
-                <strong>📋 Configuration Supabase</strong><br>
-                URL: ${SUPABASE_URL}<br>
-                Clé: ${SUPABASE_ANON_KEY.substring(0, 50)}...
-            </div>
-        `;
+        function displayConfig() {
+            if (!supabase) {
+                return;
+            }
+            
+            document.getElementById('config-info').innerHTML = `
+                <div class="test-result warning">
+                    <strong>📋 Configuration Supabase</strong><br>
+                    URL: ${SUPABASE_URL}<br>
+                    Clé: ${SUPABASE_ANON_KEY.substring(0, 50)}...<br>
+                    <span style="color: #10B981;">✅ Client Supabase initialisé</span>
+                </div>
+            `;
+        }
 
         function addResult(message, type = 'success') {
             const div = document.createElement('div');
@@ -147,6 +184,11 @@
         }
 
         async function runAllTests() {
+            if (!supabase) {
+                addResult('❌ <strong>Erreur:</strong> Client Supabase non initialisé. Rechargez la page.', 'error');
+                return;
+            }
+            
             document.getElementById('results').innerHTML = '<h3>🔍 Tests en cours...</h3>';
             
             // Test 1: Connexion
@@ -166,6 +208,11 @@
         }
 
         async function createAdminAccount() {
+            if (!supabase) {
+                addAdminResult('❌ <strong>Erreur:</strong> Client Supabase non initialisé. Rechargez la page.', 'error');
+                return;
+            }
+            
             document.getElementById('admin-results').innerHTML = '<h3>👤 Création du compte admin...</h3>';
             
             try {
@@ -205,6 +252,11 @@
         }
 
         async function createTestAccounts() {
+            if (!supabase) {
+                addAdminResult('❌ <strong>Erreur:</strong> Client Supabase non initialisé. Rechargez la page.', 'error');
+                return;
+            }
+            
             document.getElementById('admin-results').innerHTML = '<h3>👥 Création des comptes de test...</h3>';
             
             const accounts = [
@@ -249,8 +301,21 @@
 
         // Lancer les tests au chargement
         window.onload = () => {
-            runAllTests();
+            console.log('🔄 Page loaded, initializing...');
+            if (initSupabase()) {
+                displayConfig();
+                console.log('✅ Ready to run tests');
+                // Auto-run tests
+                setTimeout(() => {
+                    runAllTests();
+                }, 500);
+            } else {
+                console.error('❌ Failed to initialize Supabase');
+            }
         };
+        
+        // Debug: Log when script loads
+        console.log('📜 Script loaded successfully');
     </script>
 </body>
 </html>
