@@ -1,0 +1,216 @@
+═══════════════════════════════════════════════════════════════════════════
+  INSTRUCTIONS POUR LES TESTS RÉELS - AUTHENTIFICATION SUPABASE
+═══════════════════════════════════════════════════════════════════════════
+
+✅ L'authentification Supabase a été implémentée avec succès!
+
+Vous pouvez maintenant créer plusieurs comptes utilisateurs et tester que:
+- Chaque utilisateur a son propre espace
+- Les dossiers sont rattachés à l'utilisateur qui les crée
+- Impossible de voir les données d'un autre utilisateur
+
+───────────────────────────────────────────────────────────────────────────
+  📋 ÉTAPES À SUIVRE (30 MINUTES)
+───────────────────────────────────────────────────────────────────────────
+
+ÉTAPE 1: CRÉER UN PROJET SUPABASE (5 min)
+──────────────────────────────────────────
+1. Aller sur https://supabase.com
+2. Se connecter avec GitHub ou Email
+3. Cliquer sur "New Project"
+4. Remplir:
+   - Name: juristdz-prod
+   - Database Password: (générer et SAUVEGARDER!)
+   - Region: Europe (Frankfurt)
+   - Plan: Free
+5. Attendre 2-3 minutes
+
+ÉTAPE 2: RÉCUPÉRER LES CLÉS API (2 min)
+────────────────────────────────────────
+1. Dans Supabase, menu gauche: Settings → API
+2. Copier:
+   - Project URL: https://xxxxx.supabase.co
+   - anon public key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+ÉTAPE 3: CRÉER LE FICHIER .env.local (1 min)
+─────────────────────────────────────────────
+Créer un fichier .env.local à la racine du projet:
+
+VITE_SUPABASE_URL=https://xxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+⚠️ REMPLACER PAR VOS VRAIES CLÉS!
+
+ÉTAPE 4: CRÉER LES TABLES (10 min)
+───────────────────────────────────
+1. Dans Supabase, menu gauche: SQL Editor
+2. Cliquer sur "New query"
+3. Ouvrir le fichier SUPABASE_SETUP_GUIDE.md
+4. Copier le script SQL (section "Étape 2.2")
+5. Coller dans Supabase
+6. Cliquer sur "Run"
+7. Vérifier qu'il n'y a pas d'erreurs
+
+ÉTAPE 5: DÉMARRER L'APPLICATION (1 min)
+────────────────────────────────────────
+npm run dev
+
+ÉTAPE 6: CRÉER DES COMPTES DE TEST (10 min)
+────────────────────────────────────────────
+
+COMPTE 1 - AVOCAT:
+- Ouvrir http://localhost:5173
+- Cliquer sur "Inscription"
+- Remplir:
+  * Prénom: Ahmed
+  * Nom: Benali
+  * Profession: Avocat
+  * Email: ahmed.benali@test.dz
+  * Mot de passe: test123
+  * N° Inscription: A/12345/2024
+  * Téléphone: +213 555 111 111
+  * Cabinet: Cabinet Benali
+- Cliquer sur "Créer mon compte"
+- Vous êtes connecté!
+
+COMPTE 2 - AVOCAT:
+- Se déconnecter (bouton en haut à droite)
+- Créer un nouveau compte:
+  * Prénom: Sarah
+  * Nom: Khelifi
+  * Profession: Avocat
+  * Email: sarah.khelifi@test.dz
+  * Mot de passe: test123
+  * N° Inscription: A/67890/2024
+  * Téléphone: +213 555 222 222
+  * Cabinet: Cabinet Khelifi
+
+COMPTE 3 - NOTAIRE:
+- Se déconnecter
+- Créer un nouveau compte:
+  * Prénom: Mohamed
+  * Nom: Ziani
+  * Profession: Notaire
+  * Email: mohamed.ziani@test.dz
+  * Mot de passe: test123
+  * N° Inscription: N/11111/2024
+  * Téléphone: +213 555 333 333
+  * Cabinet: Étude Notariale Ziani
+
+COMPTE 4 - HUISSIER:
+- Se déconnecter
+- Créer un nouveau compte:
+  * Prénom: Karim
+  * Nom: Djahid
+  * Profession: Huissier de Justice
+  * Email: karim.djahid@test.dz
+  * Mot de passe: test123
+  * N° Inscription: H/22222/2024
+  * Téléphone: +213 555 444 444
+  * Cabinet: Bureau Djahid
+
+───────────────────────────────────────────────────────────────────────────
+  🧪 TESTS À EFFECTUER
+───────────────────────────────────────────────────────────────────────────
+
+TEST 1: ISOLATION DES DONNÉES
+──────────────────────────────
+1. Se connecter avec ahmed.benali@test.dz
+2. Créer un dossier "Divorce Benali"
+3. Se déconnecter
+4. Se connecter avec sarah.khelifi@test.dz
+5. Vérifier que le dossier "Divorce Benali" n'apparaît PAS
+6. Créer un dossier "Succession Khelifi"
+7. Se déconnecter
+8. Se reconnecter avec ahmed.benali@test.dz
+9. Vérifier que seul "Divorce Benali" apparaît
+
+✅ RÉSULTAT ATTENDU: Chaque utilisateur voit uniquement ses dossiers
+
+TEST 2: GÉNÉRATION DE DOCUMENTS
+────────────────────────────────
+1. Se connecter avec mohamed.ziani@test.dz (Notaire)
+2. Aller dans "Rédaction"
+3. Générer un "Acte de Vente Mobilière"
+4. Vérifier que le document est généré
+5. Se déconnecter
+6. Se connecter avec ahmed.benali@test.dz (Avocat)
+7. Vérifier que le document du notaire n'apparaît PAS
+
+✅ RÉSULTAT ATTENDU: Chaque utilisateur voit uniquement ses documents
+
+TEST 3: PROFILS DIFFÉRENTS
+───────────────────────────
+1. Se connecter avec karim.djahid@test.dz (Huissier)
+2. Vérifier que l'interface affiche "Huissier de Justice"
+3. Vérifier que les formulaires sont adaptés (Exploits, Constats)
+4. Se déconnecter
+5. Se connecter avec ahmed.benali@test.dz (Avocat)
+6. Vérifier que l'interface affiche "Avocat"
+7. Vérifier que les formulaires sont adaptés (Requêtes, Conclusions)
+
+✅ RÉSULTAT ATTENDU: Interface adaptée au rôle de chaque utilisateur
+
+───────────────────────────────────────────────────────────────────────────
+  📊 CE QUI A ÉTÉ IMPLÉMENTÉ
+───────────────────────────────────────────────────────────────────────────
+
+✅ Authentification par email/mot de passe
+✅ Inscription avec sélection du rôle
+✅ Profil utilisateur complet
+✅ Session persistante (reste connecté)
+✅ Déconnexion
+✅ Isolation des données par utilisateur
+✅ Row Level Security (RLS) activé
+✅ 4 tables créées (profiles, cases, documents, subscriptions)
+✅ Sécurité maximale
+
+───────────────────────────────────────────────────────────────────────────
+  🎯 AVANTAGES
+───────────────────────────────────────────────────────────────────────────
+
+✅ Multi-utilisateurs: Plusieurs personnes peuvent utiliser l'app
+✅ Isolation: Chaque utilisateur voit uniquement ses données
+✅ Sécurité: Impossible d'accéder aux données d'un autre
+✅ Professionnel: Système d'authentification moderne
+✅ Gratuit: Jusqu'à 50 000 utilisateurs/mois
+✅ Scalable: Peut gérer des milliers d'utilisateurs
+
+───────────────────────────────────────────────────────────────────────────
+  📞 SUPPORT
+───────────────────────────────────────────────────────────────────────────
+
+DOCUMENTATION:
+- SUPABASE_SETUP_GUIDE.md (guide complet)
+- SUPABASE_IMPLEMENTATION_COMPLETE.md (récapitulatif)
+
+AIDE SUPABASE:
+- Documentation: https://supabase.com/docs
+- Discord: https://discord.supabase.com
+
+───────────────────────────────────────────────────────────────────────────
+  ⚠️ IMPORTANT
+───────────────────────────────────────────────────────────────────────────
+
+1. NE JAMAIS commiter le fichier .env.local (déjà dans .gitignore)
+2. SAUVEGARDER le mot de passe de la base de données Supabase
+3. UTILISER des mots de passe forts pour les comptes de production
+4. ACTIVER la vérification email en production (optionnel pour tests)
+
+───────────────────────────────────────────────────────────────────────────
+  🎉 RÉSULTAT FINAL
+───────────────────────────────────────────────────────────────────────────
+
+Après avoir suivi ces étapes, vous aurez:
+
+✅ 4 comptes utilisateurs de test (2 avocats, 1 notaire, 1 huissier)
+✅ Chaque utilisateur peut créer ses propres dossiers
+✅ Chaque utilisateur voit uniquement ses données
+✅ Système d'authentification professionnel et sécurisé
+✅ Prêt pour les tests réels avec vos clients!
+
+═══════════════════════════════════════════════════════════════════════════
+Date: 2 mars 2026
+Statut: ✅ PRÊT POUR LES TESTS
+Temps estimé: 30 minutes
+═══════════════════════════════════════════════════════════════════════════
