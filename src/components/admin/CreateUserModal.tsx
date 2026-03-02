@@ -27,15 +27,16 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuc
     setError('');
 
     try {
-      // 1. Créer l'utilisateur dans auth.users
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // 1. Créer l'utilisateur avec signUp (pas besoin de clé admin)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          profession: formData.profession
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            profession: formData.profession
+          }
         }
       });
 
