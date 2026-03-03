@@ -1,7 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- TABLES CRITIQUES POUR CONCURRENCER CLIO/MYCASE
+-- SCRIPT SIMPLIFIÉ - CLIENTS + TIME TRACKING + FACTURATION
 -- ═══════════════════════════════════════════════════════════════════════════
--- Gestion des Clients + Facturation + Gestion du Temps
+-- Version sans dépendance à la table cases
+-- Exécuter ce script si vous avez l'erreur "column user_id does not exist"
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -14,13 +15,13 @@ CREATE TABLE IF NOT EXISTS public.clients (
   -- Informations personnelles
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
-  company_name TEXT, -- Pour les entreprises
+  company_name TEXT,
   client_type TEXT NOT NULL DEFAULT 'individual', -- 'individual' ou 'company'
   
   -- Identification
-  cin TEXT, -- Carte d'identité nationale
-  nif TEXT, -- Numéro d'identification fiscale (pour entreprises)
-  rc TEXT, -- Registre de commerce (pour entreprises)
+  cin TEXT,
+  nif TEXT,
+  rc TEXT,
   
   -- Contact
   email TEXT,
@@ -40,63 +41,26 @@ CREATE TABLE IF NOT EXISTS public.clients (
   
   -- Métadonnées
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  -- Index pour recherche rapide
-  search_vector tsvector GENERATED ALWAYS AS (
-    to_tsvector('french', 
-      coalesce(first_name, '') || ' ' || 
-      coalesce(last_name, '') || ' ' || 
-      coalesce(company_name, '') || ' ' ||
-      coalesce(email, '') || ' ' ||
-      coalesce(phone, '')
-    )
-  ) STORED
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Index pour performance
 CREATE INDEX IF NOT EXISTS idx_clients_user_id ON public.clients(user_id);
 CREATE INDEX IF NOT EXISTS idx_clients_status ON public.clients(status);
-CREATE INDEX IF NOT EXISTS idx_clients_search ON public.clients USING GIN(search_vector);
 CREATE INDEX IF NOT EXISTS idx_clients_created_at ON public.clients(created_at DESC);
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 2. TABLE LIAISON CLIENTS-DOSSIERS
--- ═══════════════════════════════════════════════════════════════════════════
--- Note: On vérifie d'abord si la table cases existe
-DO $$
-BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'cases') THEN
-    CREATE TABLE IF NOT EXISTS public.case_clients (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      case_id UUID NOT NULL REFERENCES public.cases(id) ON DELETE CASCADE,
-      client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
-      role TEXT DEFAULT 'client', -- 'client', 'adverse_party', 'witness', etc.
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      
-      UNIQUE(case_id, client_id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_case_clients_case_id ON public.case_clients(case_id);
-    CREATE INDEX IF NOT EXISTS idx_case_clients_client_id ON public.case_clients(client_id);
-  ELSE
-    RAISE NOTICE 'Table cases does not exist yet. Skipping case_clients creation.';
-  END IF;
-END $$;
-
--- ═══════════════════════════════════════════════════════════════════════════
--- 3. TABLE GESTION DU TEMPS (Time Tracking)
+-- 2. TABLE GESTION DU TEMPS (TIME TRACKING)
 -- ═══════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS public.time_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  case_id UUID REFERENCES public.cases(id) ON DELETE CASCADE,
   client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
   
   -- Temps
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ,
-  duration_minutes INTEGER, -- Calculé automatiquement
+  duration_minutes INTEGER,
   
   -- Description
   description TEXT NOT NULL,
@@ -104,10 +68,10 @@ CREATE TABLE IF NOT EXISTS public.time_entries (
   
   -- Facturation
   billable BOOLEAN DEFAULT true,
-  hourly_rate DECIMAL(10,2), -- Taux horaire en DA
-  amount DECIMAL(10,2), -- Montant calculé
+  hourly_rate DECIMAL(10,2),
+  amount DECIMAL(10,2),
   invoiced BOOLEAN DEFAULT false,
-  invoice_id UUID REFERENCES public.invoices(id) ON DELETE SET NULL,
+  invoice_id UUID,
   
   -- Métadonnées
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -115,19 +79,17 @@ CREATE TABLE IF NOT EXISTS public.time_entries (
 );
 
 CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON public.time_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_time_entries_case_id ON public.time_entries(case_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_client_id ON public.time_entries(client_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_start_time ON public.time_entries(start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_time_entries_billable ON public.time_entries(billable) WHERE billable = true;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 4. TABLE FACTURES (Invoices)
+-- 3. TABLE FACTURES (INVOICES)
 -- ═══════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS public.invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
-  case_id UUID REFERENCES public.cases(id) ON DELETE SET NULL,
   
   -- Numérotation
   invoice_number TEXT NOT NULL,
@@ -144,11 +106,11 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   status TEXT DEFAULT 'draft', -- 'draft', 'sent', 'paid', 'overdue', 'cancelled'
   paid_amount DECIMAL(10,2) DEFAULT 0,
   paid_date DATE,
-  payment_method TEXT, -- 'cash', 'check', 'transfer', 'card'
+  payment_method TEXT,
   
   -- Notes
   notes TEXT,
-  terms TEXT, -- Conditions de paiement
+  terms TEXT,
   
   -- Métadonnées
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -159,13 +121,12 @@ CREATE TABLE IF NOT EXISTS public.invoices (
 
 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON public.invoices(user_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_client_id ON public.invoices(client_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_case_id ON public.invoices(case_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON public.invoices(status);
 CREATE INDEX IF NOT EXISTS idx_invoices_date ON public.invoices(invoice_date DESC);
 CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON public.invoices(due_date);
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 5. TABLE LIGNES DE FACTURE (Invoice Items)
+-- 4. TABLE LIGNES DE FACTURE (INVOICE ITEMS)
 -- ═══════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS public.invoice_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -190,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.invoice_items (
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON public.invoice_items(invoice_id);
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 6. TABLE PAIEMENTS (Payments)
+-- 5. TABLE PAIEMENTS (PAYMENTS)
 -- ═══════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -201,10 +162,10 @@ CREATE TABLE IF NOT EXISTS public.payments (
   -- Montant
   amount DECIMAL(10,2) NOT NULL,
   payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  payment_method TEXT NOT NULL, -- 'cash', 'check', 'transfer', 'card'
+  payment_method TEXT NOT NULL,
   
   -- Détails
-  reference TEXT, -- Numéro de chèque, référence virement, etc.
+  reference TEXT,
   notes TEXT,
   
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -214,45 +175,6 @@ CREATE INDEX IF NOT EXISTS idx_payments_user_id ON public.payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_invoice_id ON public.payments(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_payments_client_id ON public.payments(client_id);
 CREATE INDEX IF NOT EXISTS idx_payments_date ON public.payments(payment_date DESC);
-
--- ═══════════════════════════════════════════════════════════════════════════
--- 7. TABLE ÉVÉNEMENTS/CALENDRIER
--- ═══════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS public.calendar_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  case_id UUID REFERENCES public.cases(id) ON DELETE CASCADE,
-  client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
-  
-  -- Événement
-  title TEXT NOT NULL,
-  description TEXT,
-  event_type TEXT NOT NULL, -- 'hearing', 'meeting', 'deadline', 'reminder', 'task'
-  
-  -- Date et heure
-  start_datetime TIMESTAMPTZ NOT NULL,
-  end_datetime TIMESTAMPTZ,
-  all_day BOOLEAN DEFAULT false,
-  
-  -- Localisation
-  location TEXT,
-  
-  -- Rappels
-  reminder_minutes INTEGER, -- Rappel X minutes avant
-  reminder_sent BOOLEAN DEFAULT false,
-  
-  -- Statut
-  status TEXT DEFAULT 'scheduled', -- 'scheduled', 'completed', 'cancelled'
-  
-  -- Métadonnées
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_calendar_events_user_id ON public.calendar_events(user_id);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_case_id ON public.calendar_events(case_id);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_start ON public.calendar_events(start_datetime);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_type ON public.calendar_events(event_type);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FONCTIONS UTILITAIRES
@@ -272,6 +194,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_calculate_time_entry_duration ON public.time_entries;
 CREATE TRIGGER trigger_calculate_time_entry_duration
   BEFORE INSERT OR UPDATE ON public.time_entries
   FOR EACH ROW
@@ -285,6 +208,7 @@ DECLARE
   v_tax_amount DECIMAL(10,2);
   v_total DECIMAL(10,2);
   v_invoice_id UUID;
+  v_tax_rate DECIMAL(5,2);
 BEGIN
   -- Déterminer l'ID de la facture
   IF TG_OP = 'DELETE' THEN
@@ -298,14 +222,14 @@ BEGIN
   FROM public.invoice_items
   WHERE invoice_id = v_invoice_id;
   
-  -- Récupérer le taux de TVA et calculer
-  SELECT 
-    v_subtotal,
-    v_subtotal * (tax_rate / 100),
-    v_subtotal * (1 + tax_rate / 100)
-  INTO v_subtotal, v_tax_amount, v_total
+  -- Récupérer le taux de TVA
+  SELECT tax_rate INTO v_tax_rate
   FROM public.invoices
   WHERE id = v_invoice_id;
+  
+  -- Calculer TVA et total
+  v_tax_amount := v_subtotal * (v_tax_rate / 100);
+  v_total := v_subtotal + v_tax_amount;
   
   -- Mettre à jour la facture
   UPDATE public.invoices
@@ -320,16 +244,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_invoice_total_insert ON public.invoice_items;
 CREATE TRIGGER trigger_update_invoice_total_insert
   AFTER INSERT ON public.invoice_items
   FOR EACH ROW
   EXECUTE FUNCTION update_invoice_total();
 
+DROP TRIGGER IF EXISTS trigger_update_invoice_total_update ON public.invoice_items;
 CREATE TRIGGER trigger_update_invoice_total_update
   AFTER UPDATE ON public.invoice_items
   FOR EACH ROW
   EXECUTE FUNCTION update_invoice_total();
 
+DROP TRIGGER IF EXISTS trigger_update_invoice_total_delete ON public.invoice_items;
 CREATE TRIGGER trigger_update_invoice_total_delete
   AFTER DELETE ON public.invoice_items
   FOR EACH ROW
@@ -368,13 +295,11 @@ SELECT
   c.first_name,
   c.last_name,
   c.company_name,
-  COUNT(DISTINCT cc.case_id) as total_cases,
   COUNT(DISTINCT i.id) as total_invoices,
   COALESCE(SUM(i.total), 0) as total_billed,
   COALESCE(SUM(i.paid_amount), 0) as total_paid,
   COALESCE(SUM(i.total - i.paid_amount), 0) as total_outstanding
 FROM public.clients c
-LEFT JOIN public.case_clients cc ON c.id = cc.client_id
 LEFT JOIN public.invoices i ON c.id = i.client_id
 GROUP BY c.id;
 
@@ -395,12 +320,10 @@ WHERE i.status IN ('sent', 'overdue')
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Tables créées:
 -- ✅ clients - Gestion des clients
--- ✅ case_clients - Liaison clients-dossiers
 -- ✅ time_entries - Gestion du temps (comme Clio)
 -- ✅ invoices - Factures
 -- ✅ invoice_items - Lignes de facture
 -- ✅ payments - Paiements
--- ✅ calendar_events - Calendrier et événements
 --
 -- Fonctions créées:
 -- ✅ calculate_time_entry_duration() - Calcul automatique durée/montant
@@ -411,3 +334,5 @@ WHERE i.status IN ('sent', 'overdue')
 -- ✅ client_stats - Statistiques par client
 -- ✅ overdue_invoices - Factures en retard
 -- ═══════════════════════════════════════════════════════════════════════════
+
+SELECT 'Script exécuté avec succès! Tables créées: clients, time_entries, invoices, invoice_items, payments' as message;
