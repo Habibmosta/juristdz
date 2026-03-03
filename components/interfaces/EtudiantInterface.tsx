@@ -182,7 +182,21 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">        
+        {/* DEMO Badge */}
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={20} className="text-amber-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                {isAr ? 'بيانات تجريبية - الوظيفة قيد التطوير' : 'Données de démonstration - Fonctionnalité en développement'}
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                {isAr ? 'سيتم استبدال هذه البيانات ببيانات حقيقية قريباً' : 'Ces données seront remplacées par des données réelles prochainement'}
+              </p>
+            </div>
+          </div>
+        </div>
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
