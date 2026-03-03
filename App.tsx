@@ -37,11 +37,8 @@ const App: React.FC = () => {
   // Note: Setters prefixed with _ are kept for potential future use but not currently used
   const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([]);
   const [transactions, _setTransactions] = useState<Transaction[]>([]);
-  const [cases, _setCases] = useState<Case[]>([
-    { id: '1', title: 'Litige Foncier El Madania', clientName: 'Mr. Ahmed B.', description: 'Contestation de titre de propriété datant de 2012.', createdAt: new Date(), status: 'active' },
-    { id: '2', title: 'Divorce Benamrane', clientName: 'Mme. Sarah L.', description: 'Requête de khol et garde des enfants.', createdAt: new Date(), status: 'active' }
-  ]);
-  const [activeCaseId, setActiveCaseId] = useState<string>('1');
+  const [cases, _setCases] = useState<Case[]>([]); // Empty - real cases loaded from database
+  const [activeCaseId, setActiveCaseId] = useState<string>('');
 
   useEffect(() => {
     const initApp = async () => {
@@ -200,12 +197,11 @@ const App: React.FC = () => {
           theme={theme}
         />
       )}
-      {currentMode === AppMode.CASES && (
-        <CaseManagement 
-          language={language} 
-          cases={cases} 
-          activeCaseId={activeCaseId} 
-          onSelectCase={(id) => { setActiveCaseId(id); setMode(AppMode.RESEARCH); }} 
+      {currentMode === AppMode.CASES && enhancedUser && (
+        <AvocatInterface 
+          user={enhancedUser}
+          language={language}
+          theme={theme}
         />
       )}
       {currentMode === AppMode.RESEARCH && (
