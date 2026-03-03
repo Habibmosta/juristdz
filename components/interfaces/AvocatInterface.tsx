@@ -191,16 +191,23 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     setShowEditCaseModal(true);
   };
 
-  const [recentSearches] = useState([
-    'Jurisprudence divorce garde enfants',
-    'Code civil algérien article 87',
-    'Contrat commercial nullité'
-  ]);
-
-  const [upcomingDeadlines] = useState([
-    { case: 'Affaire Benali', deadline: '2024-03-15', type: 'Dépôt conclusions' },
-    { case: 'Divorce Mansouri', deadline: '2024-03-20', type: 'Audience' }
-  ]);
+  // Load upcoming deadlines from real cases
+  const upcomingDeadlines = React.useMemo(() => {
+    if (!activeCases || activeCases.length === 0) return [];
+    
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    return activeCases
+      .filter(c => c.deadline && new Date(c.deadline) >= now && new Date(c.deadline) <= thirtyDaysFromNow)
+      .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+      .slice(0, 5) // Limit to 5 most urgent
+      .map(c => ({
+        case: c.title,
+        deadline: c.deadline ? new Date(c.deadline).toLocaleDateString('fr-FR') : '',
+        type: c.caseType || 'Échéance'
+      }));
+  }, [activeCases]);
 
   // Get updated monthly stats from case service
   const monthlyStats = caseStats ? {
@@ -590,21 +597,22 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               </div>
             </div>
 
-            {/* Recent Searches */}
+            {/* Recent Searches - Hidden for now, will be implemented with search tracking */}
+            {/* 
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                 <BookOpen size={18} className="text-legal-blue" />
                 {isAr ? 'البحوث الأخيرة' : 'Recherches Récentes'}
               </h3>
               
-              <div className="space-y-2">
-                {recentSearches.map((search, index) => (
-                  <button key={index} className="w-full p-2 text-left text-sm text-slate-600 dark:text-slate-400 hover:text-legal-blue transition-colors">
-                    • {search}
-                  </button>
-                ))}
+              <div className="text-center py-4">
+                <BookOpen size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-2" />
+                <p className="text-sm text-slate-500">
+                  {isAr ? 'لا توجد بحوث حديثة' : 'Aucune recherche récente'}
+                </p>
               </div>
             </div>
+            */}
 
             {/* Upcoming Deadlines */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
@@ -613,18 +621,27 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                 {isAr ? 'المواعيد القادمة' : 'Échéances Prochaines'}
               </h3>
               
-              <div className="space-y-3">
-                {upcomingDeadlines.map((deadline, index) => (
-                  <div key={index} className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
-                    <div className="font-bold text-sm text-amber-900 dark:text-amber-200">
-                      {deadline.case}
+              {upcomingDeadlines.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingDeadlines.map((deadline, index) => (
+                    <div key={index} className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+                      <div className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                        {deadline.case}
+                      </div>
+                      <div className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        {deadline.type} - {deadline.deadline}
+                      </div>
                     </div>
-                    <div className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                      {deadline.type} - {deadline.deadline}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Clock size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-2" />
+                  <p className="text-sm text-slate-500">
+                    {isAr ? 'لا توجد مواعيد قادمة' : 'Aucune échéance prochaine'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
