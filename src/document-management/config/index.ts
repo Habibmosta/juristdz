@@ -2,7 +2,8 @@
 // This file contains configuration settings for the DMS
 // Requirements: 8.6, 7.1
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase as centralSupabase } from '../../lib/supabase';
 
 export interface DMSConfig {
   // File upload settings
@@ -91,38 +92,9 @@ export const getDMSConfig = (): DMSConfig => {
   };
 };
 
-// Supabase client instance
-let supabaseClient: SupabaseClient | null = null;
-
+// Supabase client instance - use centralized instance
 export const getSupabaseClient = (): SupabaseClient => {
-  if (!supabaseClient) {
-    const config = getDMSConfig();
-    
-    if (!config.supabaseUrl || !config.supabaseAnonKey) {
-      throw new Error('Supabase configuration is missing. Please check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
-    }
-    
-    supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
-      },
-      db: {
-        schema: 'public'
-      },
-      global: {
-        headers: {
-          'X-Client-Info': 'juristdz-dms@1.0.0'
-        }
-      }
-    });
-    
-    // Test connection on initialization
-    testConnection();
-  }
-  
-  return supabaseClient;
+  return centralSupabase;
 };
 
 // Test Supabase connection

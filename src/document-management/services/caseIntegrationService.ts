@@ -8,13 +8,11 @@
  * Requirements: 8.1, 8.2, 8.3, 8.7
  */
 
-import { createClient } from '@supabase/supabase-js';
 import { Document, Folder, Permission } from '../types';
+import { getSupabaseClient } from '../config';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Use centralized Supabase client
+const supabase = getSupabaseClient();
 
 /**
  * Case Integration Service Class

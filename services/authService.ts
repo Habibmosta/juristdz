@@ -36,18 +36,10 @@ class AuthService {
         return null;
       }
 
-      // Get user profile with organization info
+      // Get user profile (table is 'profiles', not 'user_profiles')
       const { data: profile, error } = await supabase
-        ?.from('user_profiles')
-        .select(`
-          *,
-          organization:organizations(
-            id,
-            name,
-            type,
-            subscription_status
-          )
-        `)
+        ?.from('profiles')
+        .select('*')
         .eq('id', user.id)
         .single();
 
@@ -57,7 +49,17 @@ class AuthService {
         return null;
       }
 
-      this.currentUser = profile as UserProfile;
+      // Map profile to UserProfile interface
+      this.currentUser = {
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        role: profile.profession || 'avocat',
+        organization_id: profile.organization_name || '',
+        is_organization_admin: profile.is_admin || false,
+        is_active: profile.is_active
+      };
       return this.currentUser;
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -101,9 +103,8 @@ class AuthService {
       }
 
       const { data, error } = await supabase
-        ?.from('user_profiles')
-        .select('id, first_name, last_name, role, email')
-        .eq('organization_id', user.organization_id)
+        ?.from('profiles')
+        .select('id, first_name, last_name, profession, email')
         .eq('is_active', true)
         .order('first_name');
 

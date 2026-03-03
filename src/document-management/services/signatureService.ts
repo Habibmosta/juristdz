@@ -7,7 +7,6 @@
  * Requirements: 6.1, 6.2, 6.3, 6.5, 6.6
  */
 
-import { createClient } from '@supabase/supabase-js';
 import {
   SignatureWorkflow,
   WorkflowSigner,
@@ -21,11 +20,10 @@ import {
   SignerStatus
 } from '../types';
 import { auditService } from './auditService';
+import { getSupabaseClient } from '../config';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Use centralized Supabase client
+const supabase = getSupabaseClient();
 
 /**
  * Signature Service Class

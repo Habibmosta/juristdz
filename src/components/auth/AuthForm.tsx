@@ -6,7 +6,7 @@ interface AuthFormProps {
   onSuccess: () => void;
 }
 
-type AuthMode = 'signin' | 'signup';
+type AuthMode = 'signin' | 'signup' | 'forgot-password';
 type Profession = 'avocat' | 'notaire' | 'huissier' | 'magistrat' | 'etudiant' | 'juriste_entreprise';
 
 const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
@@ -49,6 +49,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (signInError) throw signInError;
 
       if (data.user) {
+        // Vérifier si le compte est actif
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_active, first_name, last_name')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Profile check error:', profileError);
+          throw new Error('Erreur lors de la vérification du profil');
+        }
+
+        if (!profile.is_active) {
+          // Déconnecter l'utilisateur
+          await supabase.auth.signOut();
+          setError('Votre compte est en attente de validation par un administrateur. Vous recevrez un email une fois votre compte activé.');
+          return;
+        }
+
         setSuccess('Connexion réussie!');
         setTimeout(() => onSuccess(), 1000);
       }
@@ -84,28 +103,84 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        // 2. Update profile with additional info
+        // 2. Create profile with is_active = false (waiting for admin approval)
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({
+          .insert({
+            id: authData.user.id,
+            email,
             first_name: firstName,
             last_name: lastName,
             profession,
             registration_number: registrationNumber,
             organization_name: organizationName,
-            phone_number: phoneNumber
-          })
-          .eq('id', authData.user.id);
+            phone_number: phoneNumber,
+            is_admin: false,
+            is_active: false // En attente de validation admin
+          });
 
         if (profileError) {
-          console.error('Profile update error:', profileError);
+          console.error('Profile creation error:', profileError);
+          throw new Error('Erreur lors de la création du profil');
         }
 
-        setSuccess('Compte créé avec succès! Connexion en cours...');
-        setTimeout(() => onSuccess(), 2000);
+        // 3. Create subscription with is_active = false
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: authData.user.id,
+            plan: 'free',
+            status: 'pending', // En attente
+            documents_used: 0,
+            documents_limit: 5,
+            cases_limit: 3,
+            is_active: false,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          });
+
+        if (subError) {
+          console.error('Subscription creation error:', subError);
+        }
+
+        setSuccess('Compte créé avec succès! Votre compte est en attente de validation par un administrateur. Vous recevrez un email une fois votre compte activé.');
+        
+        // Déconnecter l'utilisateur car son compte n'est pas encore actif
+        await supabase.auth.signOut();
+        
+        // Retour au mode connexion après 5 secondes
+        setTimeout(() => {
+          setMode('signin');
+          setSuccess(null);
+        }, 5000);
       }
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la création du compte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (resetError) throw resetError;
+
+      setSuccess('Un email de réinitialisation a été envoyé à votre adresse email. Veuillez vérifier votre boîte de réception.');
+      
+      // Retour au mode connexion après 5 secondes
+      setTimeout(() => {
+        setMode('signin');
+        setSuccess(null);
+      }, 5000);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de l\'envoi de l\'email');
     } finally {
       setLoading(false);
     }
@@ -229,6 +304,72 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                   'Se connecter'
                 )}
               </button>
+
+              {/* Forgot Password Link */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode('forgot-password')}
+                  className="text-sm text-slate-400 hover:text-legal-gold transition-colors"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Forgot Password Form */}
+          {mode === 'forgot-password' && (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-white mb-2">Réinitialiser le mot de passe</h3>
+                <p className="text-sm text-slate-400">
+                  Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    placeholder="maitre@barreau.dz"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  'Envoyer le lien de réinitialisation'
+                )}
+              </button>
+
+              {/* Back to Sign In */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode('signin')}
+                  className="text-sm text-slate-400 hover:text-legal-gold transition-colors"
+                >
+                  ← Retour à la connexion
+                </button>
+              </div>
             </form>
           )}
 

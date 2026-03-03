@@ -30,30 +30,26 @@ class MultiUserCaseService {
    */
   async getAllCases(): Promise<Case[]> {
     try {
-      const { profile } = await this.getCurrentUserContext();
+      const { user } = await this.getCurrentUserContext();
+
+      console.log('🔍 Fetching cases for user:', user.id);
 
       const { data, error } = await supabase
         ?.from(this.tableName)
-        .select(`
-          *,
-          client:clients(*),
-          created_by_user:user_profiles!cases_created_by_fkey(first_name, last_name),
-          assigned_to_user:user_profiles!cases_assigned_to_fkey(first_name, last_name),
-          collaborators:case_collaborators(
-            user:user_profiles(first_name, last_name, role)
-          )
-        `)
-        .eq('organization_id', profile.organization_id)
+        .select('*')
+        .eq('user_id', user.id) // Filtrer par user_id
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching cases:', error);
+        console.error('❌ Error fetching cases:', error);
         throw new Error(`Failed to fetch cases: ${error.message}`);
       }
 
+      console.log('✅ Cases fetched:', data?.length || 0);
+
       return this.mapSupabaseToCases(data || []);
     } catch (error) {
-      console.error('Error in getAllCases:', error);
+      console.error('❌ Error in getAllCases:', error);
       throw error;
     }
   }
@@ -125,41 +121,53 @@ class MultiUserCaseService {
     try {
       const { user, profile } = await this.getCurrentUserContext();
 
-      // Prepare case data with proper user and organization context
+      console.log('🔍 Creating case with user:', user.id);
+
+      // Prepare case data - structure complète avec toutes les colonnes
       const supabaseData = {
-        ...this.mapCaseToSupabase(caseData),
-        organization_id: profile.organization_id,
-        created_by: user.id,
-        assigned_to: caseData.assignedLawyer ? caseData.assignedLawyer : user.id, // Default to creator
+        user_id: user.id, // IMPORTANT: user_id de l'utilisateur connecté
+        title: caseData.title || 'Nouveau dossier',
+        client_name: caseData.clientName || 'Client',
+        client_phone: caseData.clientPhone || null,
+        client_email: caseData.clientEmail || null,
+        client_address: caseData.clientAddress || null,
+        description: caseData.description || null,
+        case_type: caseData.caseType || null,
+        priority: caseData.priority || 'medium',
+        estimated_value: caseData.estimatedValue || null,
+        deadline: caseData.deadline ? caseData.deadline.toISOString().split('T')[0] : null,
+        notes: caseData.notes || null,
+        assigned_lawyer: caseData.assignedLawyer || null,
+        tags: caseData.tags || [],
+        documents: caseData.documents || [],
+        status: caseData.status || 'active'
       };
 
-      // Remove fields that shouldn't be set directly
-      delete supabaseData.id;
-      delete supabaseData.created_at;
-      delete supabaseData.updated_at;
+      console.log('📝 Inserting case data:', supabaseData);
 
       const { data, error } = await supabase
         ?.from(this.tableName)
         .insert([supabaseData])
-        .select(`
-          *,
-          client:clients(*),
-          created_by_user:user_profiles!cases_created_by_fkey(first_name, last_name),
-          assigned_to_user:user_profiles!cases_assigned_to_fkey(first_name, last_name)
-        `)
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Error creating case:', error);
+        console.error('❌ Error creating case:', error);
         throw new Error(`Failed to create case: ${error.message}`);
       }
 
-      // Log activity
-      await this.logActivity('created', 'case', data.id, `Created case: ${data.title}`);
+      console.log('✅ Case created successfully:', data);
+
+      // Log activity (optionnel, peut échouer si la table n'existe pas)
+      try {
+        await this.logActivity('created', 'case', data.id, `Created case: ${data.title}`);
+      } catch (logError) {
+        console.warn('⚠️ Could not log activity:', logError);
+      }
 
       return this.mapSupabaseToCase(data);
     } catch (error) {
-      console.error('Error in createCase:', error);
+      console.error('❌ Error in createCase:', error);
       throw error;
     }
   }
@@ -372,35 +380,22 @@ class MultiUserCaseService {
     return {
       id: data.id,
       title: data.title,
-      clientName: data.client?.first_name && data.client?.last_name 
-        ? `${data.client.first_name} ${data.client.last_name}` 
-        : data.client?.company_name || 'Client inconnu',
-      clientPhone: data.client?.phone,
-      clientEmail: data.client?.email,
-      clientAddress: data.client?.address,
-      description: data.description,
-      caseType: data.case_type,
-      priority: data.priority,
+      clientName: data.client_name,
+      clientPhone: data.client_phone || '',
+      clientEmail: data.client_email || '',
+      clientAddress: data.client_address || '',
+      description: data.description || '',
+      caseType: data.case_type || '',
+      priority: data.priority || 'medium',
       estimatedValue: data.estimated_value ? parseFloat(data.estimated_value) : undefined,
       deadline: data.deadline ? new Date(data.deadline) : undefined,
-      status: data.status,
-      notes: data.notes,
-      assignedLawyer: data.assigned_to_user 
-        ? `${data.assigned_to_user.first_name} ${data.assigned_to_user.last_name}`
-        : undefined,
+      notes: data.notes || '',
+      assignedLawyer: data.assigned_lawyer || '',
       tags: data.tags || [],
-      documents: [], // Will be loaded separately if needed
+      documents: data.documents || [],
+      status: data.status,
       createdAt: new Date(data.created_at),
-      lastUpdated: new Date(data.updated_at),
-      
-      // Additional multi-user fields
-      createdBy: data.created_by_user 
-        ? `${data.created_by_user.first_name} ${data.created_by_user.last_name}`
-        : undefined,
-      collaborators: data.collaborators?.map((c: any) => ({
-        name: `${c.user.first_name} ${c.user.last_name}`,
-        role: c.user.role
-      })) || []
+      lastUpdated: new Date(data.updated_at)
     };
   }
 
@@ -415,25 +410,23 @@ class MultiUserCaseService {
    * Map Case interface to Supabase data
    */
   private mapCaseToSupabase(caseData: Partial<Case>): any {
-    const supabaseData: any = {
-      title: caseData.title,
-      description: caseData.description,
-      case_type: caseData.caseType,
-      priority: caseData.priority,
-      estimated_value: caseData.estimatedValue,
-      deadline: caseData.deadline ? caseData.deadline.toISOString().split('T')[0] : null,
-      status: caseData.status,
-      notes: caseData.notes,
-      tags: caseData.tags || []
-    };
-
-    // Only include timestamps if they exist
-    if (caseData.createdAt) {
-      supabaseData.created_at = caseData.createdAt.toISOString();
-    }
-    if (caseData.lastUpdated) {
-      supabaseData.updated_at = caseData.lastUpdated.toISOString();
-    }
+    const supabaseData: any = {};
+    
+    if (caseData.title !== undefined) supabaseData.title = caseData.title;
+    if (caseData.clientName !== undefined) supabaseData.client_name = caseData.clientName;
+    if (caseData.clientPhone !== undefined) supabaseData.client_phone = caseData.clientPhone;
+    if (caseData.clientEmail !== undefined) supabaseData.client_email = caseData.clientEmail;
+    if (caseData.clientAddress !== undefined) supabaseData.client_address = caseData.clientAddress;
+    if (caseData.description !== undefined) supabaseData.description = caseData.description;
+    if (caseData.caseType !== undefined) supabaseData.case_type = caseData.caseType;
+    if (caseData.priority !== undefined) supabaseData.priority = caseData.priority;
+    if (caseData.estimatedValue !== undefined) supabaseData.estimated_value = caseData.estimatedValue;
+    if (caseData.deadline !== undefined) supabaseData.deadline = caseData.deadline ? caseData.deadline.toISOString().split('T')[0] : null;
+    if (caseData.notes !== undefined) supabaseData.notes = caseData.notes;
+    if (caseData.assignedLawyer !== undefined) supabaseData.assigned_lawyer = caseData.assignedLawyer;
+    if (caseData.tags !== undefined) supabaseData.tags = caseData.tags;
+    if (caseData.documents !== undefined) supabaseData.documents = caseData.documents;
+    if (caseData.status !== undefined) supabaseData.status = caseData.status;
 
     return supabaseData;
   }

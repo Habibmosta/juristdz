@@ -11,11 +11,24 @@ class SupabaseCaseService {
   /**
    * Get all cases for the current user
    */
-  async getAllCases(): Promise<Case[]> {
+  async getAllCases(userId?: string): Promise<Case[]> {
     try {
+      // Get user_id from parameter or from auth
+      let user_id = userId;
+      if (!user_id) {
+        const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
+        user_id = user?.id;
+      }
+
+      if (!user_id) {
+        console.warn('No user authenticated, returning empty cases');
+        return [];
+      }
+
       const { data, error } = await supabase
         ?.from(this.tableName)
         .select('*')
+        .eq('user_id', user_id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -33,11 +46,24 @@ class SupabaseCaseService {
   /**
    * Get active cases only
    */
-  async getActiveCases(): Promise<Case[]> {
+  async getActiveCases(userId?: string): Promise<Case[]> {
     try {
+      // Get user_id from parameter or from auth
+      let user_id = userId;
+      if (!user_id) {
+        const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
+        user_id = user?.id;
+      }
+
+      if (!user_id) {
+        console.warn('No user authenticated, returning empty cases');
+        return [];
+      }
+
       const { data, error } = await supabase
         ?.from(this.tableName)
         .select('*')
+        .eq('user_id', user_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -134,17 +160,44 @@ class SupabaseCaseService {
   /**
    * Create a new case
    */
-  async createCase(caseData: Partial<Case>): Promise<Case> {
+  async createCase(caseData: Partial<Case>, userId?: string): Promise<Case> {
     try {
       console.log('🔍 Début création cas Supabase:', caseData);
       
-      const supabaseData = this.mapCaseToSupabase(caseData);
-      console.log('🔄 Données mappées pour Supabase:', supabaseData);
-      
-      // Pour les tests, on met user_id à null pour contourner RLS temporairement
-      supabaseData.user_id = null;
+      // Get user_id from parameter or from auth
+      let user_id = userId;
+      if (!user_id) {
+        const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
+        user_id = user?.id;
+      }
 
+      if (!user_id) {
+        throw new Error('User not authenticated - cannot create case');
+      }
+
+      // Map to complete structure with all columns
+      const supabaseData = {
+        user_id: user_id,
+        title: caseData.title || '',
+        client_name: caseData.clientName || '',
+        client_phone: caseData.clientPhone || null,
+        client_email: caseData.clientEmail || null,
+        client_address: caseData.clientAddress || null,
+        description: caseData.description || '',
+        case_type: caseData.caseType || null,
+        priority: caseData.priority || 'medium',
+        estimated_value: caseData.estimatedValue || null,
+        deadline: caseData.deadline ? caseData.deadline.toISOString().split('T')[0] : null,
+        notes: caseData.notes || null,
+        assigned_lawyer: caseData.assignedLawyer || null,
+        tags: caseData.tags || [],
+        documents: caseData.documents || [],
+        status: caseData.status || 'active'
+      };
+      
+      console.log('🔄 Données mappées pour Supabase:', supabaseData);
       console.log('📤 Envoi vers Supabase...');
+      
       const { data, error } = await supabase
         ?.from(this.tableName)
         .insert([supabaseData])
@@ -172,16 +225,42 @@ class SupabaseCaseService {
   /**
    * Update an existing case
    */
-  async updateCase(id: string, updates: Partial<Case>): Promise<Case | null> {
+  async updateCase(id: string, updates: Partial<Case>, userId?: string): Promise<Case | null> {
     try {
-      const supabaseUpdates = this.mapCaseToSupabase(updates);
-      delete supabaseUpdates.id; // Don't update ID
-      delete supabaseUpdates.created_at; // Don't update creation date
+      // Get user_id from parameter or from auth
+      let user_id = userId;
+      if (!user_id) {
+        const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
+        user_id = user?.id;
+      }
+
+      if (!user_id) {
+        throw new Error('User not authenticated - cannot update case');
+      }
+
+      // Map to complete structure with all columns
+      const supabaseUpdates: any = {};
+      if (updates.title !== undefined) supabaseUpdates.title = updates.title;
+      if (updates.clientName !== undefined) supabaseUpdates.client_name = updates.clientName;
+      if (updates.clientPhone !== undefined) supabaseUpdates.client_phone = updates.clientPhone;
+      if (updates.clientEmail !== undefined) supabaseUpdates.client_email = updates.clientEmail;
+      if (updates.clientAddress !== undefined) supabaseUpdates.client_address = updates.clientAddress;
+      if (updates.description !== undefined) supabaseUpdates.description = updates.description;
+      if (updates.caseType !== undefined) supabaseUpdates.case_type = updates.caseType;
+      if (updates.priority !== undefined) supabaseUpdates.priority = updates.priority;
+      if (updates.estimatedValue !== undefined) supabaseUpdates.estimated_value = updates.estimatedValue;
+      if (updates.deadline !== undefined) supabaseUpdates.deadline = updates.deadline ? updates.deadline.toISOString().split('T')[0] : null;
+      if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
+      if (updates.assignedLawyer !== undefined) supabaseUpdates.assigned_lawyer = updates.assignedLawyer;
+      if (updates.tags !== undefined) supabaseUpdates.tags = updates.tags;
+      if (updates.documents !== undefined) supabaseUpdates.documents = updates.documents;
+      if (updates.status !== undefined) supabaseUpdates.status = updates.status;
 
       const { data, error } = await supabase
         ?.from(this.tableName)
         .update(supabaseUpdates)
         .eq('id', id)
+        .eq('user_id', user_id) // Ensure user can only update their own cases
         .select()
         .single();
 
@@ -312,25 +391,26 @@ class SupabaseCaseService {
 
   /**
    * Map Supabase data to Case interface
+   * Maps all columns from the database
    */
   private mapSupabaseToCase(data: any): Case {
     return {
       id: data.id,
       title: data.title,
       clientName: data.client_name,
-      clientPhone: data.client_phone,
-      clientEmail: data.client_email,
-      clientAddress: data.client_address,
-      description: data.description,
-      caseType: data.case_type,
-      priority: data.priority,
+      clientPhone: data.client_phone || '',
+      clientEmail: data.client_email || '',
+      clientAddress: data.client_address || '',
+      description: data.description || '',
+      caseType: data.case_type || '',
+      priority: data.priority || 'medium',
       estimatedValue: data.estimated_value ? parseFloat(data.estimated_value) : undefined,
       deadline: data.deadline ? new Date(data.deadline) : undefined,
-      status: data.status,
-      notes: data.notes,
-      assignedLawyer: data.assigned_lawyer,
+      notes: data.notes || '',
+      assignedLawyer: data.assigned_lawyer || '',
       tags: data.tags || [],
       documents: data.documents || [],
+      status: data.status,
       createdAt: new Date(data.created_at),
       lastUpdated: new Date(data.updated_at)
     };
@@ -341,44 +421,6 @@ class SupabaseCaseService {
    */
   private mapSupabaseToCases(data: any[]): Case[] {
     return data.map(item => this.mapSupabaseToCase(item));
-  }
-
-  /**
-   * Map Case interface to Supabase data
-   */
-  private mapCaseToSupabase(caseData: Partial<Case>): any {
-    const supabaseData: any = {
-      title: caseData.title,
-      client_name: caseData.clientName,
-      client_phone: caseData.clientPhone,
-      client_email: caseData.clientEmail,
-      client_address: caseData.clientAddress,
-      description: caseData.description,
-      case_type: caseData.caseType,
-      priority: caseData.priority,
-      estimated_value: caseData.estimatedValue,
-      deadline: caseData.deadline ? caseData.deadline.toISOString().split('T')[0] : null,
-      status: caseData.status,
-      notes: caseData.notes,
-      assigned_lawyer: caseData.assignedLawyer,
-      tags: caseData.tags || [],
-      documents: caseData.documents || []
-    };
-
-    // Only include id if it exists and is not undefined
-    if (caseData.id) {
-      supabaseData.id = caseData.id;
-    }
-
-    // Only include timestamps if they exist
-    if (caseData.createdAt) {
-      supabaseData.created_at = caseData.createdAt.toISOString();
-    }
-    if (caseData.lastUpdated) {
-      supabaseData.updated_at = caseData.lastUpdated.toISOString();
-    }
-
-    return supabaseData;
   }
 
   /**

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Save } from 'lucide-react';
+import { X, Save, Trash2, AlertTriangle } from 'lucide-react';
 
 interface User {
   id: string;
@@ -33,10 +33,12 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onS
     plan: user.subscription?.plan || 'free',
     documentsLimit: user.subscription?.documents_limit || 5,
     casesLimit: user.subscription?.cases_limit || 3,
-    isActive: user.is_active
+    isActive: user.is_active,
+    newPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +72,83 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onS
 
       if (subError) throw subError;
 
+      // Changer le mot de passe si demandé
+      if (formData.newPassword === 'SEND_RESET_EMAIL') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(user.email, {
+          redirectTo: `${window.location.origin}/reset-password`
+        });
+        
+        if (resetError) {
+          console.warn('Impossible d\'envoyer l\'email de réinitialisation:', resetError);
+          throw new Error('Erreur lors de l\'envoi de l\'email de réinitialisation');
+        }
+      }
+
       onSuccess();
     } catch (err: any) {
       console.error('Erreur mise à jour:', err);
       setError(err.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // 1. Supprimer les documents
+      const { error: docsError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (docsError) {
+        console.error('Erreur suppression documents:', docsError);
+        throw new Error('Erreur lors de la suppression des documents');
+      }
+
+      // 2. Supprimer les dossiers
+      const { error: casesError } = await supabase
+        .from('cases')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (casesError) {
+        console.error('Erreur suppression dossiers:', casesError);
+        throw new Error('Erreur lors de la suppression des dossiers');
+      }
+
+      // 3. Supprimer l'abonnement
+      const { error: subError } = await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (subError) {
+        console.error('Erreur suppression abonnement:', subError);
+        throw new Error('Erreur lors de la suppression de l\'abonnement');
+      }
+
+      // 4. Supprimer le profil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Erreur suppression profil:', profileError);
+        throw new Error('Erreur lors de la suppression du profil');
+      }
+
+      // Note: L'utilisateur reste dans auth.users (nécessite service_role pour supprimer)
+      // Mais il ne pourra plus se connecter car son profil n'existe plus
+
+      onSuccess();
+    } catch (err: any) {
+      console.error('Erreur suppression:', err);
+      setError(err.message || 'Erreur lors de la suppression');
     } finally {
       setLoading(false);
     }
@@ -219,6 +294,31 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onS
             </label>
           </div>
 
+          {/* Changement de mot de passe */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Réinitialiser le mot de passe
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="sendResetEmail"
+                checked={formData.newPassword === 'SEND_RESET_EMAIL'}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  newPassword: e.target.checked ? 'SEND_RESET_EMAIL' : '' 
+                })}
+                className="w-5 h-5 rounded border-slate-700 bg-slate-800 text-legal-gold focus:ring-legal-gold"
+              />
+              <label htmlFor="sendResetEmail" className="text-sm text-slate-300">
+                Envoyer un email de réinitialisation à l'utilisateur
+              </label>
+            </div>
+            <p className="text-sm text-slate-400 mt-2">
+              L'utilisateur recevra un email avec un lien pour définir un nouveau mot de passe.
+            </p>
+          </div>
+
           {/* Actions */}
           <div className="flex items-center gap-4 pt-4 border-t border-slate-800">
             <button
@@ -236,6 +336,48 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onS
               <Save className="w-5 h-5" />
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </button>
+          </div>
+
+          {/* Zone de suppression */}
+          <div className="pt-4 border-t border-red-900/30">
+            {!showDeleteConfirm ? (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full px-6 py-3 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl font-medium hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                Supprimer l'utilisateur
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500 rounded-xl">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-red-400">
+                    <p className="font-semibold mb-1">Attention : Action irréversible</p>
+                    <p>Toutes les données de l'utilisateur seront définitivement supprimées (profil, dossiers, documents).</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 px-6 py-3 bg-slate-800 text-white rounded-xl font-medium hover:bg-slate-700 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    {loading ? 'Suppression...' : 'Confirmer la suppression'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </div>

@@ -7,7 +7,6 @@
  * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6
  */
 
-import { createClient } from '@supabase/supabase-js';
 import {
   DocumentWorkflow,
   WorkflowStep,
@@ -21,11 +20,10 @@ import {
   WorkflowStepStatus,
   WorkflowStepType
 } from '../types';
+import { getSupabaseClient } from '../config';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Use centralized Supabase client
+const supabase = getSupabaseClient();
 
 /**
  * Workflow Service Class
