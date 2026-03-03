@@ -52,9 +52,8 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
   
-  // Mock data for notarial acts
-  const [recentActes] = useState<Acte[]>([
-    {
+  // Real data - will be loaded from database when implemented
+  const [recentActes] = useState<Acte[]>([]);
       id: '1',
       numero: '2024/001',
       type: 'Vente immobilière',
