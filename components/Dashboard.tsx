@@ -1,11 +1,11 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppMode, Language, UserStats, UserRole, EnhancedUserProfile } from '../types';
 import { UI_TRANSLATIONS } from '../constants';
 import { MessageSquare, Briefcase, FileText, ShieldCheck, ArrowRight, Star, Clock, ShieldAlert } from 'lucide-react';
 import { ROLE_INTERFACE_CONFIG } from '../config/roleRouting';
 import DashboardWidget from './widgets/DashboardWidget';
 import ApiTestComponent from './ApiTestComponent';
+import { dashboardService } from '../services/dashboardService';
 import {
   AvocatInterface,
   NotaireInterface,
@@ -29,6 +29,10 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
 
+  // State for dashboard statistics
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
   // Map legacy user role to new UserRole enum
   const mapUserRole = (legacyRole: string): UserRole => {
     switch (legacyRole) {
@@ -45,6 +49,28 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
 
   const userRole = mapUserRole(user.role);
   const roleConfig = ROLE_INTERFACE_CONFIG[userRole];
+
+  // Load dashboard statistics from database
+  useEffect(() => {
+    const loadDashboardStats = async () => {
+      if (!enhancedUser?.id) {
+        setIsLoadingStats(false);
+        return;
+      }
+
+      try {
+        setIsLoadingStats(true);
+        const stats = await dashboardService.getDashboardStats(enhancedUser.id);
+        setDashboardStats(stats);
+      } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    loadDashboardStats();
+  }, [enhancedUser?.id]);
 
   // If specialized interface is requested and we have enhanced user data, show the specialized interface
   if (showSpecializedInterface && enhancedUser) {
@@ -69,21 +95,43 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
     }
   }
 
-  // Get role-specific dashboard widgets
+  // Get role-specific dashboard widgets data from database
   const getWidgetData = () => {
-    // Mock data - in real implementation, this would come from API
+    // If we have real stats from database, use them
+    if (dashboardStats) {
+      return {
+        activeCases: dashboardStats.activeCases,
+        recentSearches: dashboardStats.recentSearches,
+        pendingDeadlines: dashboardStats.pendingDeadlines,
+        monthlyRevenue: dashboardStats.monthlyRevenue?.toLocaleString('fr-DZ') || '0',
+        documentDrafts: dashboardStats.documentDrafts,
+        totalUsers: 0, // Admin only
+        systemHealth: '99.8%', // Admin only
+        dailyActiveUsers: 0, // Admin only
+        learningProgress: '0%', // Student only
+        recentExercises: 0, // Student only
+        studyMaterials: 0, // Student only
+        totalCases: dashboardStats.totalCases,
+        urgentCases: dashboardStats.urgentCases,
+        estimatedValue: dashboardStats.estimatedValue?.toLocaleString('fr-DZ') || '0',
+        casesByType: dashboardStats.casesByType,
+        casesByPriority: dashboardStats.casesByPriority
+      };
+    }
+
+    // Fallback to empty data while loading
     return {
-      activeCases: 12,
-      recentSearches: 8,
-      pendingDeadlines: 3,
-      monthlyRevenue: '45,200',
-      documentDrafts: 5,
-      totalUsers: 1247,
+      activeCases: 0,
+      recentSearches: 0,
+      pendingDeadlines: 0,
+      monthlyRevenue: '0',
+      documentDrafts: 0,
+      totalUsers: 0,
       systemHealth: '99.8%',
-      dailyActiveUsers: 342,
-      learningProgress: '78%',
-      recentExercises: 5,
-      studyMaterials: 24
+      dailyActiveUsers: 0,
+      learningProgress: '0%',
+      recentExercises: 0,
+      studyMaterials: 0
     };
   };
 
@@ -129,17 +177,29 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {roleConfig.dashboardWidgets.map((widgetType, index) => (
-                <DashboardWidget
-                  key={`${widgetType}-${index}`}
-                  type={widgetType}
-                  userRole={userRole}
-                  language={language}
-                  data={widgetData}
-                />
-              ))}
-            </div>
+            {isLoadingStats ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-4"></div>
+                    <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {roleConfig.dashboardWidgets.map((widgetType, index) => (
+                  <DashboardWidget
+                    key={`${widgetType}-${index}`}
+                    type={widgetType}
+                    userRole={userRole}
+                    language={language}
+                    data={widgetData}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Actions Grid */}
