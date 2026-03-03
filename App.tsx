@@ -8,6 +8,7 @@ import AdminDashboard from './components/AdminDashboard';
 import Documentation from './components/Documentation';
 import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
+import AvocatInterface from './components/interfaces/AvocatInterface';
 import AuthForm from './src/components/auth/AuthForm';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
