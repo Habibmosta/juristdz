@@ -6,7 +6,8 @@ export enum AppMode {
   ANALYSIS = 'ANALYSIS',
   ADMIN = 'ADMIN',
   DOCS = 'DOCS',
-  CASES = 'CASES'
+  CASES = 'CASES',
+  CLIENTS = 'CLIENTS'
 }
 
 export enum Sender {

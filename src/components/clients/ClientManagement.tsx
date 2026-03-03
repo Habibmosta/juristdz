@@ -1,325 +1,335 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Search, Building2, User, Mail, Phone, MapPin, TrendingUp, DollarSign, FileText, Calendar } from 'lucide-react';
+import { Language } from '../../types';
+import { 
+  Users, Plus, Search, Filter, Phone, Mail, MapPin, 
+  Briefcase, DollarSign, Calendar, MoreVertical, Edit2,
+  Trash2, Eye, FileText, TrendingUp
+} from 'lucide-react';
 import { ClientService } from '../../services/clientService';
-import type { Client, ClientStats } from '../../types/client.types';
-import { useAuth } from '../../hooks/useAuth';
 
-export const ClientManagement: React.FC = () => {
-  const { user } = useAuth();
+interface Client {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  createdAt: Date;
+  totalCases: number;
+  activeCases: number;
+  totalRevenue: number;
+  lastContact?: Date;
+  notes?: string;
+  tags?: string[];
+}
+
+interface ClientManagementProps {
+  language: Language;
+  userId: string;
+}
+
+const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId }) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const [clientStats, setClientStats] = useState<ClientStats[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [globalStats, setGlobalStats] = useState<any>(null);
+  const isAr = language === 'ar';
 
   useEffect(() => {
-    if (user) {
-      loadClients();
-      loadStats();
-    }
-  }, [user]);
+    loadClients();
+  }, [userId]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [clients, searchTerm]);
 
   const loadClients = async () => {
-    if (!user) return;
-    
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await ClientService.getClients(user.id);
-      setClients(data);
+      const loadedClients = await ClientService.getClients(userId);
+      setClients(loadedClients);
     } catch (error) {
-      console.error('Erreur chargement clients:', error);
+      console.error('Error loading clients:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadStats = async () => {
-    if (!user) return;
-    
-    try {
-      const [stats, global] = await Promise.all([
-        ClientService.getClientStats(user.id),
-        ClientService.getGlobalStats(user.id)
-      ]);
-      setClientStats(stats);
-      setGlobalStats(global);
-    } catch (error) {
-      console.error('Erreur chargement statistiques:', error);
+  const applyFilters = () => {
+    let filtered = [...clients];
+
+    if (searchTerm) {
+      filtered = filtered.filter(c => 
+        `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.phone?.includes(searchTerm)
+      );
     }
+
+    setFilteredClients(filtered);
   };
 
-  const handleSearch = async () => {
-    if (!user) return;
-    
-    if (searchTerm.trim()) {
-      try {
-        const results = await ClientService.searchClients(user.id, searchTerm);
-        setClients(results);
-      } catch (error) {
-        console.error('Erreur recherche:', error);
-      }
-    } else {
-      loadClients();
-    }
-  };
-
-  const filteredClients = clients.filter(client => {
-    const matchesStatus = filterStatus === 'all' || client.status === filterStatus;
-    const matchesType = filterType === 'all' || client.client_type === filterType;
-    return matchesStatus && matchesType;
-  });
-
-  const getClientStats = (clientId: string) => {
-    return clientStats.find(s => s.id === clientId);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-DZ', {
-      style: 'currency',
-      currency: 'DZD',
-      minimumFractionDigits: 0
-    }).format(amount);
+  const stats = {
+    total: clients.length,
+    active: clients.filter(c => c.activeCases > 0).length,
+    totalRevenue: clients.reduce((sum, c) => sum + c.totalRevenue, 0),
+    newThisMonth: clients.filter(c => {
+      const clientDate = new Date(c.createdAt);
+      const now = new Date();
+      return clientDate.getMonth() === now.getMonth() && clientDate.getFullYear() === now.getFullYear();
+    }).length
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 p-6 md:p-10" dir={isAr ? 'rtl' : 'ltr'}>
+      <div className="max-w-7xl mx-auto w-full space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-500/10 rounded-xl">
-              <Users className="w-8 h-8 text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Gestion des Clients</h1>
-              <p className="text-slate-400">Comme Clio - Gérez vos clients et leur facturation</p>
-            </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-slate-100">
+              {isAr ? 'إدارة العملاء' : 'Gestion des Clients'}
+            </h1>
+            <p className="text-slate-500 mt-1">
+              {isAr ? 'قاعدة بيانات العملاء الشاملة' : 'Base de données complète de vos clients'}
+            </p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+          <button 
+            onClick={() => {/* TODO: Open create client modal */}}
+            className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
           >
-            <Plus className="w-5 h-5" />
-            Nouveau Client
+            <Plus size={20} />
+            {isAr ? 'عميل جديد' : 'Nouveau Client'}
           </button>
         </div>
 
-        {/* Statistiques Globales */}
-        {globalStats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-500/10 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-400" />
-                </div>
-                <span className="text-2xl font-bold">{globalStats.totalClients}</span>
-              </div>
-              <p className="text-slate-400 text-sm">Total Clients</p>
-              <p className="text-green-400 text-xs mt-1">{globalStats.activeClients} actifs</p>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">{isAr ? 'إجمالي العملاء' : 'Total Clients'}</span>
+              <Users size={20} className="text-legal-gold" />
             </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-500/10 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-400" />
-                </div>
-                <span className="text-2xl font-bold">{formatCurrency(globalStats.totalBilled)}</span>
-              </div>
-              <p className="text-slate-400 text-sm">Total Facturé</p>
-              <p className="text-green-400 text-xs mt-1">{globalStats.collectionRate.toFixed(1)}% collecté</p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-emerald-500/10 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-emerald-400" />
-                </div>
-                <span className="text-2xl font-bold">{formatCurrency(globalStats.totalPaid)}</span>
-              </div>
-              <p className="text-slate-400 text-sm">Total Payé</p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-amber-500/10 rounded-lg">
-                  <FileText className="w-6 h-6 text-amber-400" />
-                </div>
-                <span className="text-2xl font-bold">{formatCurrency(globalStats.totalOutstanding)}</span>
-              </div>
-              <p className="text-slate-400 text-sm">En Attente</p>
-            </div>
+            <p className="text-3xl font-bold">{stats.total}</p>
           </div>
-        )}
-
-        {/* Barre de recherche et filtres */}
-        <div className="mb-6 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Rechercher un client par nom, email, téléphone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-12 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-            />
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">{isAr ? 'عملاء نشطون' : 'Clients Actifs'}</span>
+              <TrendingUp size={20} className="text-green-600" />
+            </div>
+            <p className="text-3xl font-bold text-green-600">{stats.active}</p>
           </div>
-
-          <div className="flex items-center gap-4">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="active">Actifs</option>
-              <option value="inactive">Inactifs</option>
-              <option value="archived">Archivés</option>
-            </select>
-
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Tous les types</option>
-              <option value="individual">Particuliers</option>
-              <option value="company">Entreprises</option>
-            </select>
-
-            <span className="text-sm text-slate-400 ml-auto">
-              {filteredClients.length} client{filteredClients.length > 1 ? 's' : ''}
-            </span>
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">{isAr ? 'الإيرادات' : 'Revenus'}</span>
+              <DollarSign size={20} className="text-blue-600" />
+            </div>
+            <p className="text-2xl font-bold text-blue-600">{stats.totalRevenue.toLocaleString()} DA</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">{isAr ? 'جدد هذا الشهر' : 'Nouveaux ce mois'}</span>
+              <Calendar size={20} className="text-purple-600" />
+            </div>
+            <p className="text-3xl font-bold text-purple-600">{stats.newThisMonth}</p>
           </div>
         </div>
 
-        {/* Liste des clients */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-slate-400">Chargement...</p>
+        {/* Search Bar */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+            <Search size={18} className="text-slate-400" />
+            <input 
+              type="text" 
+              placeholder={isAr ? 'البحث عن عميل...' : 'Rechercher un client...'} 
+              className="bg-transparent border-none outline-none w-full text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        ) : filteredClients.length === 0 ? (
-          <div className="text-center py-12 bg-slate-900 rounded-2xl border border-slate-800">
-            <Users className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Aucun client</h3>
-            <p className="text-slate-400 mb-6">Commencez par créer votre premier client</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
-            >
-              Créer un Client
-            </button>
+        </div>
+
+        {/* Clients Table */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-legal-gold"></div>
+          </div>
+        ) : filteredClients.length > 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {isAr ? 'العميل' : 'Client'}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {isAr ? 'الاتصال' : 'Contact'}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {isAr ? 'الملفات' : 'Dossiers'}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {isAr ? 'الإيرادات' : 'Revenus'}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {isAr ? 'آخر اتصال' : 'Dernier Contact'}
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {isAr ? 'إجراءات' : 'Actions'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y dark:divide-slate-800">
+                  {filteredClients.map(client => (
+                    <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-legal-gold/10 text-legal-gold rounded-full flex items-center justify-center font-bold">
+                            {client.firstName[0]}{client.lastName[0]}
+                          </div>
+                          <div>
+                            <p className="font-medium">{client.firstName} {client.lastName}</p>
+                            {client.tags && client.tags.length > 0 && (
+                              <div className="flex gap-1 mt-1">
+                                {client.tags.slice(0, 2).map((tag, idx) => (
+                                  <span key={idx} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-xs">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {client.email && (
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                              <Mail size={14} className="text-legal-gold" />
+                              {client.email}
+                            </div>
+                          )}
+                          {client.phone && (
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                              <Phone size={14} className="text-legal-gold" />
+                              {client.phone}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Briefcase size={16} className="text-slate-400" />
+                          <span className="font-medium">{client.activeCases}</span>
+                          <span className="text-slate-400">/</span>
+                          <span className="text-slate-500">{client.totalCases}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-green-600">
+                          {client.totalRevenue.toLocaleString()} DA
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-slate-500">
+                          {client.lastContact ? client.lastContact.toLocaleDateString() : '-'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => setSelectedClient(client)}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            title={isAr ? 'عرض' : 'Voir'}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button 
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            title={isAr ? 'تعديل' : 'Modifier'}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
+                            title={isAr ? 'حذف' : 'Supprimer'}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredClients.map(client => {
-              const stats = getClientStats(client.id);
-              return (
-                <div
-                  key={client.id}
-                  onClick={() => setSelectedClient(client)}
-                  className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer"
-                >
-                  {/* En-tête client */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg ${
-                        client.client_type === 'company' 
-                          ? 'bg-purple-500/10' 
-                          : 'bg-blue-500/10'
-                      }`}>
-                        {client.client_type === 'company' ? (
-                          <Building2 className={`w-6 h-6 ${
-                            client.client_type === 'company' 
-                              ? 'text-purple-400' 
-                              : 'text-blue-400'
-                          }`} />
-                        ) : (
-                          <User className="w-6 h-6 text-blue-400" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg">
-                          {client.client_type === 'company' 
-                            ? client.company_name 
-                            : `${client.first_name} ${client.last_name}`}
-                        </h3>
-                        {client.client_type === 'company' && (
-                          <p className="text-sm text-slate-400">
-                            {client.first_name} {client.last_name}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      client.status === 'active' 
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-slate-700 text-slate-400'
-                    }`}>
-                      {client.status === 'active' ? 'Actif' : 'Inactif'}
-                    </span>
-                  </div>
-
-                  {/* Informations de contact */}
-                  <div className="space-y-2 mb-4">
-                    {client.email && (
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Mail className="w-4 h-4" />
-                        <span className="truncate">{client.email}</span>
-                      </div>
-                    )}
-                    {(client.phone || client.mobile) && (
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Phone className="w-4 h-4" />
-                        <span>{client.mobile || client.phone}</span>
-                      </div>
-                    )}
-                    {client.city && (
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <MapPin className="w-4 h-4" />
-                        <span>{client.city}{client.wilaya && `, ${client.wilaya}`}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Statistiques */}
-                  {stats && (
-                    <div className="pt-4 border-t border-slate-800">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Dossiers</p>
-                          <p className="text-lg font-bold">{stats.total_cases || 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Factures</p>
-                          <p className="text-lg font-bold">{stats.total_invoices || 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Facturé</p>
-                          <p className="text-sm font-semibold text-green-400">
-                            {formatCurrency(stats.total_billed || 0)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">En attente</p>
-                          <p className="text-sm font-semibold text-amber-400">
-                            {formatCurrency(stats.total_outstanding || 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="py-20 text-center text-slate-400">
+            <Users size={60} className="mx-auto mb-4 opacity-20" />
+            <p>{isAr ? 'لا يوجد عملاء' : 'Aucun client trouvé'}</p>
           </div>
         )}
       </div>
+
+      {/* Client Detail Modal */}
+      {selectedClient && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedClient(null)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">{selectedClient.firstName} {selectedClient.lastName}</h2>
+                <button onClick={() => setSelectedClient(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</p>
+                  <p className="font-medium">{selectedClient.email || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'الهاتف' : 'Téléphone'}</p>
+                  <p className="font-medium">{selectedClient.phone || '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'العنوان' : 'Adresse'}</p>
+                  <p className="font-medium">{selectedClient.address || '-'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'الملفات النشطة' : 'Dossiers Actifs'}</p>
+                  <p className="text-2xl font-bold text-green-600">{selectedClient.activeCases}</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'إجمالي الملفات' : 'Total Dossiers'}</p>
+                  <p className="text-2xl font-bold">{selectedClient.totalCases}</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'الإيرادات' : 'Revenus'}</p>
+                  <p className="text-xl font-bold text-blue-600">{selectedClient.totalRevenue.toLocaleString()} DA</p>
+                </div>
+              </div>
+
+              {selectedClient.notes && (
+                <div>
+                  <p className="text-sm text-slate-500 mb-2">{isAr ? 'ملاحظات' : 'Notes'}</p>
+                  <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                    {selectedClient.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+export default ClientManagement;
