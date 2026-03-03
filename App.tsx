@@ -198,7 +198,7 @@ const App: React.FC = () => {
           theme={theme}
         />
       )}
-      {currentMode === AppMode.CASES && profile && (
+      {currentMode === AppMode.CASES && (
         <AvocatInterface 
           user={profile}
           language={language}
