@@ -51,7 +51,6 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
 }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
-  const isAr = language === 'ar';
   
   // Mock data for notarial acts - DEMO DATA
   const [recentActes] = useState<Acte[]>([
