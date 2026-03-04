@@ -9,6 +9,7 @@ import {
 import { CaseService } from '../../services/caseService';
 import { DocumentService } from '../../services/documentService';
 import { ClientService } from '../../services/clientService';
+import CaseTimeline from './CaseTimeline';
 
 interface CaseDetailViewProps {
   caseId: string;
@@ -272,11 +273,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
         {activeTab === 'timeline' && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
-            <h3 className="text-lg font-bold mb-6">{isAr ? 'الجدول الزمني' : 'Chronologie du Dossier'}</h3>
-            <div className="text-center py-12 text-slate-400">
-              <Clock size={48} className="mx-auto mb-4 opacity-20" />
-              <p>{isAr ? 'لا توجد أحداث بعد' : 'Aucun événement pour le moment'}</p>
-            </div>
+            <CaseTimeline caseId={caseId} language={language} userId={userId} />
           </div>
         )}
 

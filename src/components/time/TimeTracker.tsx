@@ -1,355 +1,519 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock, DollarSign, Calendar, FileText, TrendingUp } from 'lucide-react';
-import { InvoiceService } from '../../services/invoiceService';
-import type { TimeEntry } from '../../types/client.types';
-import { useAuth } from '../../hooks/useAuth';
+import { Play, Pause, Square, Clock, Plus, Calendar, DollarSign, FileText } from 'lucide-react';
+import { Language } from '../../types';
 
-export const TimeTracker: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTimer, setActiveTimer] = useState<TimeEntry | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+interface TimeEntry {
+  id: string;
+  caseId: string;
+  caseName: string;
+  description: string;
+  startTime: Date;
+  endTime?: Date;
+  duration: number; // in minutes
+  hourlyRate: number;
+  isBillable: boolean;
+  activity: string;
+  userId: string;
+}
 
-  // Formulaire pour démarrer un timer
-  const [timerForm, setTimerForm] = useState({
-    description: '',
-    activity_type: 'consultation' as const,
-    hourly_rate: 15000, // 15 000 DA/heure par défaut
-    billable: true
-  });
+interface TimeTrackerProps {
+  language: Language;
+  userId: string;
+  caseId?: string;
+  caseName?: string;
+  onSave?: (entry: TimeEntry) => void;
+}
 
-  useEffect(() => {
-    if (user) {
-      loadTimeEntries();
-      loadStats();
-      checkActiveTimer();
+const TimeTracker: React.FC<TimeTrackerProps> = ({ 
+  language, 
+  userId, 
+  caseId: initialCaseId, 
+  caseName: initialCaseName,
+  onSave 
+}) => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [pausedTime, setPausedTime] = useState(0);
+  
+  // Form state
+  const [caseId, setCaseId] = useState(initialCaseId || '');
+  const [caseName, setCaseName] = useState(initialCaseName || '');
+  const [description, setDescription] = useState('');
+  const [hourlyRate, setHourlyRate] = useState(5000); // 5000 DA/hour default
+  const [isBillable, setIsBillable] = useState(true);
+  const [activity, setActivity] = useState('consultation');
+  
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualDuration, setManualDuration] = useState({ hours: 0, minutes: 0 });
+
+  const t = {
+    fr: {
+      title: 'Gestion du Temps',
+      timer: 'Chronomètre',
+      manualEntry: 'Saisie Manuelle',
+      start: 'Démarrer',
+      pause: 'Pause',
+      resume: 'Reprendre',
+      stop: 'Arrêter',
+      save: 'Enregistrer',
+      cancel: 'Annuler',
+      case: 'Dossier',
+      selectCase: 'Sélectionner un dossier',
+      description: 'Description',
+      descriptionPlaceholder: 'Décrivez l\'activité...',
+      activity: 'Type d\'activité',
+      hourlyRate: 'Taux horaire (DA)',
+      billable: 'Facturable',
+      nonBillable: 'Non facturable',
+      duration: 'Durée',
+      hours: 'Heures',
+      minutes: 'Minutes',
+      amount: 'Montant',
+      activities: {
+        consultation: 'Consultation',
+        research: 'Recherche',
+        drafting: 'Rédaction',
+        hearing: 'Audience',
+        meeting: 'Réunion',
+        phone: 'Appel téléphonique',
+        email: 'Email',
+        travel: 'Déplacement',
+        other: 'Autre'
+      }
+    },
+    ar: {
+      title: 'إدارة الوقت',
+      timer: 'مؤقت',
+      manualEntry: 'إدخال يدوي',
+      start: 'بدء',
+      pause: 'إيقاف مؤقت',
+      resume: 'استئناف',
+      stop: 'إيقاف',
+      save: 'حفظ',
+      cancel: 'إلغاء',
+      case: 'ملف',
+      selectCase: 'اختر ملفاً',
+      description: 'الوصف',
+      descriptionPlaceholder: 'صف النشاط...',
+      activity: 'نوع النشاط',
+      hourlyRate: 'السعر بالساعة (دج)',
+      billable: 'قابل للفوترة',
+      nonBillable: 'غير قابل للفوترة',
+      duration: 'المدة',
+      hours: 'ساعات',
+      minutes: 'دقائق',
+      amount: 'المبلغ',
+      activities: {
+        consultation: 'استشارة',
+        research: 'بحث',
+        drafting: 'صياغة',
+        hearing: 'جلسة',
+        meeting: 'اجتماع',
+        phone: 'مكالمة هاتفية',
+        email: 'بريد إلكتروني',
+        travel: 'تنقل',
+        other: 'أخرى'
+      }
     }
-  }, [user]);
+  };
 
-  // Mettre à jour le chronomètre chaque seconde
+  const text = t[language];
+
+  // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (activeTimer) {
+    if (isRunning && !isPaused) {
       interval = setInterval(() => {
-        const start = new Date(activeTimer.start_time).getTime();
-        const now = Date.now();
-        setElapsedSeconds(Math.floor((now - start) / 1000));
+        setElapsedTime(prev => prev + 1);
       }, 1000);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [activeTimer]);
-
-  const checkActiveTimer = async () => {
-    if (!user) return;
     
-    try {
-      const entries = await InvoiceService.getTimeEntries(user.id);
-      const active = entries.find(e => !e.end_time);
-      if (active) {
-        setActiveTimer(active);
-        const start = new Date(active.start_time).getTime();
-        const now = Date.now();
-        setElapsedSeconds(Math.floor((now - start) / 1000));
-      }
-    } catch (error) {
-      console.error('Erreur vérification timer actif:', error);
-    }
-  };
-
-  const loadTimeEntries = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      const entries = await InvoiceService.getTimeEntries(user.id);
-      setTimeEntries(entries);
-    } catch (error) {
-      console.error('Erreur chargement entrées:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStats = async () => {
-    if (!user) return;
-    
-    try {
-      const stats = await InvoiceService.getTimeStats(user.id);
-      setStats(stats);
-    } catch (error) {
-      console.error('Erreur chargement stats:', error);
-    }
-  };
-
-  const handleStartTimer = async () => {
-    if (!user || !timerForm.description.trim()) return;
-    
-    try {
-      const entry = await InvoiceService.startTimer(user.id, {
-        description: timerForm.description,
-        activity_type: timerForm.activity_type,
-        hourly_rate: timerForm.hourly_rate,
-        billable: timerForm.billable
-      });
-      
-      setActiveTimer(entry);
-      setElapsedSeconds(0);
-      setTimerForm({ ...timerForm, description: '' });
-    } catch (error) {
-      console.error('Erreur démarrage timer:', error);
-    }
-  };
-
-  const handleStopTimer = async () => {
-    if (!activeTimer) return;
-    
-    try {
-      await InvoiceService.stopTimer(activeTimer.id);
-      setActiveTimer(null);
-      setElapsedSeconds(0);
-      loadTimeEntries();
-      loadStats();
-    } catch (error) {
-      console.error('Erreur arrêt timer:', error);
-    }
-  };
+    return () => clearInterval(interval);
+  }, [isRunning, isPaused]);
 
   const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  const handleStart = () => {
+    setIsRunning(true);
+    setIsPaused(false);
+    setStartTime(new Date());
+    setElapsedTime(0);
+    setPausedTime(0);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-DZ', {
-      style: 'currency',
-      currency: 'DZD',
-      minimumFractionDigits: 0
-    }).format(amount);
+  const handlePause = () => {
+    setIsPaused(true);
+    setPausedTime(elapsedTime);
   };
 
-  const calculateAmount = () => {
-    if (!activeTimer) return 0;
-    const hours = elapsedSeconds / 3600;
-    return hours * (timerForm.hourly_rate || 0);
+  const handleResume = () => {
+    setIsPaused(false);
   };
+
+  const handleStop = () => {
+    if (elapsedTime > 0) {
+      saveTimeEntry(elapsedTime / 60); // Convert to minutes
+    }
+    resetTimer();
+  };
+
+  const resetTimer = () => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setElapsedTime(0);
+    setStartTime(null);
+    setPausedTime(0);
+  };
+
+  const saveTimeEntry = (durationMinutes: number) => {
+    const entry: TimeEntry = {
+      id: `time_${Date.now()}`,
+      caseId,
+      caseName,
+      description,
+      startTime: startTime || new Date(),
+      endTime: new Date(),
+      duration: Math.round(durationMinutes),
+      hourlyRate,
+      isBillable,
+      activity,
+      userId
+    };
+
+    if (onSave) {
+      onSave(entry);
+    }
+
+    // Reset form
+    setDescription('');
+    setShowManualEntry(false);
+    setManualDuration({ hours: 0, minutes: 0 });
+  };
+
+  const handleManualSave = () => {
+    const totalMinutes = manualDuration.hours * 60 + manualDuration.minutes;
+    if (totalMinutes > 0) {
+      saveTimeEntry(totalMinutes);
+    }
+  };
+
+  const calculateAmount = (durationMinutes: number) => {
+    return (durationMinutes / 60) * hourlyRate;
+  };
+
+  const currentAmount = isRunning 
+    ? calculateAmount(elapsedTime / 60)
+    : calculateAmount(manualDuration.hours * 60 + manualDuration.minutes);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-emerald-500/10 rounded-xl">
-            <Clock className="w-8 h-8 text-emerald-400" />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-legal-gold/10 rounded-xl">
+            <Clock className="w-6 h-6 text-legal-gold" />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold">Gestion du Temps</h1>
-            <p className="text-slate-400">Time Tracking comme Clio - Facturez au temps passé</p>
-          </div>
+          <h2 className="text-2xl font-bold text-white">{text.title}</h2>
         </div>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowManualEntry(false)}
+            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+              !showManualEntry
+                ? 'bg-legal-gold text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Play className="w-4 h-4 inline mr-2" />
+            {text.timer}
+          </button>
+          <button
+            onClick={() => setShowManualEntry(true)}
+            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+              showManualEntry
+                ? 'bg-legal-gold text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Plus className="w-4 h-4 inline mr-2" />
+            {text.manualEntry}
+          </button>
+        </div>
+      </div>
 
-        {/* Statistiques */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-emerald-500/10 rounded-lg">
-                  <Clock className="w-6 h-6 text-emerald-400" />
-                </div>
-                <span className="text-2xl font-bold">{stats.billableHours.toFixed(1)}h</span>
+      <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+        {!showManualEntry ? (
+          /* Timer Mode */
+          <div className="space-y-6">
+            {/* Timer Display */}
+            <div className="text-center py-8">
+              <div className="text-6xl font-mono font-bold text-legal-gold mb-4">
+                {formatTime(elapsedTime)}
               </div>
-              <p className="text-slate-400 text-sm">Heures Facturables</p>
-              <p className="text-emerald-400 text-xs mt-1">{stats.uninvoicedHours.toFixed(1)}h non facturées</p>
+              <div className="text-slate-400">
+                {text.amount}: {currentAmount.toLocaleString('fr-DZ')} DA
+              </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-500/10 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-blue-400" />
-                </div>
-                <span className="text-2xl font-bold">{formatCurrency(stats.billableAmount)}</span>
-              </div>
-              <p className="text-slate-400 text-sm">Montant Facturable</p>
-              <p className="text-blue-400 text-xs mt-1">{formatCurrency(stats.uninvoicedAmount)} à facturer</p>
+            {/* Timer Controls */}
+            <div className="flex justify-center gap-4">
+              {!isRunning ? (
+                <button
+                  onClick={handleStart}
+                  className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all flex items-center gap-2"
+                >
+                  <Play className="w-5 h-5" />
+                  {text.start}
+                </button>
+              ) : (
+                <>
+                  {!isPaused ? (
+                    <button
+                      onClick={handlePause}
+                      className="px-8 py-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl font-bold transition-all flex items-center gap-2"
+                    >
+                      <Pause className="w-5 h-5" />
+                      {text.pause}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleResume}
+                      className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all flex items-center gap-2"
+                    >
+                      <Play className="w-5 h-5" />
+                      {text.resume}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleStop}
+                    className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all flex items-center gap-2"
+                  >
+                    <Square className="w-5 h-5" />
+                    {text.stop}
+                  </button>
+                </>
+              )}
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-500/10 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-purple-400" />
-                </div>
-                <span className="text-2xl font-bold">{formatCurrency(stats.averageHourlyRate)}</span>
+            {/* Form Fields */}
+            {isRunning && (
+              <div className="space-y-4 pt-6 border-t border-slate-800">
+                <TimeEntryForm
+                  language={language}
+                  text={text}
+                  caseId={caseId}
+                  setCaseId={setCaseId}
+                  caseName={caseName}
+                  setCaseName={setCaseName}
+                  description={description}
+                  setDescription={setDescription}
+                  activity={activity}
+                  setActivity={setActivity}
+                  hourlyRate={hourlyRate}
+                  setHourlyRate={setHourlyRate}
+                  isBillable={isBillable}
+                  setIsBillable={setIsBillable}
+                />
               </div>
-              <p className="text-slate-400 text-sm">Taux Horaire Moyen</p>
+            )}
+          </div>
+        ) : (
+          /* Manual Entry Mode */
+          <div className="space-y-6">
+            <TimeEntryForm
+              language={language}
+              text={text}
+              caseId={caseId}
+              setCaseId={setCaseId}
+              caseName={caseName}
+              setCaseName={setCaseName}
+              description={description}
+              setDescription={setDescription}
+              activity={activity}
+              setActivity={setActivity}
+              hourlyRate={hourlyRate}
+              setHourlyRate={setHourlyRate}
+              isBillable={isBillable}
+              setIsBillable={setIsBillable}
+            />
+
+            {/* Manual Duration Input */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">
+                  {text.hours}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={manualDuration.hours}
+                  onChange={(e) => setManualDuration(prev => ({ ...prev, hours: parseInt(e.target.value) || 0 }))}
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">
+                  {text.minutes}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={manualDuration.minutes}
+                  onChange={(e) => setManualDuration(prev => ({ ...prev, minutes: parseInt(e.target.value) || 0 }))}
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                />
+              </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-amber-500/10 rounded-lg">
-                  <FileText className="w-6 h-6 text-amber-400" />
-                </div>
-                <span className="text-2xl font-bold">{stats.uninvoicedEntries}</span>
+            {/* Amount Display */}
+            <div className="bg-slate-800 rounded-xl p-4 text-center">
+              <div className="text-sm text-slate-400 mb-1">{text.amount}</div>
+              <div className="text-3xl font-bold text-legal-gold">
+                {currentAmount.toLocaleString('fr-DZ')} DA
               </div>
-              <p className="text-slate-400 text-sm">Entrées Non Facturées</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={handleManualSave}
+                disabled={manualDuration.hours === 0 && manualDuration.minutes === 0}
+                className="flex-1 px-6 py-3 bg-legal-gold hover:bg-legal-gold/90 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold transition-all"
+              >
+                {text.save}
+              </button>
+              <button
+                onClick={() => {
+                  setShowManualEntry(false);
+                  setManualDuration({ hours: 0, minutes: 0 });
+                }}
+                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl font-medium transition-all"
+              >
+                {text.cancel}
+              </button>
             </div>
           </div>
         )}
-
-        {/* Chronomètre */}
-        <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-2xl p-8 mb-8">
-          {activeTimer ? (
-            <div className="text-center">
-              <div className="mb-6">
-                <div className="text-6xl font-bold text-emerald-400 mb-4">
-                  {formatTime(elapsedSeconds)}
-                </div>
-                <p className="text-xl text-slate-300 mb-2">{activeTimer.description}</p>
-                <p className="text-slate-400">
-                  {activeTimer.activity_type} • {formatCurrency(activeTimer.hourly_rate || 0)}/h
-                </p>
-                <p className="text-2xl font-bold text-emerald-400 mt-4">
-                  {formatCurrency(calculateAmount())}
-                </p>
-              </div>
-              <button
-                onClick={handleStopTimer}
-                className="px-8 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center gap-3 mx-auto"
-              >
-                <Square className="w-6 h-6" />
-                Arrêter le Chronomètre
-              </button>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-xl font-bold mb-4">Démarrer un Chronomètre</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="md:col-span-2">
-                  <input
-                    type="text"
-                    placeholder="Description de l'activité..."
-                    value={timerForm.description}
-                    onChange={(e) => setTimerForm({ ...timerForm, description: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <select
-                    value={timerForm.activity_type}
-                    onChange={(e) => setTimerForm({ ...timerForm, activity_type: e.target.value as any })}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="consultation">Consultation</option>
-                    <option value="research">Recherche</option>
-                    <option value="drafting">Rédaction</option>
-                    <option value="court">Audience</option>
-                    <option value="phone">Téléphone</option>
-                    <option value="email">Email</option>
-                    <option value="travel">Déplacement</option>
-                    <option value="other">Autre</option>
-                  </select>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    placeholder="Taux horaire (DA)"
-                    value={timerForm.hourly_rate}
-                    onChange={(e) => setTimerForm({ ...timerForm, hourly_rate: parseFloat(e.target.value) })}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={timerForm.billable}
-                    onChange={(e) => setTimerForm({ ...timerForm, billable: e.target.checked })}
-                    className="w-5 h-5 rounded border-slate-700 bg-slate-800 text-emerald-500"
-                  />
-                  Facturable
-                </label>
-                <button
-                  onClick={handleStartTimer}
-                  disabled={!timerForm.description.trim()}
-                  className="ml-auto px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  <Play className="w-5 h-5" />
-                  Démarrer
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Liste des entrées récentes */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h3 className="text-xl font-bold mb-4">Entrées Récentes</h3>
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
-            </div>
-          ) : timeEntries.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
-              <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Aucune entrée de temps</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {timeEntries.slice(0, 10).map(entry => (
-                <div
-                  key={entry.id}
-                  className="flex items-center justify-between p-4 bg-slate-800 rounded-xl hover:bg-slate-750 transition-colors"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium mb-1">{entry.description}</p>
-                    <div className="flex items-center gap-4 text-sm text-slate-400">
-                      <span>{entry.activity_type}</span>
-                      <span>•</span>
-                      <span>{new Date(entry.start_time).toLocaleDateString('fr-FR')}</span>
-                      {entry.duration_minutes && (
-                        <>
-                          <span>•</span>
-                          <span>{formatDuration(entry.duration_minutes)}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-emerald-400">
-                      {formatCurrency(entry.amount || 0)}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {entry.billable && (
-                        <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded">
-                          Facturable
-                        </span>
-                      )}
-                      {entry.invoiced && (
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
-                          Facturé
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
 };
+
+// Separate form component to avoid duplication
+const TimeEntryForm: React.FC<any> = ({
+  language,
+  text,
+  caseId,
+  setCaseId,
+  caseName,
+  setCaseName,
+  description,
+  setDescription,
+  activity,
+  setActivity,
+  hourlyRate,
+  setHourlyRate,
+  isBillable,
+  setIsBillable
+}) => {
+  return (
+    <>
+      {/* Case Selection */}
+      <div>
+        <label className="block text-sm font-medium text-slate-400 mb-2">
+          <FileText className="w-4 h-4 inline mr-2" />
+          {text.case}
+        </label>
+        <input
+          type="text"
+          value={caseName}
+          onChange={(e) => setCaseName(e.target.value)}
+          placeholder={text.selectCase}
+          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-medium text-slate-400 mb-2">
+          {text.description}
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={text.descriptionPlaceholder}
+          rows={3}
+          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-legal-gold focus:border-transparent resize-none"
+        />
+      </div>
+
+      {/* Activity Type */}
+      <div>
+        <label className="block text-sm font-medium text-slate-400 mb-2">
+          {text.activity}
+        </label>
+        <select
+          value={activity}
+          onChange={(e) => setActivity(e.target.value)}
+          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+        >
+          {Object.entries(text.activities).map(([key, label]) => (
+            <option key={key} value={key}>{label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Hourly Rate */}
+      <div>
+        <label className="block text-sm font-medium text-slate-400 mb-2">
+          <DollarSign className="w-4 h-4 inline mr-2" />
+          {text.hourlyRate}
+        </label>
+        <input
+          type="number"
+          value={hourlyRate}
+          onChange={(e) => setHourlyRate(parseInt(e.target.value) || 0)}
+          min="0"
+          step="1000"
+          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+        />
+      </div>
+
+      {/* Billable Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setIsBillable(!isBillable)}
+          className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+            isBillable
+              ? 'bg-green-600 text-white'
+              : 'bg-slate-800 text-slate-400'
+          }`}
+        >
+          {text.billable}
+        </button>
+        <button
+          onClick={() => setIsBillable(!isBillable)}
+          className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
+            !isBillable
+              ? 'bg-red-600 text-white'
+              : 'bg-slate-800 text-slate-400'
+          }`}
+        >
+          {text.nonBillable}
+        </button>
+      </div>
+    </>
+  );
+};
+
+export default TimeTracker;

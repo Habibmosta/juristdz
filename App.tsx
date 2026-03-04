@@ -12,6 +12,8 @@ import AvocatInterface from './components/interfaces/AvocatInterface';
 import AuthForm from './src/components/auth/AuthForm';
 import ClientManagement from './src/components/clients/ClientManagement';
 import EnhancedCaseManagement from './src/components/cases/EnhancedCaseManagement';
+import LawyerCalendar from './src/components/calendar/LawyerCalendar';
+import ReminderSystem from './src/components/reminders/ReminderSystem';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
@@ -208,6 +210,18 @@ const App: React.FC = () => {
       )}
       {currentMode === AppMode.CLIENTS && (
         <ClientManagement 
+          language={language} 
+          userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.CALENDAR && (
+        <LawyerCalendar 
+          language={language} 
+          userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.REMINDERS && (
+        <ReminderSystem 
           language={language} 
           userId={profile.id} 
         />

@@ -7,7 +7,9 @@ export enum AppMode {
   ADMIN = 'ADMIN',
   DOCS = 'DOCS',
   CASES = 'CASES',
-  CLIENTS = 'CLIENTS'
+  CLIENTS = 'CLIENTS',
+  CALENDAR = 'CALENDAR',
+  REMINDERS = 'REMINDERS'
 }
 
 export enum Sender {
