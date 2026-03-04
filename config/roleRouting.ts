@@ -14,6 +14,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
       AppMode.CASES,
+      AppMode.CLIENTS,
       AppMode.DOCS
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -96,6 +97,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
       AppMode.CASES,
+      AppMode.CLIENTS,
       AppMode.ADMIN,
       AppMode.DOCS
     ],

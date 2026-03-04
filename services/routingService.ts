@@ -221,6 +221,7 @@ export class RoutingService {
       [AppMode.DRAFTING]: t.menu_drafting,
       [AppMode.ANALYSIS]: t.menu_analysis,
       [AppMode.CASES]: t.menu_cases,
+      [AppMode.CLIENTS]: language === 'ar' ? 'العملاء' : 'Clients',
       [AppMode.ADMIN]: t.menu_admin,
       [AppMode.DOCS]: t.menu_docs
     };
@@ -235,6 +236,7 @@ export class RoutingService {
       [AppMode.DRAFTING]: 'FileText',
       [AppMode.ANALYSIS]: 'ShieldCheck',
       [AppMode.CASES]: 'Briefcase',
+      [AppMode.CLIENTS]: 'Users',
       [AppMode.ADMIN]: 'Settings',
       [AppMode.DOCS]: 'Book'
     };

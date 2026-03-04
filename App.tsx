@@ -10,6 +10,8 @@ import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
 import AvocatInterface from './components/interfaces/AvocatInterface';
 import AuthForm from './src/components/auth/AuthForm';
+import ClientManagement from './src/components/clients/ClientManagement';
+import EnhancedCaseManagement from './src/components/cases/EnhancedCaseManagement';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
@@ -199,10 +201,15 @@ const App: React.FC = () => {
         />
       )}
       {currentMode === AppMode.CASES && (
-        <AvocatInterface 
-          user={profile}
-          language={language}
-          theme={theme}
+        <EnhancedCaseManagement 
+          language={language} 
+          userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.CLIENTS && (
+        <ClientManagement 
+          language={language} 
+          userId={profile.id} 
         />
       )}
       {currentMode === AppMode.RESEARCH && (
