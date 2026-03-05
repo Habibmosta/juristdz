@@ -5,7 +5,6 @@ import {
   Briefcase, DollarSign, Calendar, MoreVertical, Edit2,
   Trash2, Eye, FileText, TrendingUp
 } from 'lucide-react';
-import { ClientService } from '../../services/clientService';
 
 interface Client {
   id: string;
@@ -34,6 +33,20 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    companyName: '',
+    notes: ''
+  });
   const isAr = language === 'ar';
 
   useEffect(() => {
@@ -47,8 +60,34 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
   const loadClients = async () => {
     setLoading(true);
     try {
-      const loadedClients = await ClientService.getClients(userId);
-      setClients(loadedClients);
+      const { supabase } = await import('../../lib/supabase');
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform data to match Client interface
+      const transformedClients: Client[] = (data || []).map(client => ({
+        id: client.id,
+        firstName: client.first_name || '',
+        lastName: client.last_name || '',
+        email: client.email,
+        phone: client.phone,
+        address: client.address,
+        createdAt: new Date(client.created_at),
+        totalCases: 0, // TODO: Calculate from cases table
+        activeCases: 0, // TODO: Calculate from cases table
+        totalRevenue: 0, // TODO: Calculate from invoices table
+        lastContact: client.updated_at ? new Date(client.updated_at) : undefined,
+        notes: client.notes,
+        tags: []
+      }));
+
+      setClients(transformedClients);
     } catch (error) {
       console.error('Error loading clients:', error);
     } finally {
@@ -68,6 +107,143 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
     }
 
     setFilteredClients(filtered);
+  };
+
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([{
+          user_id: userId,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          postal_code: formData.postalCode || null,
+          company_name: formData.companyName || null,
+          notes: formData.notes || null,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Reset form and close modal
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        postalCode: '',
+        companyName: '',
+        notes: ''
+      });
+      setShowCreateModal(false);
+      
+      // Reload clients
+      loadClients();
+    } catch (error) {
+      console.error('Error creating client:', error);
+      alert(isAr ? 'خطأ في إنشاء العميل' : 'Erreur lors de la création du client');
+    }
+  };
+
+  const handleEditClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClient) return;
+
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .update({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          postal_code: formData.postalCode || null,
+          company_name: formData.companyName || null,
+          notes: formData.notes || null
+        })
+        .eq('id', editingClient.id)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Reset form and close modal
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        postalCode: '',
+        companyName: '',
+        notes: ''
+      });
+      setShowEditModal(false);
+      setEditingClient(null);
+      
+      // Reload clients
+      loadClients();
+    } catch (error) {
+      console.error('Error updating client:', error);
+      alert(isAr ? 'خطأ في تحديث العميل' : 'Erreur lors de la mise à jour du client');
+    }
+  };
+
+  const openEditModal = (client: Client) => {
+    setEditingClient(client);
+    setFormData({
+      firstName: client.firstName,
+      lastName: client.lastName,
+      email: client.email || '',
+      phone: client.phone || '',
+      address: client.address || '',
+      city: '',
+      postalCode: '',
+      companyName: '',
+      notes: client.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    if (!confirm(isAr ? 'هل أنت متأكد من حذف هذا العميل؟' : 'Êtes-vous sûr de vouloir supprimer ce client ?')) {
+      return;
+    }
+
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      // Reload clients
+      loadClients();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      alert(isAr ? 'خطأ في حذف العميل' : 'Erreur lors de la suppression du client');
+    }
   };
 
   const stats = {
@@ -95,7 +271,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
             </p>
           </div>
           <button 
-            onClick={() => {/* TODO: Open create client modal */}}
+            onClick={() => setShowCreateModal(true)}
             className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
           >
             <Plus size={20} />
@@ -186,7 +362,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-legal-gold/10 text-legal-gold rounded-full flex items-center justify-center font-bold">
-                            {client.firstName[0]}{client.lastName[0]}
+                            {client.firstName?.[0] || '?'}{client.lastName?.[0] || '?'}
                           </div>
                           <div>
                             <p className="font-medium">{client.firstName} {client.lastName}</p>
@@ -246,12 +422,14 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
                             <Eye size={16} />
                           </button>
                           <button 
+                            onClick={() => openEditModal(client)}
                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                             title={isAr ? 'تعديل' : 'Modifier'}
                           >
                             <Edit2 size={16} />
                           </button>
                           <button 
+                            onClick={() => handleDeleteClient(client.id)}
                             className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
                             title={isAr ? 'حذف' : 'Supprimer'}
                           >
@@ -325,6 +503,298 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Client Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowCreateModal(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">{isAr ? 'عميل جديد' : 'Nouveau Client'}</h2>
+                <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <form onSubmit={handleCreateClient} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'الاسم الأول' : 'Prénom'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'اسم العائلة' : 'Nom'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'البريد الإلكتروني' : 'Email'}
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'الهاتف' : 'Téléphone'}
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'اسم الشركة' : 'Nom de l\'entreprise'}
+                </label>
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'العنوان' : 'Adresse'}
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'المدينة' : 'Ville'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'الرمز البريدي' : 'Code Postal'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'ملاحظات' : 'Notes'}
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-6 py-3 border dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-legal-gold text-white rounded-xl font-bold hover:bg-legal-gold/90 transition-colors"
+                >
+                  {isAr ? 'إنشاء' : 'Créer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {showEditModal && editingClient && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditModal(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">{isAr ? 'تعديل العميل' : 'Modifier le Client'}</h2>
+                <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <form onSubmit={handleEditClient} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'الاسم الأول' : 'Prénom'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'اسم العائلة' : 'Nom'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'البريد الإلكتروني' : 'Email'}
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'الهاتف' : 'Téléphone'}
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'اسم الشركة' : 'Nom de l\'entreprise'}
+                </label>
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'العنوان' : 'Adresse'}
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'المدينة' : 'Ville'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isAr ? 'الرمز البريدي' : 'Code Postal'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
+                    className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'ملاحظات' : 'Notes'}
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-6 py-3 border dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-legal-gold text-white rounded-xl font-bold hover:bg-legal-gold/90 transition-colors"
+                >
+                  {isAr ? 'حفظ' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

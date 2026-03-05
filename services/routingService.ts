@@ -222,6 +222,11 @@ export class RoutingService {
       [AppMode.ANALYSIS]: t.menu_analysis,
       [AppMode.CASES]: t.menu_cases,
       [AppMode.CLIENTS]: language === 'ar' ? 'العملاء' : 'Clients',
+      [AppMode.CALENDAR]: language === 'ar' ? 'الأجندة' : 'Agenda',
+      [AppMode.REMINDERS]: language === 'ar' ? 'التذكيرات' : 'Rappels',
+      [AppMode.BILLING]: language === 'ar' ? 'الفوترة' : 'Facturation',
+      [AppMode.ANALYTICS]: language === 'ar' ? 'الإحصائيات' : 'Statistiques',
+      [AppMode.TOOLS]: language === 'ar' ? 'الأدوات' : 'Outils',
       [AppMode.ADMIN]: t.menu_admin,
       [AppMode.DOCS]: t.menu_docs
     };
@@ -237,6 +242,11 @@ export class RoutingService {
       [AppMode.ANALYSIS]: 'ShieldCheck',
       [AppMode.CASES]: 'Briefcase',
       [AppMode.CLIENTS]: 'Users',
+      [AppMode.CALENDAR]: 'Calendar',
+      [AppMode.REMINDERS]: 'Bell',
+      [AppMode.BILLING]: 'Receipt',
+      [AppMode.ANALYTICS]: 'BarChart3',
+      [AppMode.TOOLS]: 'Wrench',
       [AppMode.ADMIN]: 'Settings',
       [AppMode.DOCS]: 'Book'
     };

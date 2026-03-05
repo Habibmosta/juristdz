@@ -34,7 +34,8 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
-    event_type: 'note'
+    event_type: 'note',
+    event_date: new Date().toISOString().split('T')[0] // Date du jour par défaut
   });
   const isAr = language === 'ar';
 
@@ -87,26 +88,40 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
     if (!newEvent.title.trim()) return;
 
     try {
+      const eventData: any = {
+        case_id: caseId,
+        user_id: userId,
+        event_type: newEvent.event_type,
+        title: newEvent.title,
+        description: newEvent.description,
+        event_date: newEvent.event_date,
+        status: 'prevu'
+      };
+
       const { data, error } = await supabase
         .from('case_events')
-        .insert([{
-          case_id: caseId,
-          user_id: userId,
-          event_type: newEvent.event_type,
-          title: newEvent.title,
-          description: newEvent.description,
-          metadata: {}
-        }])
+        .insert([eventData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding event:', error);
+        alert(`Erreur: ${error.message}`);
+        return;
+      }
 
       setEvents(prev => [data, ...prev]);
       setShowAddModal(false);
-      setNewEvent({ title: '', description: '', event_type: 'note' });
+      setNewEvent({ 
+        title: '', 
+        description: '', 
+        event_type: 'note',
+        event_date: new Date().toISOString().split('T')[0]
+      });
+      alert(isAr ? 'تمت إضافة الحدث بنجاح' : 'Événement ajouté avec succès');
     } catch (error) {
       console.error('Error adding event:', error);
+      alert(isAr ? 'خطأ في إضافة الحدث' : 'Erreur lors de l\'ajout de l\'événement');
     }
   };
 
@@ -347,6 +362,16 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
                     <option key={type.value} value={type.value}>{type.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">{isAr ? 'التاريخ' : 'Date'}</label>
+                <input
+                  type="date"
+                  value={newEvent.event_date}
+                  onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-legal-gold"
+                />
               </div>
 
               <div>

@@ -14,6 +14,9 @@ import ClientManagement from './src/components/clients/ClientManagement';
 import EnhancedCaseManagement from './src/components/cases/EnhancedCaseManagement';
 import LawyerCalendar from './src/components/calendar/LawyerCalendar';
 import ReminderSystem from './src/components/reminders/ReminderSystem';
+import InvoiceManagement from './src/components/billing/InvoiceManagement';
+import AdvancedAnalytics from './src/components/analytics/AdvancedAnalytics';
+import AlgerianCalculator from './src/components/tools/AlgerianCalculator';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
@@ -37,6 +40,7 @@ const App: React.FC = () => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [translationSystemReady, setTranslationSystemReady] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Legacy state for backward compatibility
   // Note: Setters prefixed with _ are kept for potential future use but not currently used
@@ -52,11 +56,12 @@ const App: React.FC = () => {
         setTranslationSystemReady(true);
         console.log('✅ Simple translation system ready');
 
-        // If user is authenticated, initialize routing
-        if (profile) {
+        // If user is authenticated, initialize routing (only once)
+        if (profile && !isInitialized) {
           routingService.setCurrentUser(profile);
           const defaultMode = getDefaultMode(profile.activeRole);
           setMode(defaultMode);
+          setIsInitialized(true);
         }
         
         setIsDataLoaded(true);
@@ -68,7 +73,7 @@ const App: React.FC = () => {
     };
 
     initApp();
-  }, [profile]);
+  }, [profile, isInitialized]);
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -224,6 +229,23 @@ const App: React.FC = () => {
         <ReminderSystem 
           language={language} 
           userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.BILLING && (
+        <InvoiceManagement 
+          language={language} 
+          userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.ANALYTICS && (
+        <AdvancedAnalytics 
+          language={language} 
+          userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.TOOLS && (
+        <AlgerianCalculator 
+          language={language} 
         />
       )}
       {currentMode === AppMode.RESEARCH && (

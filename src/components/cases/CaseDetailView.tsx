@@ -22,25 +22,407 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'timeline' | 'billing'>('overview');
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState('');
   const isAr = language === 'ar';
 
   useEffect(() => {
     loadCaseData();
+    loadDocuments();
   }, [caseId]);
 
   const loadCaseData = async () => {
     setLoading(true);
     try {
-      // Load case data from Supabase
-      const cases = await CaseService.getCases(userId, { status: 'active' });
-      const foundCase = cases.find(c => c.id === caseId);
-      if (foundCase) {
-        setCaseData(foundCase);
+      const { supabase } = await import('../../lib/supabase');
+      
+      // 1. Charger le dossier
+      const { data: caseData, error: caseError } = await supabase
+        .from('cases')
+        .select('*')
+        .eq('id', caseId)
+        .eq('user_id', userId)
+        .single();
+
+      if (caseError) {
+        console.error('Error loading case:', caseError);
+        return;
       }
+
+      if (!caseData) {
+        return;
+      }
+
+      // 2. Si le dossier a un client_id, charger les infos du client
+      let clientData = null;
+      if (caseData.client_id) {
+        const { data: client, error: clientError } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name, company_name, email, phone, mobile, address, city, wilaya, postal_code')
+          .eq('id', caseData.client_id)
+          .single();
+
+        if (!clientError && client) {
+          clientData = client;
+        }
+      }
+
+      // 3. Fusionner les données
+      const caseWithDates: Case = {
+        ...caseData,
+        createdAt: caseData.created_at ? new Date(caseData.created_at) : new Date(),
+        deadline: caseData.deadline ? new Date(caseData.deadline) : undefined,
+        // Utiliser les données du client si disponibles, sinon les colonnes directes
+        clientName: clientData 
+          ? (clientData.company_name || `${clientData.first_name} ${clientData.last_name}`.trim())
+          : caseData.client_name,
+        clientEmail: clientData?.email || caseData.client_email,
+        clientPhone: clientData?.phone || clientData?.mobile || caseData.client_phone,
+        clientAddress: clientData?.address 
+          ? `${clientData.address}${clientData.city ? ', ' + clientData.city : ''}${clientData.wilaya ? ', ' + clientData.wilaya : ''}${clientData.postal_code ? ' ' + clientData.postal_code : ''}`
+          : caseData.client_address,
+      };
+      
+      setCaseData(caseWithDates);
     } catch (error) {
       console.error('Error loading case:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDocuments = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      console.log('📂 Loading documents for case:', caseId);
+      
+      const { data, error } = await supabase
+        .from('case_documents')
+        .select('*')
+        .eq('case_id', caseId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error loading documents:', error);
+      } else {
+        console.log('✅ Documents loaded:', data?.length || 0, 'documents');
+        console.log('📄 Documents:', data);
+        setDocuments(data || []);
+      }
+    } catch (error) {
+      console.error('❌ Error loading documents:', error);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      for (const file of Array.from(files)) {
+        console.log('📤 Uploading file:', file.name);
+        
+        // 1. Upload file to Supabase Storage
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${userId}/${caseId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        console.log('📁 File path:', fileName);
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('case-documents')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('❌ Error uploading file:', uploadError);
+          alert(`Erreur upload: ${uploadError.message}`);
+          continue;
+        }
+
+        console.log('✅ File uploaded:', uploadData);
+
+        // 2. Get public URL
+        const { data: urlData } = supabase.storage
+          .from('case-documents')
+          .getPublicUrl(fileName);
+
+        console.log('🔗 Public URL:', urlData.publicUrl);
+
+        // 3. Détecter le type de document basé sur l'extension et le nom
+        const detectDocumentType = (filename: string, ext: string | undefined): string => {
+          const lowerName = filename.toLowerCase();
+          
+          // Contrats
+          if (lowerName.includes('contrat') || lowerName.includes('contract') || 
+              lowerName.includes('accord') || lowerName.includes('convention')) {
+            return 'contract';
+          }
+          
+          // Documents judiciaires
+          if (lowerName.includes('jugement') || lowerName.includes('ordonnance') || 
+              lowerName.includes('arrêt') || lowerName.includes('décision') ||
+              lowerName.includes('assignation') || lowerName.includes('citation')) {
+            return 'court_document';
+          }
+          
+          // Correspondance
+          if (lowerName.includes('lettre') || lowerName.includes('courrier') || 
+              lowerName.includes('email') || lowerName.includes('mail') ||
+              lowerName.includes('correspondance')) {
+            return 'correspondence';
+          }
+          
+          // Preuves
+          if (lowerName.includes('preuve') || lowerName.includes('evidence') || 
+              lowerName.includes('photo') || lowerName.includes('capture') ||
+              ext === 'jpg' || ext === 'jpeg' || ext === 'png') {
+            return 'evidence';
+          }
+          
+          // Factures
+          if (lowerName.includes('facture') || lowerName.includes('invoice') || 
+              lowerName.includes('reçu') || lowerName.includes('receipt')) {
+            return 'invoice';
+          }
+          
+          // Procédures
+          if (lowerName.includes('procédure') || lowerName.includes('procedure') || 
+              lowerName.includes('requête') || lowerName.includes('demande')) {
+            return 'procedure';
+          }
+          
+          // Identité
+          if (lowerName.includes('cin') || lowerName.includes('passeport') || 
+              lowerName.includes('carte') || lowerName.includes('identité')) {
+            return 'identity';
+          }
+          
+          return 'other';
+        };
+
+        const documentType = detectDocumentType(file.name, fileExt);
+
+        // 4. Save document metadata to database
+        const docData = {
+          case_id: caseId,
+          user_id: userId,
+          created_by: userId,
+          file_name: file.name,
+          storage_path: fileName,
+          file_size: file.size,
+          file_type: file.type,
+          title: file.name,
+          document_type: documentType,
+          status: 'active',
+          version: 1,
+          is_confidential: false,
+          created_at: new Date().toISOString()
+        };
+        
+        console.log('💾 Saving to database:', docData);
+
+        const { data: insertData, error: dbError } = await supabase
+          .from('case_documents')
+          .insert(docData)
+          .select();
+
+        if (dbError) {
+          console.error('❌ Error saving document metadata:', dbError);
+          alert(`Erreur DB: ${dbError.message}`);
+          continue;
+        }
+        
+        console.log('✅ Document saved to DB:', insertData);
+      }
+
+      // Reload documents
+      console.log('🔄 Reloading documents...');
+      await loadDocuments();
+      alert(isAr ? 'تم رفع المستندات بنجاح' : 'Documents téléchargés avec succès');
+    } catch (error) {
+      console.error('❌ Error uploading documents:', error);
+      alert(isAr ? 'خطأ في رفع المستندات' : 'Erreur lors du téléchargement: ' + error);
+    } finally {
+      setUploading(false);
+      // Reset input
+      event.target.value = '';
+    }
+  };
+
+  const handleDownloadDocument = async (doc: any) => {
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const { data, error } = await supabase.storage
+        .from('case-documents')
+        .download(doc.storage_path);
+
+      if (error) {
+        console.error('Error downloading file:', error);
+        return;
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.file_name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    }
+  };
+
+  const handleDeleteDocument = async (doc: any) => {
+    if (!confirm(isAr ? 'هل تريد حذف هذا المستند؟' : 'Voulez-vous supprimer ce document ?')) {
+      return;
+    }
+
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      // 1. Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('case-documents')
+        .remove([doc.storage_path]);
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError);
+      }
+
+      // 2. Delete from database
+      const { error: dbError } = await supabase
+        .from('case_documents')
+        .delete()
+        .eq('id', doc.id);
+
+      if (dbError) {
+        console.error('Error deleting from database:', dbError);
+        return;
+      }
+
+      // Reload documents
+      await loadDocuments();
+      alert(isAr ? 'تم حذف المستند' : 'Document supprimé');
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) {
+      alert(isAr ? 'الرجاء إدخال ملاحظة' : 'Veuillez entrer une note');
+      return;
+    }
+
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const currentNotes = caseData?.notes || '';
+      const newNotes = currentNotes 
+        ? `${currentNotes}\n\n--- ${new Date().toLocaleString('fr-FR')} ---\n${noteText}`
+        : `--- ${new Date().toLocaleString('fr-FR')} ---\n${noteText}`;
+
+      const { error } = await supabase
+        .from('cases')
+        .update({ 
+          notes: newNotes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', caseId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error adding note:', error);
+        alert(isAr ? 'خطأ في إضافة الملاحظة' : 'Erreur lors de l\'ajout de la note');
+        return;
+      }
+
+      // Reload case data
+      await loadCaseData();
+      setShowNoteModal(false);
+      setNoteText('');
+      alert(isAr ? 'تمت إضافة الملاحظة' : 'Note ajoutée avec succès');
+    } catch (error) {
+      console.error('Error adding note:', error);
+    }
+  };
+
+  const openEditModal = () => {
+    if (!caseData) return;
+    
+    setEditFormData({
+      title: caseData.title,
+      description: caseData.description || '',
+      caseType: caseData.caseType || caseData.case_type || '',
+      priority: caseData.priority || 'medium',
+      estimatedValue: caseData.estimatedValue || caseData.estimated_value || '',
+      deadline: caseData.deadline ? new Date(caseData.deadline).toISOString().split('T')[0] : '',
+      clientName: caseData.clientName || caseData.client_name || '',
+      clientPhone: caseData.clientPhone || caseData.client_phone || '',
+      clientEmail: caseData.clientEmail || caseData.client_email || '',
+      clientAddress: caseData.clientAddress || caseData.client_address || '',
+      assignedLawyer: caseData.assignedLawyer || caseData.assigned_lawyer || '',
+      notes: caseData.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateCase = async () => {
+    if (!caseData) return;
+    
+    setSaving(true);
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const updateData = {
+        title: editFormData.title,
+        description: editFormData.description,
+        case_type: editFormData.caseType,
+        priority: editFormData.priority,
+        estimated_value: editFormData.estimatedValue ? parseFloat(editFormData.estimatedValue) : null,
+        deadline: editFormData.deadline || null,
+        client_name: editFormData.clientName,
+        client_phone: editFormData.clientPhone,
+        client_email: editFormData.clientEmail,
+        client_address: editFormData.clientAddress,
+        assigned_lawyer: editFormData.assignedLawyer,
+        notes: editFormData.notes,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('cases')
+        .update(updateData)
+        .eq('id', caseId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error updating case:', error);
+        alert(isAr ? 'خطأ في تحديث الملف' : 'Erreur lors de la mise à jour');
+        return;
+      }
+
+      // Reload case data
+      await loadCaseData();
+      setShowEditModal(false);
+      alert(isAr ? 'تم تحديث الملف بنجاح' : 'Dossier mis à jour avec succès');
+    } catch (error) {
+      console.error('Error updating case:', error);
+      alert(isAr ? 'خطأ في تحديث الملف' : 'Erreur lors de la mise à jour');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -94,7 +476,10 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
             <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${getPriorityColor(caseData.priority)}`}>
               {caseData.priority?.toUpperCase() || 'NORMAL'}
             </span>
-            <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">
+            <button 
+              onClick={openEditModal}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+            >
               <Edit2 size={18} />
             </button>
           </div>
@@ -138,66 +523,178 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-slate-500 mb-1">{isAr ? 'الاسم' : 'Nom'}</p>
-                    <p className="font-medium">{caseData.clientName}</p>
+                    <p className="font-medium">{caseData.clientName || caseData.client_name || <span className="text-slate-400 italic">Non renseigné</span>}</p>
                   </div>
-                  {caseData.clientPhone && (
-                    <div>
-                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'الهاتف' : 'Téléphone'}</p>
-                      <p className="font-medium flex items-center gap-2">
-                        <Phone size={14} className="text-legal-gold" />
-                        {caseData.clientPhone}
-                      </p>
-                    </div>
-                  )}
-                  {caseData.clientEmail && (
-                    <div>
-                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</p>
-                      <p className="font-medium flex items-center gap-2">
-                        <Mail size={14} className="text-legal-gold" />
-                        {caseData.clientEmail}
-                      </p>
-                    </div>
-                  )}
-                  {caseData.clientAddress && (
-                    <div className="col-span-2">
-                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'العنوان' : 'Adresse'}</p>
-                      <p className="font-medium flex items-center gap-2">
-                        <MapPin size={14} className="text-legal-gold" />
-                        {caseData.clientAddress}
-                      </p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الهاتف' : 'Téléphone'}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      <Phone size={14} className="text-legal-gold" />
+                      {caseData.clientPhone || caseData.client_phone || <span className="text-slate-400 italic">Non renseigné</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      <Mail size={14} className="text-legal-gold" />
+                      {caseData.clientEmail || caseData.client_email || <span className="text-slate-400 italic">Non renseigné</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'العنوان' : 'Adresse'}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      <MapPin size={14} className="text-legal-gold" />
+                      {caseData.clientAddress || caseData.client_address || <span className="text-slate-400 italic">Non renseigné</span>}
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {/* Case Details */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
-                <h3 className="text-lg font-bold mb-4">{isAr ? 'تفاصيل الملف' : 'Détails du Dossier'}</h3>
-                <div className="space-y-4">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <FileText size={20} className="text-legal-gold" />
+                  {isAr ? 'تفاصيل الملف' : 'Détails du Dossier'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Type de Dossier */}
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الوصف' : 'Description'}</p>
-                    <p className="text-slate-700 dark:text-slate-300">{caseData.description}</p>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'نوع الملف' : 'Type de dossier'}</p>
+                    <p className="font-medium capitalize">
+                      {caseData.caseType || caseData.case_type || <span className="text-slate-400 italic">Non renseigné</span>}
+                    </p>
                   </div>
-                  {caseData.notes && (
-                    <div>
-                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'ملاحظات' : 'Notes'}</p>
-                      <p className="text-slate-700 dark:text-slate-300">{caseData.notes}</p>
-                    </div>
-                  )}
-                  {caseData.tags && caseData.tags.length > 0 && (
-                    <div>
-                      <p className="text-sm text-slate-500 mb-2">{isAr ? 'الوسوم' : 'Tags'}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {caseData.tags.map((tag, idx) => (
-                          <span key={idx} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-sm">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  
+                  {/* Avocat Assigné */}
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'المحامي المكلف' : 'Avocat assigné'}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      <User size={14} className="text-legal-gold" />
+                      {caseData.assignedLawyer || caseData.assigned_lawyer || <span className="text-slate-400 italic">Non assigné</span>}
+                    </p>
+                  </div>
+                  
+                  {/* Numéro de Dossier */}
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'رقم الملف' : 'Numéro de dossier'}</p>
+                    <p className="font-medium font-mono text-legal-gold">
+                      {caseData.case_number || <span className="text-slate-400 italic">Non généré</span>}
+                    </p>
+                  </div>
+                  
+                  {/* Objet du Dossier */}
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'موضوع الملف' : 'Objet du dossier'}</p>
+                    <p className="font-medium">
+                      {caseData.case_object || <span className="text-slate-400 italic">Non renseigné</span>}
+                    </p>
+                  </div>
+                  
+                  {/* Statut */}
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الحالة' : 'Statut'}</p>
+                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${
+                      caseData.status === 'active' || caseData.status === 'nouveau' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {caseData.status?.toUpperCase() || 'NOUVEAU'}
+                    </span>
+                  </div>
+                  
+                  {/* Priorité */}
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الأولوية' : 'Priorité'}</p>
+                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold border ${getPriorityColor(caseData.priority)}`}>
+                      {caseData.priority?.toUpperCase() || 'NORMALE'}
+                    </span>
+                  </div>
+                  
+                  {/* Description */}
+                  <div className="col-span-2">
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الوصف' : 'Description'}</p>
+                    <p className="text-slate-700 dark:text-slate-300">{caseData.description || <span className="text-slate-400 italic">Aucune description</span>}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Tribunal et Parties */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Activity size={20} className="text-legal-gold" />
+                  {isAr ? 'المحكمة والأطراف' : 'Tribunal et Parties'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'المحكمة' : 'Tribunal'}</p>
+                    <p className="font-medium">{caseData.court_name || <span className="text-slate-400 italic">Non renseigné</span>}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'القاضي' : 'Juge'}</p>
+                    <p className="font-medium">{caseData.judge_name || <span className="text-slate-400 italic">Non renseigné</span>}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الطرف المقابل' : 'Partie adverse'}</p>
+                    <p className="font-medium">{caseData.opposing_party || caseData.adverse_party_name || <span className="text-slate-400 italic">Non renseigné</span>}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'محامي الطرف المقابل' : 'Avocat adverse'}</p>
+                    <p className="font-medium">{caseData.opposing_lawyer || caseData.adverse_party_lawyer || <span className="text-slate-400 italic">Non renseigné</span>}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dates Importantes */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Calendar size={20} className="text-legal-gold" />
+                  {isAr ? 'التواريخ المهمة' : 'Dates Importantes'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'تاريخ الفتح' : 'Date d\'ouverture'}</p>
+                    <p className="font-medium">
+                      {(caseData.created_at || caseData.createdAt || caseData.opened_date) 
+                        ? new Date(caseData.created_at || caseData.createdAt || caseData.opened_date).toLocaleDateString('fr-FR')
+                        : <span className="text-slate-400 italic">Non renseigné</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الموعد النهائي' : 'Date limite'}</p>
+                    <p className="font-medium text-orange-600">
+                      {caseData.deadline 
+                        ? new Date(caseData.deadline).toLocaleDateString('fr-FR')
+                        : <span className="text-slate-400 italic">Non définie</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'الجلسة القادمة' : 'Prochaine audience'}</p>
+                    <p className="font-medium text-blue-600">
+                      {caseData.next_hearing_date 
+                        ? new Date(caseData.next_hearing_date).toLocaleDateString('fr-FR')
+                        : <span className="text-slate-400 italic">Non planifiée</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'التقادم' : 'Prescription'}</p>
+                    <p className="font-medium text-red-600">
+                      {caseData.statute_of_limitations 
+                        ? new Date(caseData.statute_of_limitations).toLocaleDateString('fr-FR')
+                        : <span className="text-slate-400 italic">Non définie</span>}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {caseData.notes && (
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <MessageSquare size={20} className="text-legal-gold" />
+                    {isAr ? 'ملاحظات' : 'Notes'}
+                  </h3>
+                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{caseData.notes}</p>
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -237,15 +734,24 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
                 <h3 className="text-lg font-bold mb-4">{isAr ? 'إجراءات سريعة' : 'Actions Rapides'}</h3>
                 <div className="space-y-2">
-                  <button className="w-full px-4 py-3 bg-legal-gold text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-legal-gold/90 transition-colors">
+                  <button 
+                    onClick={() => setActiveTab('documents')}
+                    className="w-full px-4 py-3 bg-legal-gold text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-legal-gold/90 transition-colors"
+                  >
                     <Plus size={18} />
                     {isAr ? 'إضافة مستند' : 'Ajouter Document'}
                   </button>
-                  <button className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                  <button 
+                    onClick={() => setShowNoteModal(true)}
+                    className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
                     <MessageSquare size={18} />
                     {isAr ? 'إضافة ملاحظة' : 'Ajouter Note'}
                   </button>
-                  <button className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                  <button 
+                    onClick={() => setActiveTab('timeline')}
+                    className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
                     <Calendar size={18} />
                     {isAr ? 'جدولة موعد' : 'Planifier RDV'}
                   </button>
@@ -259,15 +765,114 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold">{isAr ? 'المستندات' : 'Documents du Dossier'}</h3>
-              <button className="px-4 py-2 bg-legal-gold text-white rounded-xl font-medium flex items-center gap-2">
+              <label className="px-4 py-2 bg-legal-gold text-white rounded-xl font-medium flex items-center gap-2 cursor-pointer hover:bg-legal-gold/90 transition-colors">
                 <Upload size={18} />
-                {isAr ? 'رفع مستند' : 'Télécharger'}
-              </button>
+                {uploading ? (isAr ? 'جاري الرفع...' : 'Téléchargement...') : (isAr ? 'رفع مستند' : 'Télécharger')}
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
             </div>
-            <div className="text-center py-12 text-slate-400">
-              <FileText size={48} className="mx-auto mb-4 opacity-20" />
-              <p>{isAr ? 'لا توجد مستندات بعد' : 'Aucun document pour le moment'}</p>
-            </div>
+            
+            {documents.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">
+                <FileText size={48} className="mx-auto mb-4 opacity-20" />
+                <p>{isAr ? 'لا توجد مستندات بعد' : 'Aucun document pour le moment'}</p>
+                <p className="text-sm mt-2">{isAr ? 'انقر على "رفع مستند" لإضافة ملفات' : 'Cliquez sur "Télécharger" pour ajouter des fichiers'}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map((doc) => {
+                  // Fonction pour obtenir le badge du type de document
+                  const getDocumentTypeBadge = (type: string) => {
+                    const types: Record<string, { label: string; labelAr: string; color: string }> = {
+                      contract: { label: 'Contrat', labelAr: 'عقد', color: 'bg-blue-100 text-blue-700' },
+                      court_document: { label: 'Judiciaire', labelAr: 'قضائي', color: 'bg-purple-100 text-purple-700' },
+                      correspondence: { label: 'Courrier', labelAr: 'مراسلة', color: 'bg-green-100 text-green-700' },
+                      evidence: { label: 'Preuve', labelAr: 'دليل', color: 'bg-orange-100 text-orange-700' },
+                      invoice: { label: 'Facture', labelAr: 'فاتورة', color: 'bg-yellow-100 text-yellow-700' },
+                      procedure: { label: 'Procédure', labelAr: 'إجراء', color: 'bg-indigo-100 text-indigo-700' },
+                      identity: { label: 'Identité', labelAr: 'هوية', color: 'bg-pink-100 text-pink-700' },
+                      other: { label: 'Autre', labelAr: 'آخر', color: 'bg-slate-100 text-slate-700' }
+                    };
+                    
+                    const typeInfo = types[type] || types.other;
+                    return (
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${typeInfo.color}`}>
+                        {isAr ? typeInfo.labelAr : typeInfo.label}
+                      </span>
+                    );
+                  };
+
+                  return (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-4 border dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <FileText size={24} className="text-legal-gold" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium truncate">{doc.file_name}</p>
+                            {getDocumentTypeBadge(doc.document_type)}
+                          </div>
+                          <p className="text-sm text-slate-500">
+                            {new Date(doc.created_at).toLocaleDateString('fr-FR')} • {(doc.file_size / 1024).toFixed(0)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDownloadDocument(doc)}
+                          className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                          title={isAr ? 'تحميل' : 'Télécharger'}
+                        >
+                          <Download size={18} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { supabase } = await import('../../lib/supabase');
+                              
+                              // Essayer d'abord l'URL publique
+                              const { data: publicData } = supabase.storage
+                                .from('case-documents')
+                                .getPublicUrl(doc.storage_path);
+                              
+                              // Si le bucket est privé, utiliser une signed URL
+                              const { data: signedData, error } = await supabase.storage
+                                .from('case-documents')
+                                .createSignedUrl(doc.storage_path, 3600); // 1 heure
+                              
+                              const url = signedData?.signedUrl || publicData.publicUrl;
+                              window.open(url, '_blank');
+                            } catch (error) {
+                              console.error('Error opening document:', error);
+                              alert(isAr ? 'خطأ في فتح المستند' : 'Erreur lors de l\'ouverture du document');
+                            }
+                          }}
+                          className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                          title={isAr ? 'عرض' : 'Voir'}
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDocument(doc)}
+                          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
+                          title={isAr ? 'حذف' : 'Supprimer'}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -293,6 +898,265 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditModal(false)}>
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">{isAr ? 'تعديل الملف' : 'Modifier le Dossier'}</h2>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Informations du Dossier */}
+              <div>
+                <h3 className="text-lg font-bold mb-4">{isAr ? 'معلومات الملف' : 'Informations du Dossier'}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'عنوان الملف' : 'Titre du dossier'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.title || ''}
+                      onChange={(e) => setEditFormData({...editFormData, title: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                      required
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'وصف الملف' : 'Description du dossier'} *
+                    </label>
+                    <textarea
+                      value={editFormData.description || ''}
+                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'نوع الملف' : 'Type de dossier'}
+                    </label>
+                    <select
+                      value={editFormData.caseType || ''}
+                      onChange={(e) => setEditFormData({...editFormData, caseType: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="">{isAr ? 'اختر النوع' : 'Sélectionner le type'}</option>
+                      <option value="civil">{isAr ? 'مدني' : 'Droit Civil'}</option>
+                      <option value="commercial">{isAr ? 'تجاري' : 'Droit Commercial'}</option>
+                      <option value="family">{isAr ? 'أسري' : 'Droit de la Famille'}</option>
+                      <option value="penal">{isAr ? 'جنائي' : 'Droit Pénal'}</option>
+                      <option value="labor">{isAr ? 'عمل' : 'Droit du Travail'}</option>
+                      <option value="real_estate">{isAr ? 'عقاري' : 'Droit Immobilier'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'الأولوية' : 'Priorité'}
+                    </label>
+                    <select
+                      value={editFormData.priority || 'medium'}
+                      onChange={(e) => setEditFormData({...editFormData, priority: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="low">{isAr ? 'منخفضة' : 'Faible'}</option>
+                      <option value="medium">{isAr ? 'متوسطة' : 'Moyenne'}</option>
+                      <option value="high">{isAr ? 'عالية' : 'Élevée'}</option>
+                      <option value="urgent">{isAr ? 'عاجلة' : 'Urgente'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'القيمة المقدرة (دج)' : 'Valeur estimée (DA)'}
+                    </label>
+                    <input
+                      type="number"
+                      value={editFormData.estimatedValue || ''}
+                      onChange={(e) => setEditFormData({...editFormData, estimatedValue: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'الموعد النهائي' : 'Date limite'}
+                    </label>
+                    <input
+                      type="date"
+                      value={editFormData.deadline || ''}
+                      onChange={(e) => setEditFormData({...editFormData, deadline: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Informations Client */}
+              <div>
+                <h3 className="text-lg font-bold mb-4">{isAr ? 'معلومات العميل' : 'Informations Client'}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'اسم العميل' : 'Nom du client'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.clientName || ''}
+                      onChange={(e) => setEditFormData({...editFormData, clientName: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'رقم الهاتف' : 'Numéro de téléphone'}
+                    </label>
+                    <input
+                      type="tel"
+                      value={editFormData.clientPhone || ''}
+                      onChange={(e) => setEditFormData({...editFormData, clientPhone: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'البريد الإلكتروني' : 'Adresse email'}
+                    </label>
+                    <input
+                      type="email"
+                      value={editFormData.clientEmail || ''}
+                      onChange={(e) => setEditFormData({...editFormData, clientEmail: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {isAr ? 'العنوان' : 'Adresse'}
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.clientAddress || ''}
+                      onChange={(e) => setEditFormData({...editFormData, clientAddress: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Avocat Assigné */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'المحامي المكلف' : 'Avocat assigné'}
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.assignedLawyer || ''}
+                  onChange={(e) => setEditFormData({...editFormData, assignedLawyer: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'ملاحظات' : 'Notes'}
+                </label>
+                <textarea
+                  value={editFormData.notes || ''}
+                  onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800"
+                  rows={4}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-4 border-t dark:border-slate-800">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-6 py-3 rounded-xl border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  disabled={saving}
+                >
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+                <button
+                  onClick={handleUpdateCase}
+                  className="px-6 py-3 bg-legal-gold text-white rounded-xl font-medium hover:bg-legal-gold/90 transition-colors disabled:opacity-50"
+                  disabled={saving || !editFormData.title || !editFormData.description || !editFormData.clientName}
+                >
+                  {saving ? (isAr ? 'جاري الحفظ...' : 'Enregistrement...') : (isAr ? 'حفظ التعديلات' : 'Enregistrer les modifications')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note Modal */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowNoteModal(false)}>
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b dark:border-slate-800 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">{isAr ? 'إضافة ملاحظة' : 'Ajouter une Note'}</h2>
+              <button 
+                onClick={() => setShowNoteModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800 min-h-[200px]"
+                placeholder={isAr ? 'اكتب ملاحظتك هنا...' : 'Écrivez votre note ici...'}
+                autoFocus
+              />
+
+              <div className="flex gap-3 justify-end mt-4">
+                <button
+                  onClick={() => setShowNoteModal(false)}
+                  className="px-6 py-3 rounded-xl border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+                <button
+                  onClick={handleAddNote}
+                  className="px-6 py-3 bg-legal-gold text-white rounded-xl font-medium hover:bg-legal-gold/90 transition-colors"
+                  disabled={!noteText.trim()}
+                >
+                  {isAr ? 'إضافة' : 'Ajouter'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -320,29 +320,8 @@ class MultiUserCaseService {
    */
   async getCaseStatistics() {
     try {
-      const { user } = await this.getCurrentUserContext();
-
-      const { data, error } = await supabase
-        ?.from('user_case_statistics')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching case statistics:', error);
-        // Fallback to manual calculation
-        return this.calculateStatisticsManually();
-      }
-
-      return {
-        totalCases: data.total_cases || 0,
-        activeCases: data.active_cases || 0,
-        closedCases: data.closed_cases || 0,
-        urgentCases: data.urgent_cases || 0,
-        upcomingDeadlines: data.upcoming_deadlines || 0,
-        totalEstimatedValue: parseFloat(data.total_estimated_value || '0'),
-        totalHoursWorked: parseFloat(data.total_hours_worked || '0')
-      };
+      // Calculer les statistiques manuellement au lieu d'utiliser une vue
+      return this.calculateStatisticsManually();
     } catch (error) {
       console.error('Error in getCaseStatistics:', error);
       return this.calculateStatisticsManually();

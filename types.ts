@@ -9,7 +9,10 @@ export enum AppMode {
   CASES = 'CASES',
   CLIENTS = 'CLIENTS',
   CALENDAR = 'CALENDAR',
-  REMINDERS = 'REMINDERS'
+  REMINDERS = 'REMINDERS',
+  BILLING = 'BILLING',
+  ANALYTICS = 'ANALYTICS',
+  TOOLS = 'TOOLS'
 }
 
 export enum Sender {

@@ -15,6 +15,11 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.ANALYSIS,
       AppMode.CASES,
       AppMode.CLIENTS,
+      AppMode.CALENDAR,
+      AppMode.REMINDERS,
+      AppMode.BILLING,
+      AppMode.ANALYTICS,
+      AppMode.TOOLS,
       AppMode.DOCS
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -98,6 +103,11 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.ANALYSIS,
       AppMode.CASES,
       AppMode.CLIENTS,
+      AppMode.CALENDAR,
+      AppMode.REMINDERS,
+      AppMode.BILLING,
+      AppMode.ANALYTICS,
+      AppMode.TOOLS,
       AppMode.ADMIN,
       AppMode.DOCS
     ],
