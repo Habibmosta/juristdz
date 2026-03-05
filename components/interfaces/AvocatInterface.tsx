@@ -147,10 +147,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     setLoadingEvents(true);
     try {
       const { supabase } = await import('../../src/lib/supabase');
-      const today = new Date().toISOString().split('T')[0];
-      const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      const { data, error } = await supabase
+      // Charger les événements du calendrier général (table events)
+      const { data: calendarEvents } = await supabase
         .from('events')
         .select(`
           *,
@@ -160,19 +162,69 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           )
         `)
         .eq('user_id', user.id)
-        .gte('event_date', today)
-        .lte('event_date', thirtyDaysLater)
-        .order('event_date', { ascending: true })
-        .limit(10);
+        .gte('event_date', today.toISOString().split('T')[0])
+        .lte('event_date', thirtyDaysLater.toISOString().split('T')[0])
+        .order('event_date', { ascending: true });
 
-      if (error) throw error;
+      // Charger les événements des dossiers (table case_events)
+      const { data: caseEvents } = await supabase
+        .from('case_events')
+        .select(`
+          *,
+          cases:case_id (
+            id,
+            title
+          )
+        `)
+        .eq('user_id', user.id)
+        .not('event_date', 'is', null)
+        .gte('event_date', today.toISOString())
+        .lte('event_date', thirtyDaysLater.toISOString())
+        .order('event_date', { ascending: true });
 
-      const formattedEvents = data?.map(event => ({
-        ...event,
-        case_title: event.cases?.title
-      })) || [];
+      // Combiner et formater les événements
+      const allEvents = [
+        ...(calendarEvents || []).map(event => ({
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          event_date: event.event_date,
+          event_time: event.event_time,
+          event_type: event.event_type || 'other',
+          location: event.location,
+          case_id: event.case_id,
+          case_title: event.cases?.title,
+          source: 'calendar'
+        })),
+        ...(caseEvents || []).map(event => {
+          // Extraire la date et l'heure depuis event_date (TIMESTAMPTZ)
+          const eventDateTime = new Date(event.event_date);
+          const eventDate = eventDateTime.toISOString().split('T')[0];
+          const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
+          
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            event_date: eventDate,
+            event_time: eventTime !== '00:00' ? eventTime : null,
+            event_type: event.event_type || 'other',
+            location: null,
+            case_id: event.case_id,
+            case_title: event.cases?.title,
+            source: 'case'
+          };
+        })
+      ];
 
-      setUpcomingEvents(formattedEvents);
+      // Trier par date et heure
+      allEvents.sort((a, b) => {
+        const dateTimeA = new Date(`${a.event_date}T${a.event_time || '00:00'}`);
+        const dateTimeB = new Date(`${b.event_date}T${b.event_time || '00:00'}`);
+        return dateTimeA.getTime() - dateTimeB.getTime();
+      });
+
+      setUpcomingEvents(allEvents.slice(0, 10)); // Limiter à 10 événements
     } catch (error) {
       console.error('Error loading upcoming events:', error);
       setUpcomingEvents([]);
