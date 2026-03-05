@@ -166,10 +166,10 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           )
         `)
         .eq('user_id', user.id)
-        .not('event_date', 'is', null)
-        .gte('event_date', today.toISOString())
-        .lte('event_date', thirtyDaysLater.toISOString())
-        .order('event_date', { ascending: true });
+        .not('start_datetime', 'is', null)
+        .gte('start_datetime', today.toISOString())
+        .lte('start_datetime', thirtyDaysLater.toISOString())
+        .order('start_datetime', { ascending: true });
 
       console.log('📆 Événements calendrier:', calendarEvents?.length || 0, calendarError);
       if (calendarEvents && calendarEvents.length > 0) {
@@ -178,14 +178,14 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
 
       // Formater les événements
       const allEvents = (calendarEvents || []).map(event => {
-        // Extraire la date et l'heure depuis event_date (TIMESTAMPTZ)
-        const eventDateTime = new Date(event.event_date);
+        // Extraire la date et l'heure depuis start_datetime (TIMESTAMPTZ)
+        const eventDateTime = new Date(event.start_datetime);
         const eventDate = eventDateTime.toISOString().split('T')[0];
         const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
         
         console.log('🔄 Conversion événement:', {
           title: event.title,
-          original: event.event_date,
+          original: event.start_datetime,
           parsed: eventDateTime,
           date: eventDate,
           time: eventTime
@@ -196,7 +196,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           title: event.title,
           description: event.description,
           event_date: eventDate,
-          event_time: eventTime !== '00:00' ? eventTime : null,
+          event_time: event.all_day ? null : (eventTime !== '00:00' ? eventTime : null),
           event_type: event.event_type || 'other',
           location: event.location,
           case_id: event.case_id,
