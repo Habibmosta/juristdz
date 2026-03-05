@@ -33,10 +33,14 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
+      AppMode.CASES,      // ✅ Activé pour les actes notariés
+      AppMode.CLIENTS,    // ✅ Activé pour les parties
+      AppMode.CALENDAR,   // ✅ Activé pour les RDV
+      AppMode.BILLING,    // ✅ Activé pour la facturation
       AppMode.DOCS
     ],
     defaultMode: AppMode.DASHBOARD,
-    restrictedFeatures: ['case_management'] // Notaires don't use case management like avocats
+    restrictedFeatures: [] // Plus de restrictions
   },
 
   [UserRole.HUISSIER]: {
@@ -46,10 +50,14 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
+      AppMode.CASES,      // ✅ Activé pour les exploits
+      AppMode.CLIENTS,    // ✅ Activé pour les requérants
+      AppMode.CALENDAR,   // ✅ Activé pour les missions
+      AppMode.BILLING,    // ✅ Activé pour la facturation
       AppMode.DOCS
     ],
     defaultMode: AppMode.DASHBOARD,
-    restrictedFeatures: ['case_management']
+    restrictedFeatures: [] // Plus de restrictions
   },
 
   [UserRole.MAGISTRAT]: {
@@ -58,10 +66,12 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DASHBOARD,
       AppMode.RESEARCH,
       AppMode.ANALYSIS,
+      AppMode.CASES,      // ✅ Activé pour les affaires
+      AppMode.CALENDAR,   // ✅ Activé pour les audiences
       AppMode.DOCS
     ],
-    defaultMode: AppMode.RESEARCH, // Magistrats primarily use research
-    restrictedFeatures: ['drafting', 'case_management', 'billing']
+    defaultMode: AppMode.DASHBOARD,
+    restrictedFeatures: ['billing'] // Pas de facturation pour les magistrats
   },
 
   [UserRole.ETUDIANT]: {
@@ -88,10 +98,13 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
+      AppMode.CASES,      // ✅ Activé pour les dossiers juridiques
+      AppMode.CLIENTS,    // ✅ Activé pour les départements
+      AppMode.CALENDAR,   // ✅ Activé pour les échéances
       AppMode.DOCS
     ],
     defaultMode: AppMode.DASHBOARD,
-    restrictedFeatures: ['case_management', 'notary_features', 'court_procedures']
+    restrictedFeatures: ['billing'] // Pas de facturation externe
   },
 
   [UserRole.ADMIN]: {
