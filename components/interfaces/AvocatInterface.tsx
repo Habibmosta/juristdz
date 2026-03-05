@@ -6,6 +6,9 @@ import AdvancedSearch from '../search/AdvancedSearch';
 import SearchResults from '../search/SearchResults';
 import NewCaseModal from '../modals/NewCaseModal';
 import EditCaseModal from '../modals/EditCaseModal';
+import LawyerCalendarModal from '../calendar/LawyerCalendarModal';
+import MemoireEditor from '../documents/MemoireEditor';
+import HonorairesCalculator from '../billing/HonorairesCalculator';
 import { searchService } from '../../services/searchService';
 import { caseService } from '../../services/caseService';
 import { 
@@ -714,95 +717,30 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
 
       {/* Calendar Modal */}
       {showCalendar && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
-                <Calendar className="text-legal-gold" />
-                {isAr ? 'الأجندة' : 'Agenda'}
-              </h2>
-              <button
-                onClick={() => setShowCalendar(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="text-center py-12">
-                <Calendar size={64} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
-                <p className="text-slate-500 mb-4">
-                  {isAr ? 'قريباً: عرض الأجندة مع الأحداث والجلسات' : 'Prochainement: Vue agenda avec événements et audiences'}
-                </p>
-                <p className="text-sm text-slate-400">
-                  {isAr ? 'سيتم إضافة هذه الميزة في التحديث القادم' : 'Cette fonctionnalité sera ajoutée dans la prochaine mise à jour'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LawyerCalendarModal
+          isOpen={showCalendar}
+          onClose={() => setShowCalendar(false)}
+          language={language}
+          userId={user.id}
+        />
       )}
 
-      {/* Mémoire Form Modal */}
+      {/* Mémoire Editor */}
       {showMemoireForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
-                <FileText className="text-legal-blue" />
-                {isAr ? 'صياغة مذكرة' : 'Rédiger un Mémoire'}
-              </h2>
-              <button
-                onClick={() => setShowMemoireForm(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="text-center py-12">
-                <FileText size={64} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
-                <p className="text-slate-500 mb-4">
-                  {isAr ? 'قريباً: محرر مذكرات قانونية ذكي' : 'Prochainement: Éditeur intelligent de mémoires juridiques'}
-                </p>
-                <p className="text-sm text-slate-400">
-                  {isAr ? 'سيتم إضافة هذه الميزة في التحديث القادم' : 'Cette fonctionnalité sera ajoutée dans la prochaine mise à jour'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <MemoireEditor
+          isOpen={showMemoireForm}
+          onClose={() => setShowMemoireForm(false)}
+          language={language}
+        />
       )}
 
-      {/* Honoraires Calculator Modal */}
+      {/* Honoraires Calculator */}
       {showHonorairesCalc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
-                <Calculator className="text-legal-gold" />
-                {isAr ? 'حساب الأتعاب' : 'Calculateur d\'Honoraires'}
-              </h2>
-              <button
-                onClick={() => setShowHonorairesCalc(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="text-center py-12">
-                <Calculator size={64} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
-                <p className="text-slate-500 mb-4">
-                  {isAr ? 'قريباً: حاسبة أتعاب المحاماة' : 'Prochainement: Calculateur d\'honoraires d\'avocat'}
-                </p>
-                <p className="text-sm text-slate-400">
-                  {isAr ? 'سيتم إضافة هذه الميزة في التحديث القادم' : 'Cette fonctionnalité sera ajoutée dans la prochaine mise à jour'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <HonorairesCalculator
+          isOpen={showHonorairesCalc}
+          onClose={() => setShowHonorairesCalc(false)}
+          language={language}
+        />
       )}
     </div>
   );
