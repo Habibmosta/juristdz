@@ -601,6 +601,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                 </p>
               </div>
             </div>
+          </div>
         )}
       </div>
 
