@@ -453,6 +453,61 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
               theme={theme}
             />
           )}
+
+          {/* Quick Controls - Theme, Language, Search */}
+          {!isDesktopSidebarCollapsed && (
+            <div className={`mt-4 flex items-center gap-2 p-2 rounded-xl ${
+              theme === 'light' ? 'bg-slate-50' : 'bg-slate-800/50'
+            }`}>
+              {/* Theme Toggle */}
+              <button 
+                onClick={onThemeToggle}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                  theme === 'light' 
+                    ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+                }`}
+                title={theme === 'light' ? (isAr ? 'الوضع المظلم' : 'Mode sombre') : (isAr ? 'الوضع المضيء' : 'Mode clair')}
+              >
+                {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                <span className="text-xs font-medium">
+                  {theme === 'light' ? (isAr ? 'داكن' : 'Sombre') : (isAr ? 'فاتح' : 'Clair')}
+                </span>
+              </button>
+
+              {/* Language Toggle */}
+              <button 
+                onClick={() => {
+                  const newLanguage = language === 'fr' ? 'ar' : 'fr';
+                  handleLanguageTransition(newLanguage);
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                  theme === 'light' 
+                    ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+                } ${isLanguageTransitioning ? 'animate-pulse' : ''}`}
+                title={language === 'fr' ? 'Basculer vers l\'arabe' : 'التبديل إلى الفرنسية'}
+              >
+                <Globe size={16} className={isLanguageTransitioning ? 'animate-spin' : ''} />
+                <span className="text-xs font-bold uppercase">
+                  {language === 'fr' ? 'FR' : 'AR'}
+                </span>
+              </button>
+
+              {/* Search Button */}
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className={`flex items-center justify-center p-2 rounded-lg transition-all ${
+                  theme === 'light' 
+                    ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+                }`}
+                title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
+              >
+                <Search size={16} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Desktop Navigation */}
@@ -472,7 +527,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
         {!isDesktopSidebarCollapsed && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-700">
             {/* User Profile Section */}
-            <div className="mb-4 relative">
+            <div className="mb-3 relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
@@ -526,80 +581,24 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
               )}
             </div>
 
-            {/* Bottom Controls Section */}
-            <div className="space-y-3">
-              {/* Theme & Language Controls */}
-              <div className={`flex items-center gap-2 p-3 rounded-xl ${
-                theme === 'light' ? 'bg-slate-50' : 'bg-slate-800/50'
-              }`}>
-                {/* Theme Toggle */}
-                <button 
-                  onClick={onThemeToggle}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                    theme === 'light' 
-                      ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
-                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
-                  }`}
-                  title={theme === 'light' ? (isAr ? 'الوضع المظلم' : 'Mode sombre') : (isAr ? 'الوضع المضيء' : 'Mode clair')}
-                >
-                  {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                  <span className="text-xs font-medium">
-                    {theme === 'light' ? (isAr ? 'داكن' : 'Sombre') : (isAr ? 'فاتح' : 'Clair')}
-                  </span>
-                </button>
-
-                {/* Language Toggle */}
-                <button 
-                  onClick={() => {
-                    const newLanguage = language === 'fr' ? 'ar' : 'fr';
-                    handleLanguageTransition(newLanguage);
-                  }}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                    theme === 'light' 
-                      ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
-                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
-                  } ${isLanguageTransitioning ? 'animate-pulse' : ''}`}
-                  title={language === 'fr' ? 'Basculer vers l\'arabe' : 'التبديل إلى الفرنسية'}
-                >
-                  <Globe size={16} className={isLanguageTransitioning ? 'animate-spin' : ''} />
-                  <span className="text-xs font-bold uppercase">
-                    {language === 'fr' ? 'FR' : 'AR'}
-                  </span>
-                </button>
-
-                {/* Search Button */}
-                <button 
-                  onClick={() => setIsSearchOpen(true)}
-                  className={`flex items-center justify-center p-2 rounded-lg transition-all ${
-                    theme === 'light' 
-                      ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
-                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
-                  }`}
-                  title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
-                >
-                  <Search size={16} />
-                </button>
+            {/* Security Notice */}
+            <div className={`p-3 rounded-xl border ${
+              theme === 'light' 
+                ? 'bg-slate-50 border-slate-100' 
+                : 'bg-slate-800 border-slate-700'
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={12} className="text-legal-gold" />
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                  {isAr ? 'وضع آمن' : 'Mode Sécurisé'}
+                </span>
               </div>
-
-              {/* Security Notice */}
-              <div className={`p-3 rounded-xl border ${
-                theme === 'light' 
-                  ? 'bg-slate-50 border-slate-100' 
-                  : 'bg-slate-800 border-slate-700'
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield size={12} className="text-legal-gold" />
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                    {isAr ? 'وضع آمن' : 'Mode Sécurisé'}
-                  </span>
-                </div>
-                <p className="text-[8px] text-slate-400 leading-tight">
-                  {isAr 
-                    ? 'جميع البيانات محمية ومشفرة. تحقق دائماً من الجريدة الرسمية.'
-                    : 'Données protégées et chiffrées. Vérifiez toujours avec le JORA.'
-                  }
-                </p>
-              </div>
+              <p className="text-[8px] text-slate-400 leading-tight">
+                {isAr 
+                  ? 'جميع البيانات محمية ومشفرة. تحقق دائماً من الجريدة الرسمية.'
+                  : 'Données protégées et chiffrées. Vérifiez toujours avec le JORA.'
+                }
+              </p>
             </div>
           </div>
         )}
