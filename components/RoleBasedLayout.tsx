@@ -402,7 +402,9 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
         <div className={`p-6 border-b transition-colors ${
           theme === 'light' ? 'border-slate-100' : 'border-slate-700/50'
         }`}>
-          <div className="flex items-center justify-between mb-4">
+          {/* Logo and User Profile on same line */}
+          <div className="flex items-center justify-between gap-3 mb-4">
+            {/* Logo Section */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="p-2 bg-legal-gold rounded-xl shrink-0 shadow-lg shadow-legal-gold/20">
                 <Scale className="w-6 h-6 text-white" />
@@ -425,22 +427,73 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                 </div>
               )}
             </div>
-            
-            {/* Desktop Sidebar Collapse Toggle */}
-            <button
-              onClick={() => setIsDesktopSidebarCollapsed(!isDesktopSidebarCollapsed)}
-              className={`p-2 rounded-lg transition-colors ${
-                theme === 'light' 
-                  ? 'hover:bg-slate-100 active:bg-slate-200' 
-                  : 'hover:bg-slate-800 active:bg-slate-700'
-              }`}
-              title={isDesktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isDesktopSidebarCollapsed ? 
-                (isAr ? <ChevronLeft size={16} /> : <ChevronRight size={16} />) : 
-                (isAr ? <ChevronRight size={16} /> : <ChevronLeft size={16} />)
-              }
-            </button>
+
+            {/* User Profile - Compact on same line */}
+            {!isDesktopSidebarCollapsed && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    theme === 'light'
+                      ? 'hover:bg-slate-100 active:bg-slate-200'
+                      : 'hover:bg-slate-800 active:bg-slate-700'
+                  }`}
+                  title={user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
+                >
+                  <div className="w-8 h-8 rounded-full bg-legal-gold flex items-center justify-center text-white font-bold text-sm">
+                    {user.firstName?.[0] || user.email[0].toUpperCase()}
+                  </div>
+                </button>
+
+                {/* Desktop Dropdown Menu */}
+                {showUserMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowUserMenu(false)}
+                    />
+                    <div className={`absolute ${isAr ? 'left-0' : 'right-0'} top-full mt-2 w-64 rounded-xl shadow-2xl border z-50 ${
+                      theme === 'light' 
+                        ? 'bg-white border-slate-200' 
+                        : 'bg-slate-900 border-slate-800'
+                    }`}>
+                      {/* User Info in Dropdown */}
+                      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-legal-gold flex items-center justify-center text-white font-bold">
+                            {user.firstName?.[0] || user.email[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate">
+                              {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Logout Button */}
+                      <div className="p-2">
+                        <button
+                          onClick={async () => {
+                            await signOut();
+                            setShowUserMenu(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                            theme === 'light'
+                              ? 'hover:bg-red-50 text-red-600'
+                              : 'hover:bg-red-900/20 text-red-400'
+                          }`}
+                        >
+                          <LogOut size={18} />
+                          <span className="font-medium">{isAr ? 'تسجيل الخروج' : 'Déconnexion'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Role Switcher - Hidden when collapsed */}
@@ -506,63 +559,6 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
               >
                 <Search size={16} />
               </button>
-            </div>
-          )}
-
-          {/* User Profile Section */}
-          {!isDesktopSidebarCollapsed && (
-            <div className="mt-4 relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                  theme === 'light'
-                    ? 'hover:bg-slate-100 active:bg-slate-200'
-                    : 'hover:bg-slate-800 active:bg-slate-700'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-legal-gold flex items-center justify-center text-white font-bold">
-                  {user.firstName?.[0] || user.email[0].toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="font-bold text-sm truncate">
-                    {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                </div>
-                <ChevronDown size={16} className={`transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Desktop Dropdown Menu */}
-              {showUserMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowUserMenu(false)}
-                  />
-                  <div className={`absolute ${isAr ? 'right-0' : 'left-0'} top-full mt-2 w-full rounded-xl shadow-2xl border z-50 ${
-                    theme === 'light' 
-                      ? 'bg-white border-slate-200' 
-                      : 'bg-slate-900 border-slate-800'
-                  }`}>
-                    <div className="p-2">
-                      <button
-                        onClick={async () => {
-                          await signOut();
-                          setShowUserMenu(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          theme === 'light'
-                            ? 'hover:bg-red-50 text-red-600'
-                            : 'hover:bg-red-900/20 text-red-400'
-                        }`}
-                      >
-                        <LogOut size={18} />
-                        <span className="font-medium">{isAr ? 'تسجيل الخروج' : 'Déconnexion'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           )}
         </div>
