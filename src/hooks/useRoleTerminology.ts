@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { getTerminology, getTerm, RoleTerminology } from '../config/roleTerminology';
-import { UserRole } from '../types';
+import { UserRole } from '../../types';
 
 /**
  * Hook pour obtenir la terminologie adaptée au rôle de l'utilisateur

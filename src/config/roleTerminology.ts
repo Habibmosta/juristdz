@@ -3,7 +3,7 @@
  * Pour dépasser la concurrence avec une interface ultra-personnalisée
  */
 
-import { UserRole } from '../types';
+import { UserRole } from '../../types';
 
 export interface RoleTerminology {
   // Terminologie principale
