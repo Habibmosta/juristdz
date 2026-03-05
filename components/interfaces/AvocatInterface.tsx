@@ -6,6 +6,7 @@ import AdvancedSearch from '../search/AdvancedSearch';
 import SearchResults from '../search/SearchResults';
 import NewCaseModal from '../modals/NewCaseModal';
 import EditCaseModal from '../modals/EditCaseModal';
+import { CaseDetailModal } from '../cases/CaseDetailModal';
 import LawyerCalendarModal from '../calendar/LawyerCalendarModal';
 import MemoireEditor from '../documents/MemoireEditor';
 import HonorairesCalculator from '../billing/HonorairesCalculator';
@@ -37,7 +38,8 @@ import {
   RefreshCw,
   Edit3,
   Trash2,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 
 interface AvocatInterfaceProps {
@@ -67,7 +69,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   // Case management state
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [showEditCaseModal, setShowEditCaseModal] = useState(false);
+  const [showCaseDetail, setShowCaseDetail] = useState(false);
   const [editingCase, setEditingCase] = useState<Case | null>(null);
+  const [viewingCase, setViewingCase] = useState<Case | null>(null);
   const [activeCases, setActiveCases] = useState<Case[]>([]);
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [isLoadingCases, setIsLoadingCases] = useState(true);
@@ -318,6 +322,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     } catch (error) {
       console.error('Error archiving case:', error);
     }
+  };
+
+  // Handle view case
+  const handleViewCase = (case_: Case) => {
+    setViewingCase(case_);
+    setShowCaseDetail(true);
   };
 
   // Handle edit case
@@ -620,7 +630,11 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                 </div>
               ) : (
                 filteredCases.map(case_ => (
-                  <div key={case_.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors cursor-pointer group">
+                  <div 
+                    key={case_.id} 
+                    className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue hover:shadow-md transition-all cursor-pointer group"
+                    onClick={() => handleViewCase(case_)}
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-legal-blue transition-colors">
@@ -637,7 +651,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                             </>
                           )}
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">
                           {case_.description}
                         </p>
                         {case_.caseType && (
@@ -646,16 +660,32 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => handleEditCase(case_)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewCase(case_);
+                          }}
+                          className="p-2 text-slate-400 hover:text-legal-blue hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title={isAr ? 'عرض الملف' : 'Voir le dossier'}
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCase(case_);
+                          }}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                           title={isAr ? 'تعديل الملف' : 'Modifier le dossier'}
                         >
                           <Edit3 size={16} />
                         </button>
                         <button
-                          onClick={() => handleDeleteCase(case_.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCase(case_.id);
+                          }}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           title={isAr ? 'أرشفة الملف' : 'Archiver le dossier'}
                         >
@@ -964,6 +994,23 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           language={language}
           theme={theme}
           case_={editingCase}
+        />
+      )}
+
+      {/* Case Detail Modal */}
+      {viewingCase && (
+        <CaseDetailModal
+          case_={viewingCase}
+          isOpen={showCaseDetail}
+          onClose={() => {
+            setShowCaseDetail(false);
+            setViewingCase(null);
+          }}
+          onEdit={() => {
+            setEditingCase(viewingCase);
+            setShowEditCaseModal(true);
+          }}
+          language={language}
         />
       )}
 
