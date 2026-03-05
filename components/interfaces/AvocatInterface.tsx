@@ -155,87 +155,68 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       console.log('📅 Période:', today.toISOString(), 'à', thirtyDaysLater.toISOString());
       console.log('👤 User ID:', user.id);
 
-      // Essayer de charger les événements - on va tester différentes structures
-      let calendarEvents = null;
-      let calendarError = null;
-
-      // Tentative 1: Avec start_datetime
-      const attempt1 = await supabase
+      // Charger depuis calendar_events (utilise start_time)
+      const calendarResult = await supabase
         .from('calendar_events')
+        .select(`
+          *,
+          cases:case_id (
+            id,
+            title
+          )
+        `)
+        .eq('user_id', user.id)
+        .not('start_time', 'is', null)
+        .gte('start_time', today.toISOString())
+        .lte('start_time', thirtyDaysLater.toISOString())
+        .order('start_time', { ascending: true });
+
+      console.log('📆 calendar_events:', calendarResult.data?.length || 0, calendarResult.error);
+
+      // Charger depuis case_events (utilise event_date)
+      const todayDate = today.toISOString().split('T')[0];
+      const thirtyDaysDate = thirtyDaysLater.toISOString().split('T')[0];
+      
+      const caseEventsResult = await supabase
+        .from('case_events')
         .select('*')
         .eq('user_id', user.id)
-        .limit(1);
+        .gte('event_date', todayDate)
+        .lte('event_date', thirtyDaysDate)
+        .order('event_date', { ascending: true });
 
-      if (attempt1.data && attempt1.data.length > 0) {
-        console.log('📋 Structure de calendar_events:', Object.keys(attempt1.data[0]));
-        
-        // Déterminer quelle colonne de date utiliser
-        const sampleEvent = attempt1.data[0];
-        let dateColumn = null;
-        
-        if ('start_datetime' in sampleEvent) {
-          dateColumn = 'start_datetime';
-        } else if ('event_date' in sampleEvent) {
-          dateColumn = 'event_date';
-        } else if ('date' in sampleEvent) {
-          dateColumn = 'date';
-        } else if ('created_at' in sampleEvent) {
-          dateColumn = 'created_at'; // Fallback
+      console.log('📋 case_events:', caseEventsResult.data?.length || 0, caseEventsResult.error);
+
+      // Charger les titres des dossiers pour case_events
+      let caseTitles: Record<string, string> = {};
+      if (caseEventsResult.data && caseEventsResult.data.length > 0) {
+        const caseIds = [...new Set(caseEventsResult.data.map(e => e.case_id).filter(Boolean))];
+        if (caseIds.length > 0) {
+          const casesResult = await supabase
+            .from('cases')
+            .select('id, title')
+            .in('id', caseIds);
+          
+          if (casesResult.data) {
+            caseTitles = Object.fromEntries(
+              casesResult.data.map(c => [c.id, c.title])
+            );
+          }
         }
-
-        console.log('📅 Colonne de date détectée:', dateColumn);
-
-        if (dateColumn) {
-          // Charger tous les événements avec la bonne colonne
-          const result = await supabase
-            .from('calendar_events')
-            .select(`
-              *,
-              cases:case_id (
-                id,
-                title
-              )
-            `)
-            .eq('user_id', user.id)
-            .not(dateColumn, 'is', null)
-            .gte(dateColumn, today.toISOString())
-            .lte(dateColumn, thirtyDaysLater.toISOString())
-            .order(dateColumn, { ascending: true });
-
-          calendarEvents = result.data;
-          calendarError = result.error;
-        }
-      } else {
-        calendarError = attempt1.error;
       }
 
-      console.log('📆 Événements calendrier:', calendarEvents?.length || 0, calendarError);
-      if (calendarEvents && calendarEvents.length > 0) {
-        console.log('📋 Détails événements:', calendarEvents);
-      }
-
-      // Formater les événements
-      const allEvents = (calendarEvents || []).map(event => {
-        // Déterminer la colonne de date
-        const dateValue = event.start_datetime || event.event_date || event.date || event.created_at;
-        const eventDateTime = new Date(dateValue);
+      // Formater les événements de calendar_events
+      const calendarEvents = (calendarResult.data || []).map(event => {
+        const eventDateTime = new Date(event.start_time);
         const eventDate = eventDateTime.toISOString().split('T')[0];
-        const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
-        
-        console.log('🔄 Conversion événement:', {
-          title: event.title,
-          original: dateValue,
-          parsed: eventDateTime,
-          date: eventDate,
-          time: eventTime
-        });
+        const eventTime = event.is_all_day ? null : eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
         
         return {
           id: event.id,
           title: event.title,
           description: event.description,
           event_date: eventDate,
-          event_time: event.all_day ? null : (eventTime !== '00:00' ? eventTime : null),
+          event_time: eventTime,
           event_type: event.event_type || 'other',
           location: event.location,
           case_id: event.case_id,
@@ -243,6 +224,25 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           source: 'calendar'
         };
       });
+
+      // Formater les événements de case_events
+      const caseEvents = (caseEventsResult.data || []).map(event => {
+        return {
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          event_date: event.event_date,
+          event_time: event.event_time,
+          event_type: event.event_type || 'other',
+          location: event.location,
+          case_id: event.case_id,
+          case_title: caseTitles[event.case_id] || null,
+          source: 'case'
+        };
+      });
+
+      // Fusionner les deux sources
+      const allEvents = [...calendarEvents, ...caseEvents];
 
       console.log('✅ Total événements:', allEvents.length);
 
