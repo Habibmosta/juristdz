@@ -79,10 +79,15 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   const [showCalendar, setShowCalendar] = useState(false);
   const [showMemoireForm, setShowMemoireForm] = useState(false);
   const [showHonorairesCalc, setShowHonorairesCalc] = useState(false);
+  
+  // Events state
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   // Load cases and statistics on component mount
   useEffect(() => {
     loadCases();
     loadCaseStatistics();
+    loadUpcomingEvents();
   }, []);
 
   // Filter cases based on search and priority
@@ -135,6 +140,44 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       setCaseStats(stats);
     } catch (error) {
       console.error('Error loading case statistics:', error);
+    }
+  };
+
+  const loadUpcomingEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const { supabase } = await import('../../src/lib/supabase');
+      const today = new Date().toISOString().split('T')[0];
+      const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          cases:case_id (
+            id,
+            title
+          )
+        `)
+        .eq('user_id', user.id)
+        .gte('event_date', today)
+        .lte('event_date', thirtyDaysLater)
+        .order('event_date', { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+
+      const formattedEvents = data?.map(event => ({
+        ...event,
+        case_title: event.cases?.title
+      })) || [];
+
+      setUpcomingEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error loading upcoming events:', error);
+      setUpcomingEvents([]);
+    } finally {
+      setLoadingEvents(false);
     }
   };
 
@@ -661,6 +704,125 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                   <p className="text-sm text-slate-500">
                     {isAr ? 'لا توجد مواعيد قادمة' : 'Aucune échéance prochaine'}
                   </p>
+                </div>
+              )}
+            </div>
+
+            {/* Upcoming Events */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Calendar size={18} className="text-legal-gold" />
+                  {isAr ? 'الأحداث القادمة' : 'Événements à venir'}
+                </h3>
+                <button
+                  onClick={() => setShowCalendar(true)}
+                  className="text-xs text-legal-blue hover:text-legal-blue/80 font-medium"
+                >
+                  {isAr ? 'عرض الكل' : 'Voir tout'}
+                </button>
+              </div>
+              
+              {loadingEvents ? (
+                <div className="text-center py-4">
+                  <RefreshCw size={24} className="mx-auto text-slate-300 animate-spin mb-2" />
+                  <p className="text-sm text-slate-500">
+                    {isAr ? 'جاري التحميل...' : 'Chargement...'}
+                  </p>
+                </div>
+              ) : upcomingEvents.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingEvents.slice(0, 5).map((event) => {
+                    const eventDate = new Date(event.event_date);
+                    const isToday = eventDate.toDateString() === new Date().toDateString();
+                    const isTomorrow = eventDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                    
+                    const getEventTypeColor = (type: string) => {
+                      switch (type) {
+                        case 'hearing': return 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400';
+                        case 'meeting': return 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
+                        case 'deadline': return 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400';
+                        default: return 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400';
+                      }
+                    };
+
+                    const getEventTypeLabel = (type: string) => {
+                      const labels = {
+                        hearing: isAr ? 'جلسة' : 'Audience',
+                        meeting: isAr ? 'اجتماع' : 'Réunion',
+                        deadline: isAr ? 'موعد نهائي' : 'Échéance',
+                        other: isAr ? 'آخر' : 'Autre'
+                      };
+                      return labels[type as keyof typeof labels] || type;
+                    };
+
+                    return (
+                      <div 
+                        key={event.id} 
+                        className={`p-3 border rounded-xl ${getEventTypeColor(event.event_type)} ${
+                          isToday ? 'ring-2 ring-legal-gold' : ''
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm truncate">
+                              {event.title}
+                            </div>
+                            {event.case_title && (
+                              <div className="text-xs opacity-75 truncate mt-0.5">
+                                {event.case_title}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mt-1 text-xs">
+                              <Clock size={12} />
+                              {isToday ? (
+                                <span className="font-bold">
+                                  {isAr ? 'اليوم' : 'Aujourd\'hui'}
+                                  {event.event_time && ` - ${event.event_time}`}
+                                </span>
+                              ) : isTomorrow ? (
+                                <span className="font-bold">
+                                  {isAr ? 'غداً' : 'Demain'}
+                                  {event.event_time && ` - ${event.event_time}`}
+                                </span>
+                              ) : (
+                                <span>
+                                  {eventDate.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR', { 
+                                    weekday: 'short', 
+                                    day: 'numeric', 
+                                    month: 'short' 
+                                  })}
+                                  {event.event_time && ` - ${event.event_time}`}
+                                </span>
+                              )}
+                            </div>
+                            {event.location && (
+                              <div className="flex items-center gap-1 mt-1 text-xs opacity-75">
+                                <MapPin size={12} />
+                                <span className="truncate">{event.location}</span>
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap">
+                            {getEventTypeLabel(event.event_type)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Calendar size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-2" />
+                  <p className="text-sm text-slate-500 mb-3">
+                    {isAr ? 'لا توجد أحداث قادمة' : 'Aucun événement à venir'}
+                  </p>
+                  <button
+                    onClick={() => setShowCalendar(true)}
+                    className="text-xs text-legal-blue hover:text-legal-blue/80 font-medium"
+                  >
+                    {isAr ? 'إضافة حدث' : 'Ajouter un événement'}
+                  </button>
                 </div>
               )}
             </div>
