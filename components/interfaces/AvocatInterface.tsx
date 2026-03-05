@@ -155,21 +155,59 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       console.log('📅 Période:', today.toISOString(), 'à', thirtyDaysLater.toISOString());
       console.log('👤 User ID:', user.id);
 
-      // Charger les événements du calendrier (table calendar_events)
-      const { data: calendarEvents, error: calendarError } = await supabase
+      // Essayer de charger les événements - on va tester différentes structures
+      let calendarEvents = null;
+      let calendarError = null;
+
+      // Tentative 1: Avec start_datetime
+      const attempt1 = await supabase
         .from('calendar_events')
-        .select(`
-          *,
-          cases:case_id (
-            id,
-            title
-          )
-        `)
+        .select('*')
         .eq('user_id', user.id)
-        .not('start_datetime', 'is', null)
-        .gte('start_datetime', today.toISOString())
-        .lte('start_datetime', thirtyDaysLater.toISOString())
-        .order('start_datetime', { ascending: true });
+        .limit(1);
+
+      if (attempt1.data && attempt1.data.length > 0) {
+        console.log('📋 Structure de calendar_events:', Object.keys(attempt1.data[0]));
+        
+        // Déterminer quelle colonne de date utiliser
+        const sampleEvent = attempt1.data[0];
+        let dateColumn = null;
+        
+        if ('start_datetime' in sampleEvent) {
+          dateColumn = 'start_datetime';
+        } else if ('event_date' in sampleEvent) {
+          dateColumn = 'event_date';
+        } else if ('date' in sampleEvent) {
+          dateColumn = 'date';
+        } else if ('created_at' in sampleEvent) {
+          dateColumn = 'created_at'; // Fallback
+        }
+
+        console.log('📅 Colonne de date détectée:', dateColumn);
+
+        if (dateColumn) {
+          // Charger tous les événements avec la bonne colonne
+          const result = await supabase
+            .from('calendar_events')
+            .select(`
+              *,
+              cases:case_id (
+                id,
+                title
+              )
+            `)
+            .eq('user_id', user.id)
+            .not(dateColumn, 'is', null)
+            .gte(dateColumn, today.toISOString())
+            .lte(dateColumn, thirtyDaysLater.toISOString())
+            .order(dateColumn, { ascending: true });
+
+          calendarEvents = result.data;
+          calendarError = result.error;
+        }
+      } else {
+        calendarError = attempt1.error;
+      }
 
       console.log('📆 Événements calendrier:', calendarEvents?.length || 0, calendarError);
       if (calendarEvents && calendarEvents.length > 0) {
@@ -178,14 +216,15 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
 
       // Formater les événements
       const allEvents = (calendarEvents || []).map(event => {
-        // Extraire la date et l'heure depuis start_datetime (TIMESTAMPTZ)
-        const eventDateTime = new Date(event.start_datetime);
+        // Déterminer la colonne de date
+        const dateValue = event.start_datetime || event.event_date || event.date || event.created_at;
+        const eventDateTime = new Date(dateValue);
         const eventDate = eventDateTime.toISOString().split('T')[0];
         const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
         
         console.log('🔄 Conversion événement:', {
           title: event.title,
-          original: event.start_datetime,
+          original: dateValue,
           parsed: eventDateTime,
           date: eventDate,
           time: eventTime
