@@ -71,6 +71,11 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   const [caseStats, setCaseStats] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  
+  // Additional UI states
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showMemoireForm, setShowMemoireForm] = useState(false);
+  const [showHonorairesCalc, setShowHonorairesCalc] = useState(false);
   // Load cases and statistics on component mount
   useEffect(() => {
     loadCases();
@@ -268,7 +273,14 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <Search size={16} className="inline mr-2" />
               {isAr ? 'البحث القانوني' : 'Recherche Juridique'}
             </button>
-            <button className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium hover:border-legal-blue transition-colors">
+            <button 
+              onClick={() => setShowCalendar(!showCalendar)}
+              className={`px-4 py-2 border rounded-xl text-sm font-medium transition-colors ${
+                showCalendar 
+                  ? 'bg-legal-blue text-white border-legal-blue' 
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-legal-blue'
+              }`}
+            >
               <Calendar size={16} className="inline mr-2" />
               {isAr ? 'الأجندة' : 'Agenda'}
             </button>
@@ -577,7 +589,10 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                   </div>
                 </button>
                 
-                <button className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors">
+                <button 
+                  onClick={() => setShowMemoireForm(true)}
+                  className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <FileText size={16} className="text-slate-500" />
                     <span className="text-sm font-medium">
@@ -586,7 +601,10 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                   </div>
                 </button>
                 
-                <button className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors">
+                <button 
+                  onClick={() => setShowHonorairesCalc(true)}
+                  className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-legal-blue transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <Calculator size={16} className="text-slate-500" />
                     <span className="text-sm font-medium">
@@ -692,6 +710,99 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           theme={theme}
           case_={editingCase}
         />
+      )}
+
+      {/* Calendar Modal */}
+      {showCalendar && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold flex items-center gap-3">
+                <Calendar className="text-legal-gold" />
+                {isAr ? 'الأجندة' : 'Agenda'}
+              </h2>
+              <button
+                onClick={() => setShowCalendar(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center py-12">
+                <Calendar size={64} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                <p className="text-slate-500 mb-4">
+                  {isAr ? 'قريباً: عرض الأجندة مع الأحداث والجلسات' : 'Prochainement: Vue agenda avec événements et audiences'}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {isAr ? 'سيتم إضافة هذه الميزة في التحديث القادم' : 'Cette fonctionnalité sera ajoutée dans la prochaine mise à jour'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mémoire Form Modal */}
+      {showMemoireForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold flex items-center gap-3">
+                <FileText className="text-legal-blue" />
+                {isAr ? 'صياغة مذكرة' : 'Rédiger un Mémoire'}
+              </h2>
+              <button
+                onClick={() => setShowMemoireForm(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center py-12">
+                <FileText size={64} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                <p className="text-slate-500 mb-4">
+                  {isAr ? 'قريباً: محرر مذكرات قانونية ذكي' : 'Prochainement: Éditeur intelligent de mémoires juridiques'}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {isAr ? 'سيتم إضافة هذه الميزة في التحديث القادم' : 'Cette fonctionnalité sera ajoutée dans la prochaine mise à jour'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Honoraires Calculator Modal */}
+      {showHonorairesCalc && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b dark:border-slate-800 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold flex items-center gap-3">
+                <Calculator className="text-legal-gold" />
+                {isAr ? 'حساب الأتعاب' : 'Calculateur d\'Honoraires'}
+              </h2>
+              <button
+                onClick={() => setShowHonorairesCalc(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center py-12">
+                <Calculator size={64} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                <p className="text-slate-500 mb-4">
+                  {isAr ? 'قريباً: حاسبة أتعاب المحاماة' : 'Prochainement: Calculateur d\'honoraires d\'avocat'}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {isAr ? 'سيتم إضافة هذه الميزة في التحديث القادم' : 'Cette fonctionnalité sera ajoutée dans la prochaine mise à jour'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
