@@ -56,7 +56,7 @@ const LawyerCalendarModal: React.FC<LawyerCalendarModalProps> = ({
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
       const { data, error } = await supabase
-        .from('events')
+        .from('calendar_events')
         .select(`
           *,
           cases:case_id (
@@ -65,8 +65,8 @@ const LawyerCalendarModal: React.FC<LawyerCalendarModalProps> = ({
           )
         `)
         .eq('user_id', userId)
-        .gte('event_date', startOfMonth.toISOString().split('T')[0])
-        .lte('event_date', endOfMonth.toISOString().split('T')[0])
+        .gte('event_date', startOfMonth.toISOString())
+        .lte('event_date', endOfMonth.toISOString())
         .order('event_date', { ascending: true });
 
       if (error) throw error;
@@ -89,7 +89,7 @@ const LawyerCalendarModal: React.FC<LawyerCalendarModalProps> = ({
 
     try {
       const { error } = await supabase
-        .from('events')
+        .from('calendar_events')
         .insert([{
           user_id: userId,
           ...newEvent

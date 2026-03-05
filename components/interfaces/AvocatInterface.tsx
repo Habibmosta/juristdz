@@ -155,26 +155,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       console.log('📅 Période:', today.toISOString(), 'à', thirtyDaysLater.toISOString());
       console.log('👤 User ID:', user.id);
 
-      // Charger les événements du calendrier général (table events)
+      // Charger les événements du calendrier (table calendar_events)
       const { data: calendarEvents, error: calendarError } = await supabase
-        .from('events')
-        .select(`
-          *,
-          cases:case_id (
-            id,
-            title
-          )
-        `)
-        .eq('user_id', user.id)
-        .gte('event_date', today.toISOString().split('T')[0])
-        .lte('event_date', thirtyDaysLater.toISOString().split('T')[0])
-        .order('event_date', { ascending: true });
-
-      console.log('📆 Événements calendrier:', calendarEvents?.length || 0, calendarError);
-
-      // Charger les événements des dossiers (table case_events)
-      const { data: caseEvents, error: caseError } = await supabase
-        .from('case_events')
+        .from('calendar_events')
         .select(`
           *,
           cases:case_id (
@@ -188,54 +171,41 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         .lte('event_date', thirtyDaysLater.toISOString())
         .order('event_date', { ascending: true });
 
-      console.log('📁 Événements dossiers:', caseEvents?.length || 0, caseError);
-      if (caseEvents && caseEvents.length > 0) {
-        console.log('📋 Détails événements dossiers:', caseEvents);
+      console.log('📆 Événements calendrier:', calendarEvents?.length || 0, calendarError);
+      if (calendarEvents && calendarEvents.length > 0) {
+        console.log('📋 Détails événements:', calendarEvents);
       }
 
-      // Combiner et formater les événements
-      const allEvents = [
-        ...(calendarEvents || []).map(event => ({
+      // Formater les événements
+      const allEvents = (calendarEvents || []).map(event => {
+        // Extraire la date et l'heure depuis event_date (TIMESTAMPTZ)
+        const eventDateTime = new Date(event.event_date);
+        const eventDate = eventDateTime.toISOString().split('T')[0];
+        const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
+        
+        console.log('🔄 Conversion événement:', {
+          title: event.title,
+          original: event.event_date,
+          parsed: eventDateTime,
+          date: eventDate,
+          time: eventTime
+        });
+        
+        return {
           id: event.id,
           title: event.title,
           description: event.description,
-          event_date: event.event_date,
-          event_time: event.event_time,
+          event_date: eventDate,
+          event_time: eventTime !== '00:00' ? eventTime : null,
           event_type: event.event_type || 'other',
           location: event.location,
           case_id: event.case_id,
           case_title: event.cases?.title,
           source: 'calendar'
-        })),
-        ...(caseEvents || []).map(event => {
-          // Extraire la date et l'heure depuis event_date (TIMESTAMPTZ)
-          const eventDateTime = new Date(event.event_date);
-          const eventDate = eventDateTime.toISOString().split('T')[0];
-          const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
-          
-          console.log('🔄 Conversion événement:', {
-            original: event.event_date,
-            parsed: eventDateTime,
-            date: eventDate,
-            time: eventTime
-          });
-          
-          return {
-            id: event.id,
-            title: event.title,
-            description: event.description,
-            event_date: eventDate,
-            event_time: eventTime !== '00:00' ? eventTime : null,
-            event_type: event.event_type || 'other',
-            location: null,
-            case_id: event.case_id,
-            case_title: event.cases?.title,
-            source: 'case'
-          };
-        })
-      ];
+        };
+      });
 
-      console.log('✅ Total événements combinés:', allEvents.length);
+      console.log('✅ Total événements:', allEvents.length);
 
       // Trier par date et heure
       allEvents.sort((a, b) => {
