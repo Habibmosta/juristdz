@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, FileText, Users, Calendar, File, ChevronRight, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../src/lib/supabase';
 import { Language, AppMode } from '../../types';
 import { useRoleTerminology } from '../../src/hooks/useRoleTerminology';
 

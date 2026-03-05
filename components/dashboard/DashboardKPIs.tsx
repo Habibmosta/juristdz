@@ -11,7 +11,7 @@ import {
   Calendar,
   Target
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../src/lib/supabase';
 import { Language } from '../../types';
 
 interface KPIData {

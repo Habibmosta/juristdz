@@ -13,7 +13,7 @@ import {
   Calendar,
   Flag
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../src/lib/supabase';
 import { Language } from '../../types';
 import TaskForm from './TaskForm';
 
