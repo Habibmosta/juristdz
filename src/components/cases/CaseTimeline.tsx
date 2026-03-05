@@ -230,7 +230,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
         <div>
           <h3 className="text-lg font-bold flex items-center gap-2">
             <Clock size={20} className="text-legal-gold" />
-            {isAr ? 'الجدول الزمني' : 'Chronologie du Dossier'}
+            {isAr ? 'أجندة الملف' : 'Agenda du Dossier'}
           </h3>
           <p className="text-sm text-slate-500 mt-1">
             {isAr ? `${filteredEvents.length} حدث` : `${filteredEvents.length} événements`}

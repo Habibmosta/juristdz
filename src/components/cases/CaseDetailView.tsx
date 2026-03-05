@@ -29,11 +29,13 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
   const [uploading, setUploading] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const isAr = language === 'ar';
 
   useEffect(() => {
     loadCaseData();
     loadDocuments();
+    loadUpcomingEvents();
   }, [caseId]);
 
   const loadCaseData = async () => {
@@ -117,6 +119,28 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
       }
     } catch (error) {
       console.error('❌ Error loading documents:', error);
+    }
+  };
+
+  const loadUpcomingEvents = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('case_events')
+        .select('*')
+        .eq('case_id', caseId)
+        .gte('event_date', today)
+        .order('event_date', { ascending: true })
+        .limit(5);
+
+      if (!error && data) {
+        setUpcomingEvents(data);
+      }
+    } catch (error) {
+      console.error('Error loading upcoming events:', error);
     }
   };
 
@@ -490,7 +514,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
           {[
             { id: 'overview', label: isAr ? 'نظرة عامة' : 'Vue d\'ensemble', icon: Activity },
             { id: 'documents', label: isAr ? 'المستندات' : 'Documents', icon: FileText },
-            { id: 'timeline', label: isAr ? 'الجدول الزمني' : 'Timeline', icon: Clock },
+            { id: 'timeline', label: isAr ? 'الأحداث' : 'Agenda', icon: Clock },
             { id: 'billing', label: isAr ? 'الفواتير' : 'Facturation', icon: DollarSign }
           ].map(tab => (
             <button
@@ -757,6 +781,61 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                   </button>
                 </div>
               </div>
+
+              {/* Prochains Événements */}
+              {upcomingEvents.length > 0 && (
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                      <Clock size={20} className="text-legal-gold" />
+                      {isAr ? 'الأحداث القادمة' : 'Prochains Événements'}
+                    </h3>
+                    <button
+                      onClick={() => setActiveTab('timeline')}
+                      className="text-sm text-legal-gold hover:underline"
+                    >
+                      {isAr ? 'عرض الكل' : 'Voir tout'}
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {upcomingEvents.map((event) => {
+                      const eventDate = new Date(event.event_date);
+                      const isToday = eventDate.toDateString() === new Date().toDateString();
+                      const isTomorrow = eventDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className="p-3 rounded-xl border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          onClick={() => setActiveTab('timeline')}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`mt-1 p-2 rounded-lg ${
+                              isToday ? 'bg-red-100 text-red-600' :
+                              isTomorrow ? 'bg-orange-100 text-orange-600' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
+                              <Calendar size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{event.title}</p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {isToday ? (isAr ? 'اليوم' : 'Aujourd\'hui') :
+                                 isTomorrow ? (isAr ? 'غدا' : 'Demain') :
+                                 eventDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                {event.event_time && ` • ${event.event_time.substring(0, 5)}`}
+                              </p>
+                              <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                {event.event_type}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
