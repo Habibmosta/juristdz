@@ -140,6 +140,9 @@ const LawyerCalendarModal: React.FC<LawyerCalendarModalProps> = ({
       case 'hearing': return 'bg-red-100 text-red-700 border-red-200';
       case 'meeting': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'deadline': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'call': return 'bg-green-100 text-green-700 border-green-200';
+      case 'email': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'document': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
@@ -149,6 +152,9 @@ const LawyerCalendarModal: React.FC<LawyerCalendarModalProps> = ({
       hearing: isAr ? 'جلسة' : 'Audience',
       meeting: isAr ? 'اجتماع' : 'Réunion',
       deadline: isAr ? 'موعد نهائي' : 'Échéance',
+      call: isAr ? 'مكالمة' : 'Appel',
+      email: isAr ? 'بريد إلكتروني' : 'Email',
+      document: isAr ? 'وثيقة' : 'Document',
       other: isAr ? 'آخر' : 'Autre'
     };
     return labels[type as keyof typeof labels] || type;
@@ -330,6 +336,9 @@ const LawyerCalendarModal: React.FC<LawyerCalendarModalProps> = ({
                     <option value="meeting">{isAr ? 'اجتماع' : 'Réunion'}</option>
                     <option value="hearing">{isAr ? 'جلسة' : 'Audience'}</option>
                     <option value="deadline">{isAr ? 'موعد نهائي' : 'Échéance'}</option>
+                    <option value="call">{isAr ? 'مكالمة' : 'Appel téléphonique'}</option>
+                    <option value="email">{isAr ? 'بريد إلكتروني' : 'Email'}</option>
+                    <option value="document">{isAr ? 'وثيقة' : 'Document à préparer'}</option>
                     <option value="other">{isAr ? 'آخر' : 'Autre'}</option>
                   </select>
                   <div className="flex gap-3">

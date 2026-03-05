@@ -742,6 +742,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                         case 'hearing': return 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400';
                         case 'meeting': return 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
                         case 'deadline': return 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400';
+                        case 'call': return 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
+                        case 'email': return 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400';
+                        case 'document': return 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400';
                         default: return 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400';
                       }
                     };
@@ -751,6 +754,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                         hearing: isAr ? 'جلسة' : 'Audience',
                         meeting: isAr ? 'اجتماع' : 'Réunion',
                         deadline: isAr ? 'موعد نهائي' : 'Échéance',
+                        call: isAr ? 'مكالمة' : 'Appel',
+                        email: isAr ? 'بريد إلكتروني' : 'Email',
+                        document: isAr ? 'وثيقة' : 'Document',
                         other: isAr ? 'آخر' : 'Autre'
                       };
                       return labels[type as keyof typeof labels] || type;
