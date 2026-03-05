@@ -637,7 +637,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-legal-blue transition-colors">
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-legal-blue dark:group-hover:text-blue-400 transition-colors">
                           {case_.title}
                         </h3>
                         <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
@@ -717,7 +717,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                         <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-bold rounded-full">
                           {isAr ? 'نشط' : 'ACTIF'}
                         </span>
-                        <ChevronRight size={16} className="text-slate-400 group-hover:text-legal-blue transition-colors" />
+                        <ChevronRight size={16} className="text-slate-400 group-hover:text-legal-blue dark:group-hover:text-blue-400 transition-colors" />
                       </div>
                     </div>
                   </div>
