@@ -508,26 +508,10 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
               </button>
             </div>
           )}
-        </div>
 
-        {/* Desktop Navigation */}
-        <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-          <RoleBasedNavigation
-            navigationItems={navigationItems}
-            currentMode={currentMode}
-            userRole={user.activeRole}
-            language={language}
-            onNavigate={handleNavigation}
-            theme={theme}
-            isCollapsed={isDesktopSidebarCollapsed}
-          />
-        </div>
-
-        {/* Desktop Footer Controls */}
-        {!isDesktopSidebarCollapsed && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-            {/* User Profile Section */}
-            <div className="mb-3 relative">
+          {/* User Profile Section */}
+          {!isDesktopSidebarCollapsed && (
+            <div className="mt-4 relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
@@ -555,7 +539,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                     className="fixed inset-0 z-40" 
                     onClick={() => setShowUserMenu(false)}
                   />
-                  <div className={`absolute ${isAr ? 'right-0' : 'left-0'} bottom-full mb-2 w-full rounded-xl shadow-2xl border z-50 ${
+                  <div className={`absolute ${isAr ? 'right-0' : 'left-0'} top-full mt-2 w-full rounded-xl shadow-2xl border z-50 ${
                     theme === 'light' 
                       ? 'bg-white border-slate-200' 
                       : 'bg-slate-900 border-slate-800'
@@ -580,7 +564,25 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                 </>
               )}
             </div>
+          )}
+        </div>
 
+        {/* Desktop Navigation */}
+        <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
+          <RoleBasedNavigation
+            navigationItems={navigationItems}
+            currentMode={currentMode}
+            userRole={user.activeRole}
+            language={language}
+            onNavigate={handleNavigation}
+            theme={theme}
+            isCollapsed={isDesktopSidebarCollapsed}
+          />
+        </div>
+
+        {/* Desktop Footer - Security Notice Only */}
+        {!isDesktopSidebarCollapsed && (
+          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
             {/* Security Notice */}
             <div className={`p-3 rounded-xl border ${
               theme === 'light' 
