@@ -3,6 +3,8 @@ import { AppMode, UserRole, Language, EnhancedUserProfile } from '../types';
 import { routingService, NavigationItem } from '../services/routingService';
 import RoleBasedNavigation from './RoleBasedNavigation';
 import RoleSwitcher from './RoleSwitcher';
+import NotificationCenter from './notifications/NotificationCenter';
+import GlobalSearch from './search/GlobalSearch';
 import { useAuth } from '../src/hooks/useAuth';
 import { 
   Scale, 
@@ -19,7 +21,8 @@ import {
   ChevronRight,
   LogOut,
   User as UserIcon,
-  ChevronDown
+  ChevronDown,
+  Search
 } from 'lucide-react';
 import { UI_TRANSLATIONS } from '../constants';
 
@@ -60,6 +63,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const { signOut } = useAuth();
   const t = UI_TRANSLATIONS[language];
@@ -118,6 +122,19 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMobileSidebarOpen]);
+
+  // Handle Ctrl+K / Cmd+K for global search
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const updateNavigationItems = () => {
     routingService.setLanguage(language);
@@ -214,6 +231,33 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Search Button */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className={`p-2 rounded-xl transition-colors ${
+              theme === 'light' 
+                ? 'hover:bg-slate-100 active:bg-slate-200' 
+                : 'hover:bg-slate-800 active:bg-slate-700'
+            }`}
+            title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
+          >
+            <Search size={20} />
+          </button>
+
+          {/* Notification Center */}
+          <NotificationCenter 
+            userId={user.id}
+            language={language}
+            onNavigate={(type, id) => {
+              // Navigate to the related entity
+              if (type === 'case') {
+                onModeChange(AppMode.CASES);
+              } else if (type === 'event') {
+                onModeChange(AppMode.CALENDAR);
+              }
+            }}
+          />
+
           {/* Mobile Language Toggle */}
           <button 
             onClick={() => {
@@ -483,6 +527,15 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
             </div>
 
             <div className="flex items-center justify-between mb-4">
+              {/* Search Button */}
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
+              >
+                <Search size={16} />
+              </button>
+
               <button 
                 onClick={onThemeToggle}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -614,6 +667,18 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
           </span>
         </div>
       )}
+
+      {/* Global Search */}
+      <GlobalSearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        language={language}
+        userId={user.id}
+        onNavigate={(mode, id) => {
+          onModeChange(mode);
+          // TODO: Navigate to specific item with ID
+        }}
+      />
     </div>
   );
 };
