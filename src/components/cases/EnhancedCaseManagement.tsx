@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { CaseService } from '../../services/caseService';
 import CaseDetailView from './CaseDetailView';
+import { useRoleTerminology } from '../../hooks/useRoleTerminology';
 
 interface EnhancedCaseManagementProps {
   language: Language;
@@ -23,6 +24,7 @@ interface Client {
 }
 
 const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ language, userId }) => {
+  const { t } = useRoleTerminology(language);
   const [cases, setCases] = useState<Case[]>([]);
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
@@ -472,10 +474,12 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-slate-100">
-              {isAr ? 'إدارة الملفات' : 'Gestion des Dossiers'}
+              {isAr ? t.case(true) : t.case(true)}
             </h1>
             <p className="text-slate-500 mt-1">
-              {isAr ? 'إدارة شاملة لملفات العملاء' : 'Gestion complète de vos dossiers clients'}
+              {isAr 
+                ? `إدارة شاملة ${t.case(true).toLowerCase()}` 
+                : `Gestion complète de vos ${t.case(true).toLowerCase()}`}
             </p>
           </div>
           <button 
@@ -483,7 +487,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
             className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
           >
             <Plus size={20} />
-            {isAr ? 'ملف جديد' : 'Nouveau Dossier'}
+            {t.createCase()}
           </button>
         </div>
 
@@ -527,7 +531,9 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
               <Search size={18} className="text-slate-400" />
               <input 
                 type="text" 
-                placeholder={isAr ? 'البحث عن ملف أو عميل...' : 'Rechercher un dossier ou client...'} 
+                placeholder={isAr 
+                  ? `البحث عن ${t.case(false)} أو ${t.client(false)}...` 
+                  : `Rechercher un ${t.case(false).toLowerCase()} ou ${t.client(false).toLowerCase()}...`} 
                 className="bg-transparent border-none outline-none w-full text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -679,7 +685,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
         ) : (
           <div className="col-span-full py-20 text-center text-slate-400">
             <Briefcase size={60} className="mx-auto mb-4 opacity-20" />
-            <p>{isAr ? 'لا توجد ملفات' : 'Aucun dossier trouvé'}</p>
+            <p>{isAr ? `لا توجد ${t.case(true)}` : `Aucun ${t.case(false).toLowerCase()} trouvé`}</p>
           </div>
         )}
       </div>
@@ -690,7 +696,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">{isAr ? 'ملف جديد' : 'Nouveau Dossier'}</h2>
+                <h2 className="text-2xl font-bold">{t.createCase()}</h2>
                 <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                   ✕
                 </button>

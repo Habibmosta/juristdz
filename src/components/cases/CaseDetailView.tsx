@@ -10,6 +10,7 @@ import { CaseService } from '../../services/caseService';
 import { DocumentService } from '../../services/documentService';
 import { ClientService } from '../../services/clientService';
 import CaseTimeline from './CaseTimeline';
+import { useRoleTerminology } from '../../hooks/useRoleTerminology';
 
 interface CaseDetailViewProps {
   caseId: string;
@@ -19,6 +20,7 @@ interface CaseDetailViewProps {
 }
 
 const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBack, userId }) => {
+  const { t } = useRoleTerminology(language);
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'timeline' | 'billing'>('overview');
   const [loading, setLoading] = useState(true);
@@ -270,10 +272,10 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
       // Reload documents
       console.log('🔄 Reloading documents...');
       await loadDocuments();
-      alert(isAr ? 'تم رفع المستندات بنجاح' : 'Documents téléchargés avec succès');
+      alert(isAr ? `تم رفع ${t.document(true)} بنجاح` : `${t.document(true)} téléchargés avec succès`);
     } catch (error) {
       console.error('❌ Error uploading documents:', error);
-      alert(isAr ? 'خطأ في رفع المستندات' : 'Erreur lors du téléchargement: ' + error);
+      alert(isAr ? `خطأ في رفع ${t.document(true)}` : `Erreur lors du téléchargement des ${t.document(true).toLowerCase()}: ` + error);
     } finally {
       setUploading(false);
       // Reset input
@@ -309,7 +311,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
   };
 
   const handleDeleteDocument = async (doc: any) => {
-    if (!confirm(isAr ? 'هل تريد حذف هذا المستند؟' : 'Voulez-vous supprimer ce document ?')) {
+    if (!confirm(isAr ? `هل تريد حذف هذا ${t.document(false)}؟` : `Voulez-vous supprimer ce ${t.document(false).toLowerCase()} ?`)) {
       return;
     }
 
@@ -338,7 +340,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
       // Reload documents
       await loadDocuments();
-      alert(isAr ? 'تم حذف المستند' : 'Document supprimé');
+      alert(isAr ? `تم حذف ${t.document(false)}` : `${t.document(false)} supprimé`);
     } catch (error) {
       console.error('Error deleting document:', error);
     }
@@ -444,7 +446,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
       alert(isAr ? 'تم تحديث الملف بنجاح' : 'Dossier mis à jour avec succès');
     } catch (error) {
       console.error('Error updating case:', error);
-      alert(isAr ? 'خطأ في تحديث الملف' : 'Erreur lors de la mise à jour');
+      alert(isAr ? `خطأ في تحديث ${t.case(false)}` : `Erreur lors de la mise à jour du ${t.case(false).toLowerCase()}`);
     } finally {
       setSaving(false);
     }
@@ -462,7 +464,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <AlertCircle size={48} className="text-slate-400 mb-4" />
-        <p className="text-slate-500">{isAr ? 'الملف غير موجود' : 'Dossier introuvable'}</p>
+        <p className="text-slate-500">{isAr ? `${t.case(false)} غير موجود` : `${t.case(false)} introuvable`}</p>
         <button onClick={onBack} className="mt-4 px-6 py-2 bg-legal-gold text-white rounded-xl">
           {isAr ? 'رجوع' : 'Retour'}
         </button>
@@ -493,7 +495,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
             </button>
             <div>
               <h1 className="text-2xl font-bold">{caseData.title}</h1>
-              <p className="text-sm text-slate-500">{isAr ? 'رقم الملف:' : 'N° Dossier:'} {caseData.id}</p>
+              <p className="text-sm text-slate-500">{isAr ? `رقم ${t.case(false)}:` : `N° ${t.case(false)}:`} {caseData.id}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -513,8 +515,8 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
         <div className="flex gap-2 mt-6">
           {[
             { id: 'overview', label: isAr ? 'نظرة عامة' : 'Vue d\'ensemble', icon: Activity },
-            { id: 'documents', label: isAr ? 'المستندات' : 'Documents', icon: FileText },
-            { id: 'timeline', label: isAr ? 'الأحداث' : 'Agenda', icon: Clock },
+            { id: 'documents', label: t.document(true), icon: FileText },
+            { id: 'timeline', label: t.event(true), icon: Clock },
             { id: 'billing', label: isAr ? 'الفواتير' : 'Facturation', icon: DollarSign }
           ].map(tab => (
             <button
@@ -542,7 +544,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <User size={20} className="text-legal-gold" />
-                  {isAr ? 'معلومات العميل' : 'Informations Client'}
+                  {isAr ? `معلومات ${t.client(false)}` : `Informations ${t.client(false)}`}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -577,12 +579,12 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <FileText size={20} className="text-legal-gold" />
-                  {isAr ? 'تفاصيل الملف' : 'Détails du Dossier'}
+                  {isAr ? `تفاصيل ${t.case(false)}` : `Détails du ${t.case(false)}`}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Type de Dossier */}
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'نوع الملف' : 'Type de dossier'}</p>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? `نوع ${t.case(false)}` : `Type de ${t.case(false).toLowerCase()}`}</p>
                     <p className="font-medium capitalize">
                       {caseData.caseType || caseData.case_type || <span className="text-slate-400 italic">Non renseigné</span>}
                     </p>
@@ -599,7 +601,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                   
                   {/* Numéro de Dossier */}
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'رقم الملف' : 'Numéro de dossier'}</p>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? `رقم ${t.case(false)}` : `Numéro de ${t.case(false).toLowerCase()}`}</p>
                     <p className="font-medium font-mono text-legal-gold">
                       {caseData.case_number || <span className="text-slate-400 italic">Non généré</span>}
                     </p>
@@ -607,7 +609,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                   
                   {/* Objet du Dossier */}
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{isAr ? 'موضوع الملف' : 'Objet du dossier'}</p>
+                    <p className="text-sm text-slate-500 mb-1">{isAr ? `موضوع ${t.case(false)}` : `Objet du ${t.case(false).toLowerCase()}`}</p>
                     <p className="font-medium">
                       {caseData.case_object || <span className="text-slate-400 italic">Non renseigné</span>}
                     </p>
@@ -763,7 +765,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                     className="w-full px-4 py-3 bg-legal-gold text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-legal-gold/90 transition-colors"
                   >
                     <Plus size={18} />
-                    {isAr ? 'إضافة مستند' : 'Ajouter Document'}
+                    {isAr ? `إضافة ${t.document(false)}` : `Ajouter ${t.document(false)}`}
                   </button>
                   <button 
                     onClick={() => setShowNoteModal(true)}
@@ -777,7 +779,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                     className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     <Calendar size={18} />
-                    {isAr ? 'جدولة موعد' : 'Planifier RDV'}
+                    {isAr ? `جدولة ${t.event(false)}` : `Planifier ${t.event(false)}`}
                   </button>
                 </div>
               </div>
@@ -788,7 +790,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold flex items-center gap-2">
                       <Clock size={20} className="text-legal-gold" />
-                      {isAr ? 'الأحداث القادمة' : 'Prochains Événements'}
+                      {isAr ? `${t.event(true)} القادمة` : `Prochains ${t.event(true)}`}
                     </h3>
                     <button
                       onClick={() => setActiveTab('timeline')}
@@ -843,7 +845,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
         {activeTab === 'documents' && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border dark:border-slate-800">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">{isAr ? 'المستندات' : 'Documents du Dossier'}</h3>
+              <h3 className="text-lg font-bold">{isAr ? t.document(true) : `${t.document(true)} du ${t.case(false)}`}</h3>
               <label className="px-4 py-2 bg-legal-gold text-white rounded-xl font-medium flex items-center gap-2 cursor-pointer hover:bg-legal-gold/90 transition-colors">
                 <Upload size={18} />
                 {uploading ? (isAr ? 'جاري الرفع...' : 'Téléchargement...') : (isAr ? 'رفع مستند' : 'Télécharger')}
@@ -860,7 +862,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
             {documents.length === 0 ? (
               <div className="text-center py-12 text-slate-400">
                 <FileText size={48} className="mx-auto mb-4 opacity-20" />
-                <p>{isAr ? 'لا توجد مستندات بعد' : 'Aucun document pour le moment'}</p>
+                <p>{isAr ? `لا توجد ${t.document(true)}` : `Aucun ${t.document(false).toLowerCase()} pour le moment`}</p>
                 <p className="text-sm mt-2">{isAr ? 'انقر على "رفع مستند" لإضافة ملفات' : 'Cliquez sur "Télécharger" pour ajouter des fichiers'}</p>
               </div>
             ) : (
@@ -998,11 +1000,11 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
             <div className="p-6 space-y-6">
               {/* Informations du Dossier */}
               <div>
-                <h3 className="text-lg font-bold mb-4">{isAr ? 'معلومات الملف' : 'Informations du Dossier'}</h3>
+                <h3 className="text-lg font-bold mb-4">{isAr ? `معلومات ${t.case(false)}` : `Informations du ${t.case(false)}`}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">
-                      {isAr ? 'عنوان الملف' : 'Titre du dossier'} *
+                      {isAr ? `عنوان ${t.case(false)}` : `Titre du ${t.case(false).toLowerCase()}`} *
                     </label>
                     <input
                       type="text"
@@ -1015,7 +1017,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">
-                      {isAr ? 'وصف الملف' : 'Description du dossier'} *
+                      {isAr ? `وصف ${t.case(false)}` : `Description du ${t.case(false).toLowerCase()}`} *
                     </label>
                     <textarea
                       value={editFormData.description || ''}
@@ -1028,7 +1030,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      {isAr ? 'نوع الملف' : 'Type de dossier'}
+                      {isAr ? `نوع ${t.case(false)}` : `Type de ${t.case(false).toLowerCase()}`}
                     </label>
                     <select
                       value={editFormData.caseType || ''}
@@ -1090,11 +1092,11 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
               {/* Informations Client */}
               <div>
-                <h3 className="text-lg font-bold mb-4">{isAr ? 'معلومات العميل' : 'Informations Client'}</h3>
+                <h3 className="text-lg font-bold mb-4">{isAr ? `معلومات ${t.client(false)}` : `Informations ${t.client(false)}`}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      {isAr ? 'اسم العميل' : 'Nom du client'} *
+                      {isAr ? `اسم ${t.client(false)}` : `Nom du ${t.client(false).toLowerCase()}`} *
                     </label>
                     <input
                       type="text"

@@ -6,6 +6,7 @@ import {
   CheckCircle, AlertCircle, Info, TrendingUp, X
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useRoleTerminology } from '../../hooks/useRoleTerminology';
 
 interface CaseEvent {
   id: string;
@@ -25,6 +26,7 @@ interface CaseTimelineProps {
 }
 
 const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId }) => {
+  const { t } = useRoleTerminology(language);
   const [events, setEvents] = useState<CaseEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<CaseEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,15 +120,15 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
         event_type: 'note',
         event_date: new Date().toISOString().split('T')[0]
       });
-      alert(isAr ? 'تمت إضافة الحدث بنجاح' : 'Événement ajouté avec succès');
+      alert(isAr ? `تمت إضافة ${t.event(false)} بنجاح` : `${t.event(false)} ajouté avec succès`);
     } catch (error) {
       console.error('Error adding event:', error);
-      alert(isAr ? 'خطأ في إضافة الحدث' : 'Erreur lors de l\'ajout de l\'événement');
+      alert(isAr ? `خطأ في إضافة ${t.event(false)}` : `Erreur lors de l'ajout du ${t.event(false).toLowerCase()}`);
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm(isAr ? 'هل أنت متأكد من حذف هذا الحدث؟' : 'Êtes-vous sûr de supprimer cet événement ?')) {
+    if (!confirm(isAr ? `هل أنت متأكد من حذف هذا ${t.event(false)}؟` : `Êtes-vous sûr de supprimer cet ${t.event(false).toLowerCase()} ?`)) {
       return;
     }
 
@@ -230,10 +232,10 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
         <div>
           <h3 className="text-lg font-bold flex items-center gap-2">
             <Clock size={20} className="text-legal-gold" />
-            {isAr ? 'أجندة الملف' : 'Agenda du Dossier'}
+            {isAr ? `أجندة ${t.case(false)}` : `Agenda du ${t.case(false)}`}
           </h3>
           <p className="text-sm text-slate-500 mt-1">
-            {isAr ? `${filteredEvents.length} حدث` : `${filteredEvents.length} événements`}
+            {isAr ? `${filteredEvents.length} ${t.event(false)}` : `${filteredEvents.length} ${t.event(true).toLowerCase()}`}
           </p>
         </div>
         <button
@@ -241,7 +243,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
           className="px-4 py-2 bg-legal-gold text-white rounded-xl font-medium flex items-center gap-2 hover:bg-legal-gold/90 transition-colors"
         >
           <Plus size={18} />
-          {isAr ? 'إضافة حدث' : 'Ajouter Événement'}
+          {isAr ? `إضافة ${t.event(false)}` : `Ajouter ${t.event(false)}`}
         </button>
       </div>
 
@@ -252,7 +254,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
           <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder={isAr ? 'البحث في الأحداث...' : 'Rechercher dans les événements...'}
+            placeholder={isAr ? `البحث في ${t.event(true)}...` : `Rechercher dans les ${t.event(true).toLowerCase()}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
@@ -344,7 +346,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddModal(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">{isAr ? 'إضافة حدث جديد' : 'Ajouter un Événement'}</h3>
+              <h3 className="text-xl font-bold">{isAr ? `إضافة ${t.event(false)} جديد` : `Ajouter un ${t.event(false)}`}</h3>
               <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                 <X size={20} />
               </button>
@@ -380,7 +382,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
                   type="text"
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  placeholder={isAr ? 'عنوان الحدث...' : 'Titre de l\'événement...'}
+                  placeholder={isAr ? `عنوان ${t.event(false)}...` : `Titre du ${t.event(false).toLowerCase()}...`}
                   className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-legal-gold"
                 />
               </div>
@@ -390,7 +392,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
                 <textarea
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  placeholder={isAr ? 'وصف الحدث...' : 'Description de l\'événement...'}
+                  placeholder={isAr ? `وصف ${t.event(false)}...` : `Description du ${t.event(false).toLowerCase()}...`}
                   rows={3}
                   className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-legal-gold resize-none"
                 />
