@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppMode, Language, UserStats } from '../types';
-import { Scale, FileText, Search, ShieldCheck, Globe, HelpCircle, CreditCard, Crown, Settings, Zap, UserCircle, Sun, Moon, Book, Share2, Check, QrCode, X, Briefcase, LayoutDashboard, Wifi, WifiOff } from 'lucide-react';
+import { Scale, FileText, Search, ShieldCheck, Globe, HelpCircle, CreditCard, Crown, Settings, Zap, UserCircle, Sun, Moon, Book, Share2, Check, QrCode, X, Briefcase, LayoutDashboard, Wifi, WifiOff, Users, Calendar, DollarSign, Clock, UserCheck } from 'lucide-react';
 import { UI_TRANSLATIONS } from '../constants';
 
 interface SidebarProps {
@@ -147,6 +147,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
               {[
                 { mode: AppMode.CASES, label: t.menu_cases, icon: Briefcase },
+                { mode: AppMode.CLIENTS, label: t.menu_clients, icon: Users },
+                { mode: AppMode.CALENDAR, label: t.menu_calendar, icon: Calendar },
+                { mode: AppMode.BILLING, label: t.menu_billing_new, icon: DollarSign },
+                { mode: AppMode.TIME_TRACKING, label: t.menu_time_tracking, icon: Clock },
+                { mode: AppMode.CLIENT_PORTAL, label: t.menu_client_portal, icon: UserCheck },
                 { mode: AppMode.DRAFTING, label: t.menu_drafting, icon: FileText },
                 { mode: AppMode.ANALYSIS, label: t.menu_analysis, icon: ShieldCheck },
               ].map((item) => {

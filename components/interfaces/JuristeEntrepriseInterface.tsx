@@ -25,6 +25,7 @@ import {
   Target,
   Zap
 } from 'lucide-react';
+import NewContratModal from '../modals/NewContratModal';
 
 interface JuristeEntrepriseInterfaceProps {
   user: EnhancedUserProfile;

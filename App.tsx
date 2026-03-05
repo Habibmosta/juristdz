@@ -17,6 +17,11 @@ import ReminderSystem from './src/components/reminders/ReminderSystem';
 import InvoiceManagement from './src/components/billing/InvoiceManagement';
 import AdvancedAnalytics from './src/components/analytics/AdvancedAnalytics';
 import AlgerianCalculator from './src/components/tools/AlgerianCalculator';
+// Nouveaux composants professionnels
+import InvoiceManager from './src/components/billing/InvoiceManager';
+import CalendarView from './src/components/calendar/CalendarView';
+import ClientPortal from './src/components/portal/ClientPortal';
+import TimeTracker from './src/components/time/TimeTracker';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
@@ -220,7 +225,7 @@ const App: React.FC = () => {
         />
       )}
       {currentMode === AppMode.CALENDAR && (
-        <LawyerCalendar 
+        <CalendarView 
           language={language} 
           userId={profile.id} 
         />
@@ -232,9 +237,21 @@ const App: React.FC = () => {
         />
       )}
       {currentMode === AppMode.BILLING && (
-        <InvoiceManagement 
+        <InvoiceManager 
           language={language} 
           userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.TIME_TRACKING && (
+        <TimeTracker 
+          language={language} 
+          userId={profile.id} 
+        />
+      )}
+      {currentMode === AppMode.CLIENT_PORTAL && (
+        <ClientPortal 
+          clientId={profile.id}
+          language={language} 
         />
       )}
       {currentMode === AppMode.ANALYTICS && (

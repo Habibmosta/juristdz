@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
+import NewConstatHuissierModal from '../modals/NewConstatatHuissierModal';
 import { 
   Gavel, 
   FileText, 
@@ -66,8 +67,11 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
   
+  // Modal state
+  const [showNewConstatModal, setShowNewConstatModal] = useState(false);
+  
   // Mock data for exploits
-  const [recentExploits] = useState<Exploit[]>([
+  const [recentExploits, setRecentExploits] = useState<Exploit[]>([
     {
       id: '1',
       numero: '2024/H/001',
@@ -192,7 +196,10 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               <Calculator size={16} className="inline mr-2" />
               {isAr ? 'حاسبة الرسوم' : 'Calculateur'}
             </button>
-            <button className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <button 
+              onClick={() => setShowNewConstatModal(true)}
+              className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+            >
               <Plus size={18} />
               {isAr ? 'استدعاء جديد' : 'Nouvel Exploit'}
             </button>
@@ -577,6 +584,18 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* New Constat Modal */}
+      <NewConstatHuissierModal
+        isOpen={showNewConstatModal}
+        onClose={() => setShowNewConstatModal(false)}
+        onSave={(newConstat) => {
+          setRecentExploits(prev => [newConstat, ...prev]);
+          console.log('✅ Nouvel acte créé:', newConstat);
+        }}
+        language={language}
+        theme={theme}
+      />
     </div>
   );
 };

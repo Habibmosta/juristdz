@@ -74,6 +74,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [documentChecklist, setDocumentChecklist] = useState<string[]>([]);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Documents sélectionnés à collecter
+  const [customDocument, setCustomDocument] = useState(''); // Pour ajouter des documents personnalisés
   const isAr = language === 'ar';
 
   useEffect(() => {
@@ -900,22 +901,239 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
                 </div>
               </div>
 
-              {/* Document Checklist Display */}
+              {/* Date Limite - VISIBLE PAR DÉFAUT */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'الموعد النهائي' : 'Date limite'} <span className="text-orange-500">⚠️</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {isAr ? 'تاريخ مهم لإدارة الملف' : 'Date importante pour la gestion du dossier'}
+                </p>
+              </div>
+
+              {/* Avocat Assigné - PRÉ-REMPLI */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isAr ? 'المحامي المكلف' : 'Avocat assigné'} <span className="text-green-500">✓</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.assignedLawyer}
+                  onChange={(e) => setFormData({...formData, assignedLawyer: e.target.value})}
+                  placeholder={isAr ? 'اسم المحامي' : 'Nom de l\'avocat'}
+                  className="w-full px-4 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold outline-none"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {isAr ? 'تم التعبئة تلقائياً من ملفك الشخصي' : 'Pré-rempli automatiquement depuis votre profil'}
+                </p>
+              </div>
+
+              {/* SECTION CONSULTATION INITIALE */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">💼</span>
+                  <h3 className="font-bold text-sm text-purple-700 dark:text-purple-300">
+                    {isAr ? 'الاستشارة الأولية' : 'Consultation Initiale'}
+                  </h3>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1">
+                    {isAr ? 'تاريخ الاستشارة' : 'Date de consultation'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.initialConsultationDate}
+                    onChange={(e) => setFormData({...formData, initialConsultationDate: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1">
+                    {isAr ? 'هدف العميل' : 'Objectif du client'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.clientObjective}
+                    onChange={(e) => setFormData({...formData, clientObjective: e.target.value})}
+                    placeholder={isAr ? 'ما الذي يريد العميل تحقيقه؟' : 'Que souhaite obtenir le client?'}
+                    className="w-full px-3 py-2 text-sm border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1">
+                    {isAr ? 'الاستراتيجية القانونية' : 'Stratégie juridique envisagée'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.legalStrategy}
+                    onChange={(e) => setFormData({...formData, legalStrategy: e.target.value})}
+                    placeholder={isAr ? 'الخطة القانونية المقترحة...' : 'Approche juridique proposée...'}
+                    className="w-full px-3 py-2 text-sm border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* SECTION ÉVALUATION DU DOSSIER */}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">📊</span>
+                  <h3 className="font-bold text-sm text-orange-700 dark:text-orange-300">
+                    {isAr ? 'تقييم الملف' : 'Évaluation du Dossier'}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">
+                      {isAr ? 'مستوى المخاطر' : 'Niveau de risque'}
+                    </label>
+                    <select
+                      value={formData.riskLevel}
+                      onChange={(e) => setFormData({...formData, riskLevel: e.target.value as any})}
+                      className="w-full px-3 py-2 text-sm border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none"
+                    >
+                      <option value="low">🟢 {isAr ? 'منخفض' : 'Faible'}</option>
+                      <option value="medium">🟡 {isAr ? 'متوسط' : 'Moyen'}</option>
+                      <option value="high">🔴 {isAr ? 'عالي' : 'Élevé'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium mb-1">
+                      {isAr ? 'احتمالية النجاح (%)' : 'Probabilité de succès (%)'}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.successProbability}
+                      onChange={(e) => setFormData({...formData, successProbability: e.target.value})}
+                      placeholder="75"
+                      className="w-full px-3 py-2 text-sm border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1">
+                    {isAr ? 'المدة المقدرة (بالأشهر)' : 'Durée estimée (en mois)'}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.estimatedDuration}
+                    onChange={(e) => setFormData({...formData, estimatedDuration: e.target.value})}
+                    placeholder="12"
+                    className="w-full px-3 py-2 text-sm border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    {isAr ? 'المدة المتوقعة لإنهاء الملف' : 'Durée prévue pour clôturer le dossier'}
+                  </p>
+                </div>
+
+                {/* Jauge visuelle de probabilité */}
+                {formData.successProbability && (
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-600 dark:text-slate-400">
+                        {isAr ? 'احتمالية النجاح' : 'Probabilité de succès'}
+                      </span>
+                      <span className="font-bold text-orange-600">{formData.successProbability}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          parseInt(formData.successProbability) >= 70 ? 'bg-green-500' :
+                          parseInt(formData.successProbability) >= 40 ? 'bg-orange-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${formData.successProbability}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION DOCUMENTS À COLLECTER - INTERACTIVE */}
               {documentChecklist.length > 0 && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">📋</span>
-                    <h3 className="font-bold text-sm">
-                      {isAr ? 'الوثائق المطلوبة' : 'Documents requis'}
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">📋</span>
+                    <h3 className="font-bold text-sm text-blue-700 dark:text-blue-300">
+                      {isAr ? 'الوثائق المطلوبة' : 'Documents à Collecter'}
                     </h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  
+                  <div className="space-y-2">
                     {documentChecklist.map((doc, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                        <span className="text-blue-500">✓</span>
-                        {doc}
-                      </div>
+                      <label 
+                        key={idx} 
+                        className="flex items-center gap-3 p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedDocuments.includes(doc)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedDocuments([...selectedDocuments, doc]);
+                            } else {
+                              setSelectedDocuments(selectedDocuments.filter(d => d !== doc));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{doc}</span>
+                      </label>
                     ))}
+                  </div>
+
+                  <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                      {isAr 
+                        ? `${selectedDocuments.length} من ${documentChecklist.length} وثيقة محددة`
+                        : `${selectedDocuments.length} sur ${documentChecklist.length} documents sélectionnés`}
+                    </p>
+                    
+                    {/* Ajouter un document personnalisé */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={customDocument}
+                        onChange={(e) => setCustomDocument(e.target.value)}
+                        placeholder={isAr ? 'إضافة وثيقة أخرى...' : 'Ajouter un autre document...'}
+                        className="flex-1 px-3 py-2 text-xs border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && customDocument.trim()) {
+                            e.preventDefault();
+                            setDocumentChecklist([...documentChecklist, customDocument.trim()]);
+                            setSelectedDocuments([...selectedDocuments, customDocument.trim()]);
+                            setCustomDocument('');
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customDocument.trim()) {
+                            setDocumentChecklist([...documentChecklist, customDocument.trim()]);
+                            setSelectedDocuments([...selectedDocuments, customDocument.trim()]);
+                            setCustomDocument('');
+                          }
+                        }}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        {isAr ? 'إضافة' : 'Ajouter'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

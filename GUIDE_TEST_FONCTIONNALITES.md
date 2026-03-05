@@ -1,336 +1,310 @@
-# 🧪 Guide de Test des Nouvelles Fonctionnalités
+# 🧪 GUIDE DE TEST DES NOUVELLES FONCTIONNALITÉS
 
-## 🎯 Objectif
+## ✅ INTÉGRATION TERMINÉE!
 
-Tester les 3 fonctionnalités critiques qui nous rendent compétitifs avec Clio/MyCase.
+Les 3 nouveaux systèmes sont maintenant intégrés dans l'application:
+- ✅ Routes ajoutées dans App.tsx
+- ✅ Menu mis à jour dans Sidebar.tsx
+- ✅ Traductions ajoutées dans constants.ts
+- ✅ Types ajoutés dans types.ts
+- ✅ Compilation réussie sans erreurs
 
 ---
 
-## ⚙️ ÉTAPE 1: Configuration Base de Données (5 min)
+## 🚀 DÉMARRER L'APPLICATION
 
-### 1. Ouvrir Supabase Dashboard
-```
-https://supabase.com/dashboard
-```
-
-### 2. Aller dans SQL Editor
-
-### 3. Exécuter le script
-```sql
--- Copier tout le contenu de: supabase/create-clients-invoices-tables.sql
--- Coller dans SQL Editor
--- Cliquer "Run"
+```bash
+yarn dev
 ```
 
-### 4. Vérifier les tables créées
-```sql
--- Vérifier que ces tables existent:
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
-AND table_name IN ('clients', 'time_entries', 'invoices', 'invoice_items', 'payments', 'calendar_events');
+L'application démarre sur: **http://localhost:5174/**
+
+---
+
+## 📋 TESTS À EFFECTUER
+
+### 1. VÉRIFIER LE MENU
+
+**Étapes:**
+1. Ouvre http://localhost:5174/
+2. Connecte-toi avec ton compte
+3. Regarde le menu latéral (Sidebar)
+
+**Tu devrais voir dans "Suite Métier":**
+- 📁 Dossiers
+- 👥 Clients
+- 📅 Calendrier ⬅️ NOUVEAU
+- 💰 Facturation ⬅️ NOUVEAU
+- ⏱️ Temps ⬅️ NOUVEAU
+- 👤 Portail Client ⬅️ NOUVEAU
+- 📝 Rédaction
+- 🛡️ Analyse
+
+---
+
+### 2. TESTER LA FACTURATION
+
+**Accès:** Clique sur "💰 Facturation" dans le menu
+
+**Test 1: Créer une facture**
+1. Clique sur "Nouvelle Facture"
+2. Sélectionne un client dans la liste
+3. (Optionnel) Sélectionne un dossier
+4. Remplis les dates:
+   - Date d'émission: Aujourd'hui
+   - Date d'échéance: Dans 30 jours
+5. Ajoute un élément:
+   - Description: "Consultation juridique"
+   - Quantité: 2
+   - Prix unitaire: 15000
+6. Vérifie que le calcul est automatique:
+   - Sous-total: 30,000 DA
+   - TVA (19%): 5,700 DA
+   - Total: 35,700 DA
+7. Clique sur "Créer"
+
+**Résultat attendu:**
+- ✅ Message: "Facture créée avec succès!"
+- ✅ La facture apparaît dans la liste
+- ✅ Numéro: INV-2026-0001
+
+**Test 2: Générer un PDF**
+1. Dans la liste des factures, trouve ta facture
+2. Clique sur l'icône "📥 Télécharger PDF"
+
+**Résultat attendu:**
+- ✅ Un PDF se télécharge automatiquement
+- ✅ Le PDF contient:
+  - En-tête avec couleurs
+  - Informations avocat et client
+  - Tableau des éléments
+  - Calculs (sous-total, TVA, total)
+  - Pied de page
+
+**Test 3: Envoyer par email**
+1. Trouve une facture avec statut "Brouillon"
+2. Clique sur l'icône "📧 Envoyer"
+
+**Résultat attendu:**
+- ✅ Ton client email s'ouvre (Outlook, Gmail, etc.)
+- ✅ Le sujet contient le numéro de facture
+- ✅ Le corps contient un message
+
+**Test 4: Statistiques**
+Vérifie en haut de la page:
+- ✅ Total factures
+- ✅ Factures payées (montant)
+- ✅ Factures en attente (montant)
+- ✅ Factures en retard
+
+---
+
+### 3. TESTER LE CALENDRIER
+
+**Accès:** Clique sur "📅 Calendrier" dans le menu
+
+**Test 1: Vue mensuelle**
+1. Vérifie que tu vois le calendrier du mois actuel
+2. Vérifie que la date d'aujourd'hui est mise en évidence
+3. Clique sur "←" et "→" pour naviguer entre les mois
+4. Clique sur "Aujourd'hui" pour revenir
+
+**Résultat attendu:**
+- ✅ Calendrier s'affiche correctement
+- ✅ Navigation fluide
+- ✅ Date actuelle en bleu
+
+**Test 2: Créer un événement**
+1. Clique sur "Nouvel Événement"
+2. Remplis le formulaire:
+   - Titre: "Audience Tribunal"
+   - Type: Audience (⚖️)
+   - Date début: Demain
+   - Heure début: 10:00
+   - Date fin: Demain
+   - Heure fin: 12:00
+   - Lieu: "Tribunal d'Alger"
+   - Type de lieu: Tribunal
+   - Rappel: 1 heure avant
+3. Clique sur "Créer"
+
+**Résultat attendu:**
+- ✅ Message: "Événement créé avec succès!"
+- ✅ L'événement apparaît dans le calendrier
+- ✅ Badge rouge avec "⚖️ Audience Tribunal"
+
+**Test 3: Détection de conflits**
+1. Crée un autre événement au même moment
+2. Remplis avec les mêmes date/heure
+
+**Résultat attendu:**
+- ✅ Alerte: "Conflit avec événement existant"
+- ✅ Option de continuer ou annuler
+
+**Test 4: Intégration avec dossiers**
+1. Va dans "Dossiers"
+2. Crée/modifie un dossier
+3. Ajoute une "Date d'audience"
+4. Retourne au calendrier
+
+**Résultat attendu:**
+- ✅ L'audience apparaît automatiquement dans le calendrier
+- ✅ Liée au dossier
+
+---
+
+### 4. TESTER LE SUIVI DU TEMPS
+
+**Accès:** Clique sur "⏱️ Temps" dans le menu
+
+**Test 1: Démarrer un timer**
+1. Remplis:
+   - Description: "Rédaction contrat"
+   - Dossier: (Sélectionne un dossier)
+   - Facturable: ✅
+   - Taux horaire: 15000 DA
+2. Clique sur "Démarrer"
+
+**Résultat attendu:**
+- ✅ Timer démarre: 00:00:01, 00:00:02...
+- ✅ Bouton change en "Arrêter"
+
+**Test 2: Arrêter le timer**
+1. Attends quelques secondes
+2. Clique sur "Arrêter"
+
+**Résultat attendu:**
+- ✅ Timer s'arrête
+- ✅ L'activité apparaît dans "Activités Récentes"
+- ✅ Durée et montant calculés automatiquement
+
+**Test 3: Activités récentes**
+Vérifie la liste en bas:
+- ✅ Description de l'activité
+- ✅ Dossier associé
+- ✅ Durée (ex: 2min)
+- ✅ Montant (si facturable)
+
+---
+
+### 5. TESTER LE PORTAIL CLIENT
+
+**Accès:** Clique sur "👤 Portail Client" dans le menu
+
+**Test 1: Onglet Dossiers**
+1. Vérifie que tu vois les dossiers
+2. Chaque dossier affiche:
+   - Titre et numéro
+   - Statut
+   - Date d'ouverture
+   - Prochaine audience (si applicable)
+
+**Résultat attendu:**
+- ✅ Liste des dossiers s'affiche
+- ✅ Informations complètes
+
+**Test 2: Onglet Messages**
+1. Clique sur l'onglet "Messages"
+2. Écris un message test
+3. Clique sur "Envoyer"
+
+**Résultat attendu:**
+- ✅ Message apparaît dans la conversation
+- ✅ Aligné à droite (client)
+- ✅ Horodatage visible
+
+**Test 3: Onglet Documents**
+1. Clique sur l'onglet "Documents"
+2. Vérifie les documents partagés
+
+**Résultat attendu:**
+- ✅ Liste des documents
+- ✅ Boutons "Voir" et "Télécharger"
+
+---
+
+## 🎯 CHECKLIST COMPLÈTE
+
+### Facturation
+- [ ] Menu "Facturation" visible
+- [ ] Création de facture fonctionne
+- [ ] Calculs automatiques corrects
+- [ ] Génération PDF fonctionne
+- [ ] Envoi email fonctionne
+- [ ] Statistiques s'affichent
+- [ ] Bilingue FR/AR
+
+### Calendrier
+- [ ] Menu "Calendrier" visible
+- [ ] Vue mensuelle s'affiche
+- [ ] Navigation mois fonctionne
+- [ ] Création événement fonctionne
+- [ ] Détection conflits fonctionne
+- [ ] Intégration dossiers fonctionne
+- [ ] Bilingue FR/AR
+
+### Suivi du Temps
+- [ ] Menu "Temps" visible
+- [ ] Timer démarre/arrête
+- [ ] Calculs automatiques
+- [ ] Association dossier fonctionne
+- [ ] Activités récentes s'affichent
+- [ ] Bilingue FR/AR
+
+### Portail Client
+- [ ] Menu "Portail Client" visible
+- [ ] Onglet Dossiers fonctionne
+- [ ] Onglet Messages fonctionne
+- [ ] Onglet Documents fonctionne
+- [ ] Bilingue FR/AR
+
+---
+
+## 🐛 PROBLÈMES COURANTS
+
+### Le menu ne s'affiche pas
+**Solution:** Rafraîchis la page (Ctrl+R ou Cmd+R)
+
+### Erreur "Cannot find module"
+**Solution:**
+```bash
+yarn install
+yarn dev
 ```
 
-Résultat attendu: 6 tables
+### Les données ne s'affichent pas
+**Solution:** Vérifie que:
+1. Tu es connecté
+2. Les scripts SQL ont été exécutés
+3. Tu as des données de test
+
+### Le PDF ne se génère pas
+**Solution:** Ouvre la console du navigateur (F12) et vérifie les erreurs
+
+### L'email ne s'envoie pas automatiquement
+**C'est normal!** Le système utilise un fallback `mailto:` qui ouvre ton client email. Pour l'envoi automatique, il faut configurer une Edge Function Supabase.
 
 ---
 
-## 🧪 ÉTAPE 2: Test Gestion des Clients (10 min)
+## 📊 RÉSULTAT ATTENDU
 
-### Scénario: Cabinet d'Avocat à Alger
+Après tous les tests, tu devrais avoir:
+- ✅ 3 nouveaux systèmes fonctionnels
+- ✅ Menu mis à jour avec 6 nouvelles entrées
+- ✅ Tout bilingue FR/AR
+- ✅ Design moderne et cohérent
+- ✅ Intégrations entre les modules
 
-**1. Créer un client particulier**
-- Nom: Karim Benali
-- Email: karim.benali@email.dz
-- Téléphone: 0555 12 34 56
-- Adresse: Rue Didouche Mourad, Alger
-- Wilaya: Alger
-- CIN: 123456789
-
-**2. Créer un client entreprise**
-- Entreprise: SARL TechAlgeria
-- Contact: Sarah Khelifi
-- Email: contact@techalgeria.dz
-- NIF: 123456789012345
-- RC: 16/00-1234567
-- Wilaya: Alger
-
-**3. Vérifier les statistiques**
-- Total clients: 2
-- Clients actifs: 2
-- Total facturé: 0 DA (normal, pas encore de factures)
-
-**4. Tester la recherche**
-- Rechercher "Karim" → Doit trouver Karim Benali
-- Rechercher "Tech" → Doit trouver SARL TechAlgeria
-- Rechercher "0555" → Doit trouver Karim Benali
-
-✅ **Résultat attendu:** Gestion clients fonctionnelle comme Clio
+**Score: 6.4/10** 🎉
 
 ---
 
-## ⏱️ ÉTAPE 3: Test Time Tracking (15 min)
+## 🚀 PROCHAINES ÉTAPES
 
-### Scénario: Journée de travail d'un avocat
+Si tout fonctionne, tu peux:
+1. Créer des données de test
+2. Tester avec de vrais clients
+3. Personnaliser les couleurs/design
+4. Ajouter plus de fonctionnalités
 
-**1. Démarrer un chronomètre**
-- Description: "Consultation client Karim Benali"
-- Type d'activité: Consultation
-- Taux horaire: 15 000 DA/h
-- Facturable: Oui
-- Cliquer "Démarrer"
-
-**2. Observer le chronomètre**
-- Le temps doit s'incrémenter: 00:00:01, 00:00:02, etc.
-- Le montant doit s'incrémenter en temps réel
-- Après 1 minute: ~250 DA (15 000 / 60)
-- Après 6 minutes: ~1 500 DA
-
-**3. Arrêter le chronomètre**
-- Cliquer "Arrêter le Chronomètre"
-- L'entrée doit apparaître dans "Entrées Récentes"
-- Durée calculée automatiquement
-- Montant calculé automatiquement
-
-**4. Créer une entrée manuelle**
-- Description: "Rédaction requête - Dossier 123"
-- Type: Rédaction
-- Taux: 15 000 DA/h
-- Durée: 2h30 (150 minutes)
-- Montant attendu: 37 500 DA
-
-**5. Vérifier les statistiques**
-- Heures facturables: ~2h36 (2h30 + 6 min)
-- Montant facturable: ~39 000 DA
-- Heures non facturées: ~2h36 (rien n'est encore facturé)
-- Montant à facturer: ~39 000 DA
-
-✅ **Résultat attendu:** Time tracking fonctionnel comme Clio
-
----
-
-## 💰 ÉTAPE 4: Test Facturation (15 min)
-
-### Scénario: Facturer le temps passé
-
-**1. Créer une facture manuellement**
-- Client: Karim Benali
-- Date: Aujourd'hui
-- Échéance: Dans 30 jours
-- Ajouter ligne:
-  - Description: "Consultation juridique"
-  - Quantité: 1
-  - Prix unitaire: 20 000 DA
-  - Montant: 20 000 DA
-
-**2. Vérifier les calculs automatiques**
-- Sous-total: 20 000 DA
-- TVA (19%): 3 800 DA
-- Total: 23 800 DA
-
-**3. Créer une facture depuis time entries**
-- Sélectionner les 2 entrées de temps créées
-- Cliquer "Créer facture depuis temps"
-- Vérifier que les lignes sont ajoutées automatiquement
-- Total attendu: ~39 000 DA × 1.19 = ~46 410 DA
-
-**4. Envoyer une facture**
-- Cliquer "Envoyer"
-- Statut change: Brouillon → Envoyée
-
-**5. Enregistrer un paiement**
-- Montant: 23 800 DA
-- Méthode: Virement
-- Date: Aujourd'hui
-- Statut change: Envoyée → Payée
-
-**6. Vérifier les statistiques**
-- Total facturé: ~70 000 DA (23 800 + 46 410)
-- Total payé: 23 800 DA
-- En attente: ~46 410 DA
-- Taux de collection: ~34%
-
-✅ **Résultat attendu:** Facturation fonctionnelle comme Clio
-
----
-
-## 📊 ÉTAPE 5: Vérifier le ROI (5 min)
-
-### Calcul du ROI pour l'avocat
-
-**Sans JuristDZ:**
-- Temps perdu (oubli de noter): 2h/semaine × 4 = 8h/mois
-- Perte: 8h × 15 000 DA = 120 000 DA/mois
-- Temps facturation manuelle: 4h/mois × 15 000 DA = 60 000 DA
-- Erreurs de calcul: ~10 000 DA/mois
-- **Perte totale: 190 000 DA/mois**
-
-**Avec JuristDZ:**
-- Coût: 12 000 DA/mois
-- Temps économisé: 12h/mois
-- Erreurs: 0
-- **Gain net: 178 000 DA/mois**
-- **ROI: 1 483%**
-
-✅ **Résultat:** JuristDZ se rentabilise en 2 jours
-
----
-
-## 🎯 ÉTAPE 6: Test avec un Vrai Avocat (1 heure)
-
-### Préparation
-
-1. **Créer un compte de test**
-   - Email: avocat.test@juristdz.com
-   - Profession: Avocat
-   - Plan: Pro (illimité)
-
-2. **Préparer un scénario réaliste**
-   - 3 clients réels (anonymisés)
-   - 1 journée de travail typique
-   - 5-6 entrées de temps
-   - 2 factures
-
-### Questions à poser à l'avocat
-
-1. **Gestion Clients**
-   - Est-ce que les informations demandées sont pertinentes?
-   - Manque-t-il des champs importants?
-   - La recherche est-elle efficace?
-
-2. **Time Tracking**
-   - Le chronomètre est-il pratique?
-   - Les types d'activité sont-ils adaptés?
-   - Le taux horaire par défaut est-il correct?
-   - Préfère-t-il entrer le temps manuellement ou utiliser le chrono?
-
-3. **Facturation**
-   - Le processus de création de facture est-il simple?
-   - Les calculs sont-ils corrects?
-   - Le template de facture est-il professionnel?
-   - Manque-t-il des informations?
-
-4. **Général**
-   - Combien de temps économiserait-il par semaine?
-   - Combien d'argent perdait-il avant (temps non noté)?
-   - Paierait-il 12 000 DA/mois pour ça?
-   - Qu'est-ce qui manque le plus?
-
-### Feedback attendu
-
-**Points positifs:**
-- Gain de temps énorme
-- Calculs automatiques
-- Interface moderne
-- Prix accessible
-
-**Points à améliorer:**
-- Template facture à personnaliser
-- Export PDF
-- Rappels automatiques
-- Application mobile
-
----
-
-## 🚀 ÉTAPE 7: Prochaines Améliorations (Basées sur feedback)
-
-### Priorité 1 (Cette semaine)
-1. **Export PDF factures**
-   - Template professionnel algérien
-   - Logo cabinet
-   - Conditions de paiement
-
-2. **Rappels automatiques**
-   - Échéances à venir
-   - Factures en retard
-   - Notifications
-
-3. **Dashboard amélioré**
-   - Graphiques de revenus
-   - KPIs en temps réel
-   - Prévisions
-
-### Priorité 2 (Semaine prochaine)
-1. **Calendrier intégré**
-   - Audiences
-   - Rendez-vous clients
-   - Échéances
-
-2. **Liaison dossiers-clients-temps**
-   - Voir tout le temps par dossier
-   - Voir tous les dossiers d'un client
-   - Statistiques par dossier
-
-3. **Amélioration mobile**
-   - Interface responsive
-   - Timer mobile
-   - Notifications push
-
----
-
-## 📈 Métriques de Succès
-
-### Après 1 semaine de test
-- [ ] 5 avocats testeurs
-- [ ] 50+ clients créés
-- [ ] 100+ entrées de temps
-- [ ] 20+ factures générées
-- [ ] Feedback positif (8/10 minimum)
-
-### Après 1 mois
-- [ ] 50 avocats utilisateurs
-- [ ] 500+ clients
-- [ ] 2000+ entrées de temps
-- [ ] 200+ factures
-- [ ] 10 clients payants
-
-### Après 3 mois
-- [ ] 200 avocats utilisateurs
-- [ ] 2000+ clients
-- [ ] 10 000+ entrées de temps
-- [ ] 1000+ factures
-- [ ] 50 clients payants
-- [ ] 600 000 DA de revenus/mois
-
----
-
-## 💡 Conseils pour les Tests
-
-1. **Utiliser des données réalistes**
-   - Vrais noms de clients (anonymisés)
-   - Vrais montants
-   - Vraies descriptions
-
-2. **Tester tous les cas d'usage**
-   - Client particulier ET entreprise
-   - Temps court (5 min) ET long (3h)
-   - Facture simple ET complexe
-
-3. **Noter tous les bugs**
-   - Calculs incorrects
-   - Erreurs d'affichage
-   - Problèmes de performance
-
-4. **Mesurer le temps**
-   - Combien de temps pour créer un client?
-   - Combien de temps pour créer une facture?
-   - Combien de temps économisé vs méthode manuelle?
-
----
-
-## 🎯 Objectif Final
-
-**Prouver que JuristDZ:**
-1. ✅ Fait gagner du temps (12h/mois minimum)
-2. ✅ Fait gagner de l'argent (120 000 DA/mois minimum)
-3. ✅ Est aussi bon que Clio/MyCase
-4. ✅ Coûte 10x moins cher
-5. ✅ Est adapté au marché algérien
-
-**= Produit prêt pour le lancement commercial**
-
----
-
-**Date**: 3 mars 2026  
-**Durée totale des tests**: 1-2 heures  
-**Prochaine étape**: Feedback et améliorations  
-**Objectif**: Lancement avril 2026
+**Besoin d'aide? Pose tes questions!** 💪

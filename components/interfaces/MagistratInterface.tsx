@@ -4,6 +4,7 @@ import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search
 import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
 import SearchResults from '../search/SearchResults';
+import NewJugementModal from '../modals/NewJugementModal';
 import { searchService } from '../../services/searchService';
 import { 
   Crown, 
@@ -70,6 +71,9 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult<JurisprudenceResult | LegalText> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Modal state
+  const [showNewJugementModal, setShowNewJugementModal] = useState(false);
   
   // Mock data for pending cases
   const [affairesEnInstance] = useState<Affaire[]>([
@@ -227,7 +231,10 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <Search size={16} className="inline mr-2" />
               {isAr ? 'بحث متقدم' : 'Recherche Avancée'}
             </button>
-            <button className="px-6 py-2 bg-purple-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <button 
+              onClick={() => setShowNewJugementModal(true)}
+              className="px-6 py-2 bg-purple-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+            >
               <Plus size={18} />
               {isAr ? 'حكم جديد' : 'Nouveau Jugement'}
             </button>
@@ -649,6 +656,17 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* New Jugement Modal */}
+      <NewJugementModal
+        isOpen={showNewJugementModal}
+        onClose={() => setShowNewJugementModal(false)}
+        onSave={(newJugement) => {
+          console.log('✅ Nouveau jugement créé:', newJugement);
+        }}
+        language={language}
+        theme={theme}
+      />
     </div>
   );
 };

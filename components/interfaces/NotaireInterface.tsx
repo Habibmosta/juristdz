@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
+import NewActeNotarialModal from '../modals/NewActeNotarialModal';
 import { 
   FileSignature, 
   BookOpen, 
@@ -52,8 +53,11 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
   
+  // Modal state
+  const [showNewActeModal, setShowNewActeModal] = useState(false);
+  
   // Mock data for notarial acts - DEMO DATA
-  const [recentActes] = useState<Acte[]>([
+  const [recentActes, setRecentActes] = useState<Acte[]>([
     {
       id: '1',
       numero: '2024/001',
@@ -147,7 +151,10 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
               <Archive size={16} className="inline mr-2" />
               {isAr ? 'الأرشيف' : 'Minutier'}
             </button>
-            <button className="px-6 py-2 bg-amber-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <button 
+              onClick={() => setShowNewActeModal(true)}
+              className="px-6 py-2 bg-amber-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+            >
               <Plus size={18} />
               {isAr ? 'عقد جديد' : 'Nouvel Acte'}
             </button>
@@ -456,6 +463,18 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* New Acte Modal */}
+      <NewActeNotarialModal
+        isOpen={showNewActeModal}
+        onClose={() => setShowNewActeModal(false)}
+        onSave={(newActe) => {
+          setRecentActes(prev => [newActe, ...prev]);
+          console.log('✅ Nouvel acte créé:', newActe);
+        }}
+        language={language}
+        theme={theme}
+      />
     </div>
   );
 };

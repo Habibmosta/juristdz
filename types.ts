@@ -12,7 +12,9 @@ export enum AppMode {
   REMINDERS = 'REMINDERS',
   BILLING = 'BILLING',
   ANALYTICS = 'ANALYTICS',
-  TOOLS = 'TOOLS'
+  TOOLS = 'TOOLS',
+  TIME_TRACKING = 'TIME_TRACKING',
+  CLIENT_PORTAL = 'CLIENT_PORTAL'
 }
 
 export enum Sender {
