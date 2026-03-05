@@ -526,78 +526,81 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
               )}
             </div>
 
-            <div className="flex items-center justify-between mb-4">
-              {/* Search Button */}
-              <button 
-                onClick={() => setIsSearchOpen(true)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
-              >
-                <Search size={16} />
-              </button>
+            {/* Bottom Controls Section */}
+            <div className="space-y-3">
+              {/* Theme & Language Controls */}
+              <div className={`flex items-center gap-2 p-3 rounded-xl ${
+                theme === 'light' ? 'bg-slate-50' : 'bg-slate-800/50'
+              }`}>
+                {/* Theme Toggle */}
+                <button 
+                  onClick={onThemeToggle}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    theme === 'light' 
+                      ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+                  }`}
+                  title={theme === 'light' ? (isAr ? 'الوضع المظلم' : 'Mode sombre') : (isAr ? 'الوضع المضيء' : 'Mode clair')}
+                >
+                  {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                  <span className="text-xs font-medium">
+                    {theme === 'light' ? (isAr ? 'داكن' : 'Sombre') : (isAr ? 'فاتح' : 'Clair')}
+                  </span>
+                </button>
 
-              <button 
-                onClick={onThemeToggle}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                title={theme === 'light' ? (isAr ? 'الوضع المظلم' : 'Mode sombre') : (isAr ? 'الوضع المضيء' : 'Mode clair')}
-              >
-                {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-              </button>
-              
-              {/* Desktop Language Toggle Switch */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium transition-all duration-300 ${language === 'fr' ? 'text-legal-gold font-semibold' : 'text-slate-400'}`}>
-                  Fr
-                </span>
+                {/* Language Toggle */}
                 <button 
                   onClick={() => {
                     const newLanguage = language === 'fr' ? 'ar' : 'fr';
                     handleLanguageTransition(newLanguage);
                   }}
-                  className={`language-toggle relative w-12 h-6 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:ring-offset-2 dark:focus:ring-offset-slate-900 hover:shadow-md transform hover:scale-105 btn-press ${
-                    language === 'ar' 
-                      ? 'bg-legal-gold/20 hover:bg-legal-gold/30' 
-                      : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
-                  } ${isLanguageTransitioning ? 'language-button-active animate-pulse' : ''}`}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    theme === 'light' 
+                      ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+                  } ${isLanguageTransitioning ? 'animate-pulse' : ''}`}
                   title={language === 'fr' ? 'Basculer vers l\'arabe' : 'التبديل إلى الفرنسية'}
-                  dir="ltr"
                 >
-                  <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-lg transition-all duration-500 ease-out transform ${
-                    language === 'ar' 
-                      ? 'translate-x-6 bg-legal-gold scale-110' 
-                      : 'translate-x-0.5 bg-white dark:bg-slate-300 scale-100'
-                  } ${isLanguageTransitioning ? 'scale-125' : ''}`}>
-                    <Globe size={12} className={`absolute inset-0 m-auto transition-all duration-500 ${
-                      language === 'ar' ? 'text-white' : 'text-legal-gold'
-                    } ${isLanguageTransitioning ? 'animate-spin' : ''}`} />
-                  </div>
+                  <Globe size={16} className={isLanguageTransitioning ? 'animate-spin' : ''} />
+                  <span className="text-xs font-bold uppercase">
+                    {language === 'fr' ? 'FR' : 'AR'}
+                  </span>
                 </button>
-                <span className={`text-xs font-medium transition-all duration-300 ${language === 'ar' ? 'text-legal-gold font-semibold' : 'text-slate-400'}`}>
-                  ع
-                </span>
-              </div>
-            </div>
 
-            {/* Security Notice */}
-            <div className={`p-3 rounded-xl border ${
-              theme === 'light' 
-                ? 'bg-slate-50 border-slate-100' 
-                : 'bg-slate-800 border-slate-700'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Shield size={12} className="text-legal-gold" />
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                  {isAr ? 'وضع آمن' : 'Mode Sécurisé'}
-                </span>
+                {/* Search Button */}
+                <button 
+                  onClick={() => setIsSearchOpen(true)}
+                  className={`flex items-center justify-center p-2 rounded-lg transition-all ${
+                    theme === 'light' 
+                      ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+                  }`}
+                  title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
+                >
+                  <Search size={16} />
+                </button>
               </div>
-              <p className="text-[8px] text-slate-400 leading-tight">
-                {isAr 
-                  ? 'جميع البيانات محمية ومشفرة. تحقق دائماً من الجريدة الرسمية.'
-                  : 'Données protégées et chiffrées. Vérifiez toujours avec le JORA.'
-                }
-              </p>
+
+              {/* Security Notice */}
+              <div className={`p-3 rounded-xl border ${
+                theme === 'light' 
+                  ? 'bg-slate-50 border-slate-100' 
+                  : 'bg-slate-800 border-slate-700'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield size={12} className="text-legal-gold" />
+                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                    {isAr ? 'وضع آمن' : 'Mode Sécurisé'}
+                  </span>
+                </div>
+                <p className="text-[8px] text-slate-400 leading-tight">
+                  {isAr 
+                    ? 'جميع البيانات محمية ومشفرة. تحقق دائماً من الجريدة الرسمية.'
+                    : 'Données protégées et chiffrées. Vérifiez toujours avec le JORA.'
+                  }
+                </p>
+              </div>
             </div>
-          </div>
         )}
       </div>
 
