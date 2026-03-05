@@ -424,11 +424,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-export default CalendarView;
 
       {/* Create Event Modal */}
       {showCreateModal && (
@@ -443,3 +438,8 @@ export default CalendarView;
           initialDate={selectedDate || undefined}
         />
       )}
+    </div>
+  );
+};
+
+export default CalendarView;
