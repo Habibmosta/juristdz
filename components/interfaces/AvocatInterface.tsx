@@ -151,8 +151,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       today.setHours(0, 0, 0, 0);
       const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+      console.log('🔍 Chargement des événements...');
+      console.log('📅 Période:', today.toISOString(), 'à', thirtyDaysLater.toISOString());
+      console.log('👤 User ID:', user.id);
+
       // Charger les événements du calendrier général (table events)
-      const { data: calendarEvents } = await supabase
+      const { data: calendarEvents, error: calendarError } = await supabase
         .from('events')
         .select(`
           *,
@@ -166,8 +170,10 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         .lte('event_date', thirtyDaysLater.toISOString().split('T')[0])
         .order('event_date', { ascending: true });
 
+      console.log('📆 Événements calendrier:', calendarEvents?.length || 0, calendarError);
+
       // Charger les événements des dossiers (table case_events)
-      const { data: caseEvents } = await supabase
+      const { data: caseEvents, error: caseError } = await supabase
         .from('case_events')
         .select(`
           *,
@@ -181,6 +187,11 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         .gte('event_date', today.toISOString())
         .lte('event_date', thirtyDaysLater.toISOString())
         .order('event_date', { ascending: true });
+
+      console.log('📁 Événements dossiers:', caseEvents?.length || 0, caseError);
+      if (caseEvents && caseEvents.length > 0) {
+        console.log('📋 Détails événements dossiers:', caseEvents);
+      }
 
       // Combiner et formater les événements
       const allEvents = [
@@ -202,6 +213,13 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
           const eventDate = eventDateTime.toISOString().split('T')[0];
           const eventTime = eventDateTime.toTimeString().split(' ')[0].substring(0, 5);
           
+          console.log('🔄 Conversion événement:', {
+            original: event.event_date,
+            parsed: eventDateTime,
+            date: eventDate,
+            time: eventTime
+          });
+          
           return {
             id: event.id,
             title: event.title,
@@ -217,6 +235,8 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         })
       ];
 
+      console.log('✅ Total événements combinés:', allEvents.length);
+
       // Trier par date et heure
       allEvents.sort((a, b) => {
         const dateTimeA = new Date(`${a.event_date}T${a.event_time || '00:00'}`);
@@ -224,9 +244,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         return dateTimeA.getTime() - dateTimeB.getTime();
       });
 
-      setUpcomingEvents(allEvents.slice(0, 10)); // Limiter à 10 événements
+      const finalEvents = allEvents.slice(0, 10);
+      console.log('🎯 Événements finaux à afficher:', finalEvents);
+      
+      setUpcomingEvents(finalEvents);
     } catch (error) {
-      console.error('Error loading upcoming events:', error);
+      console.error('❌ Error loading upcoming events:', error);
       setUpcomingEvents([]);
     } finally {
       setLoadingEvents(false);
