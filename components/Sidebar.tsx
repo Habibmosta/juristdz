@@ -205,39 +205,99 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
             </>
           )}
-            <button onClick={() => setShowShareModal(true)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-500 hover:text-legal-gold transition-colors">
-              <Share2 size={16} /> {t.menu_share}
+            <button onClick={() => setShowShareModal(true)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+              theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+            }`}>
+              <Share2 size={18} />
+              <span className="font-medium text-sm">{t.menu_share}</span>
             </button>
-            <div className="flex gap-1 px-4 py-2">
-               <button onClick={toggleTheme} title="Changer de thème" className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors">
-                  {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-               </button>
-               <button 
-                 onClick={() => {
-                   const newLanguage = language === 'fr' ? 'ar' : 'fr';
-                   console.log(`🔧 Sidebar language switch: ${language} -> ${newLanguage}`);
-                   setLanguage(newLanguage);
-                 }} 
-                 className="px-2 py-1 text-[10px] font-bold border rounded-lg hover:border-legal-gold text-slate-500 transition-colors uppercase"
-               >
-                  {language}
-               </button>
-            </div>
           </div>
         </nav>
 
-        <div className="mt-auto p-4">
-           <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                 <Zap size={14} className="text-legal-gold" />
-                 <span className="text-[10px] font-bold text-slate-500">
-                   {isAr ? 'مكتب افتراضي' : 'CABINET VIRTUEL'}
-                 </span>
+        {/* Bottom Section - Controls */}
+        <div className={`p-4 border-t ${theme === 'light' ? 'border-slate-100' : 'border-slate-800/50'}`}>
+          {/* Theme & Language Controls */}
+          <div className={`flex items-center justify-between gap-2 p-3 rounded-xl mb-3 ${
+            theme === 'light' ? 'bg-slate-50' : 'bg-slate-800/50'
+          }`}>
+            <button 
+              onClick={toggleTheme} 
+              title={isAr ? 'تغيير المظهر' : 'Changer de thème'}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                theme === 'light' 
+                  ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+              }`}
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              <span className="text-xs font-medium">
+                {theme === 'light' ? (isAr ? 'داكن' : 'Sombre') : (isAr ? 'فاتح' : 'Clair')}
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => {
+                const newLanguage = language === 'fr' ? 'ar' : 'fr';
+                console.log(`🔧 Sidebar language switch: ${language} -> ${newLanguage}`);
+                setLanguage(newLanguage);
+              }} 
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                theme === 'light' 
+                  ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
+                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
+              }`}
+              title={isAr ? 'تغيير اللغة' : 'Changer de langue'}
+            >
+              <Globe size={16} />
+              <span className="text-xs font-bold uppercase">
+                {language === 'fr' ? 'FR' : 'AR'}
+              </span>
+            </button>
+          </div>
+
+          {/* User Profile Section */}
+          <div className={`p-3 rounded-xl ${
+            theme === 'light' ? 'bg-slate-50' : 'bg-slate-800/50'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                theme === 'light' ? 'bg-legal-blue' : 'bg-legal-gold'
+              }`}>
+                <UserCircle size={20} className="text-white" />
               </div>
-              <p className="text-[9px] text-slate-400 leading-tight">
-                {isAr ? 'هذا الإصدار التجريبي مخصص للاختبارات المهنية. البيانات محلية.' : 'Cette version béta est réservée aux tests métiers. Les données sont locales.'}
-              </p>
-           </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold truncate ${
+                  theme === 'light' ? 'text-slate-900' : 'text-white'
+                }`}>
+                  {userStats.name || (isAr ? 'مستخدم' : 'Utilisateur')}
+                </p>
+                <p className="text-xs text-slate-500 truncate">
+                  {userStats.role === 'admin' ? (isAr ? 'مسؤول' : 'Administrateur') :
+                   userStats.role === 'avocat' ? (isAr ? 'محامي' : 'Avocat') :
+                   userStats.role === 'magistrat' ? (isAr ? 'قاضي' : 'Magistrat') :
+                   userStats.role === 'notaire' ? (isAr ? 'موثق' : 'Notaire') :
+                   userStats.role === 'huissier' ? (isAr ? 'محضر' : 'Huissier') :
+                   userStats.role === 'juriste' ? (isAr ? 'قانوني' : 'Juriste') :
+                   (isAr ? 'طالب' : 'Étudiant')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Beta Notice */}
+          <div className={`mt-3 p-3 rounded-xl border ${
+            theme === 'light' ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Zap size={12} className="text-legal-gold" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                {isAr ? 'مكتب افتراضي' : 'Cabinet Virtuel'}
+              </span>
+            </div>
+            <p className="text-[9px] text-slate-400 leading-tight">
+              {isAr ? 'نسخة تجريبية للاختبارات المهنية' : 'Version béta pour tests métiers'}
+            </p>
+          </div>
         </div>
       </div>
 
