@@ -59,6 +59,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     resetPasswordDesc: isAr ? 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين' : 'Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe',
     sendResetLink: isAr ? 'إرسال رابط إعادة التعيين' : 'Envoyer le lien de réinitialisation',
     sending: isAr ? 'جاري الإرسال...' : 'Envoi en cours...',
+    showPassword: isAr ? 'إظهار كلمة المرور' : 'Afficher le mot de passe',
+    hidePassword: isAr ? 'إخفاء كلمة المرور' : 'Masquer le mot de passe',
+    optional: isAr ? 'اختياري' : 'Optionnel',
   };
 
   const professions: { value: Profession; label: string; icon: string }[] = [
@@ -242,17 +245,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'} flex items-center justify-center p-4`} dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="max-w-md w-full">
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'} flex items-center justify-center p-4 sm:p-6 lg:p-8`} dir={isAr ? 'rtl' : 'ltr'}>
+      <div className="w-full max-w-md lg:max-w-lg">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-legal-gold to-amber-600 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">⚖️</span>
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-legal-gold to-amber-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl sm:text-2xl">⚖️</span>
             </div>
-            <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>JuristDZ</h1>
+            <h1 className={`text-2xl sm:text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>JuristDZ</h1>
           </div>
-          <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+          <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
             {isAr ? 'مساعد قانوني ذكي جزائري' : 'Assistant IA Juridique Algérien'}
           </p>
         </div>
@@ -260,11 +263,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         {/* Auth Card */}
         <div className={`${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'} backdrop-blur-xl rounded-2xl border shadow-2xl overflow-hidden`}>
           {/* Header avec langue et mode */}
-          <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-800/30' : 'border-slate-200 bg-slate-50'} flex items-center justify-between`}>
+          <div className={`p-3 sm:p-4 border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-800/30' : 'border-slate-200 bg-slate-50'} flex items-center justify-between flex-wrap gap-2`}>
             <div className="flex gap-2">
               <button
                 onClick={() => setLanguage('fr')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   language === 'fr'
                     ? 'bg-legal-gold text-white'
                     : theme === 'dark'
@@ -277,7 +280,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               </button>
               <button
                 onClick={() => setLanguage('ar')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   language === 'ar'
                     ? 'bg-legal-gold text-white'
                     : theme === 'dark'
@@ -302,13 +305,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             </button>
           </div>
 
-          {/* Content avec scroll */}
-          <div className="p-8 max-h-[70vh] overflow-y-auto">
+          {/* Content avec scroll optimisé */}
+          <div className="p-4 sm:p-6 lg:p-8 max-h-[calc(100vh-200px)] sm:max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar pb-20 sm:pb-24">
             {/* Mode Toggle */}
-            <div className={`flex gap-2 mb-6 p-1 rounded-xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
+            <div className={`flex gap-2 mb-4 sm:mb-6 p-1 rounded-xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
               <button
                 onClick={() => setMode('signin')}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                className={`flex-1 py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base font-medium transition-all ${
                   mode === 'signin'
                     ? 'bg-legal-gold text-white shadow-lg'
                     : theme === 'dark'
@@ -320,7 +323,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               </button>
               <button
                 onClick={() => setMode('signup')}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                className={`flex-1 py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base font-medium transition-all ${
                   mode === 'signup'
                     ? 'bg-legal-gold text-white shadow-lg'
                     : theme === 'dark'
@@ -351,16 +354,20 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           {mode === 'signin' && (
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.email}
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 sm:py-3 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                     placeholder="maitre@barreau.dz"
                     required
                   />
@@ -368,24 +375,28 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Mot de passe
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.password}
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Lock className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    className={`w-full ${isAr ? 'pr-10 pl-12' : 'pl-10 pr-12'} py-2.5 sm:py-3 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                     placeholder="••••••••"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
-                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    className={`absolute ${isAr ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'} transition-colors`}
+                    title={showPassword ? t.hidePassword : t.showPassword}
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5" />
@@ -399,15 +410,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2.5 sm:py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Connexion...
+                    {t.signingIn}
                   </>
                 ) : (
-                  'Se connecter'
+                  t.signInButton
                 )}
               </button>
 
@@ -416,9 +427,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setMode('forgot-password')}
-                  className="text-sm text-slate-400 hover:text-legal-gold transition-colors"
+                  className={`text-sm ${theme === 'dark' ? 'text-slate-400 hover:text-legal-gold' : 'text-slate-600 hover:text-legal-gold'} transition-colors`}
                 >
-                  Mot de passe oublié ?
+                  {t.forgotPassword}
                 </button>
               </div>
             </form>
@@ -428,23 +439,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           {mode === 'forgot-password' && (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-white mb-2">Réinitialiser le mot de passe</h3>
-                <p className="text-sm text-slate-400">
-                  Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t.resetPassword}</h3>
+                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {t.resetPasswordDesc}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.email}
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 sm:py-3 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                     placeholder="maitre@barreau.dz"
                     required
                   />
@@ -454,15 +469,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2.5 sm:py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Envoi en cours...
+                    {t.sending}
                   </>
                 ) : (
-                  'Envoyer le lien de réinitialisation'
+                  t.sendResetLink
                 )}
               </button>
 
@@ -471,9 +486,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setMode('signin')}
-                  className="text-sm text-slate-400 hover:text-legal-gold transition-colors"
+                  className={`text-sm ${theme === 'dark' ? 'text-slate-400 hover:text-legal-gold' : 'text-slate-600 hover:text-legal-gold'} transition-colors`}
                 >
-                  ← Retour à la connexion
+                  {t.backToSignin}
                 </button>
               </div>
             </form>
@@ -481,19 +496,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
           {/* Sign Up Form */}
           {mode === 'signup' && (
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSignUp} className="space-y-3 sm:space-y-4 pb-8">
+              {/* Nom et Prénom */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Prénom
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {t.firstName}
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <User className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                      className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 ${
+                        theme === 'dark' 
+                          ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                          : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                      } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                       placeholder="Ahmed"
                       required
                     />
@@ -501,30 +521,97 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Nom
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {t.lastName}
                   </label>
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    className={`w-full px-4 py-2.5 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                     placeholder="Benali"
                     required
                   />
                 </div>
               </div>
 
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Profession
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.professionalEmail}
                 </label>
                 <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
+                    placeholder="maitre@barreau.dz"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Mot de passe */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.password}
+                </label>
+                <div className="relative">
+                  <Lock className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`w-full ${isAr ? 'pr-10 pl-12' : 'pl-10 pr-12'} py-2.5 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute ${isAr ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'} transition-colors`}
+                    title={showPassword ? t.hidePassword : t.showPassword}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+                <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>{t.minChars}</p>
+              </div>
+
+              {/* Profession */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.profession}
+                </label>
+                <div className="relative">
+                  <Briefcase className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                   <select
                     value={profession}
                     onChange={(e) => setProfession(e.target.value as Profession)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent appearance-none cursor-pointer"
+                    className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent appearance-none cursor-pointer transition-all`}
                     required
                   >
                     {professions.map((prof) => (
@@ -536,99 +623,65 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email professionnel
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
-                    placeholder="maitre@barreau.dz"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Mot de passe
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
-                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Minimum 6 caractères</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              {/* N° Inscription et Téléphone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    N° Inscription
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {t.registrationNumber} <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>({t.optional})</span>
                   </label>
                   <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Hash className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                     <input
                       type="text"
                       value={registrationNumber}
                       onChange={(e) => setRegistrationNumber(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                      className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 ${
+                        theme === 'dark' 
+                          ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                          : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                      } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                       placeholder="A/12345/2024"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Téléphone
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {t.phone} <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>({t.optional})</span>
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Phone className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                     <input
                       type="tel"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                      className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 ${
+                        theme === 'dark' 
+                          ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                          : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                      } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                       placeholder="+213 555 123 456"
                     />
                   </div>
                 </div>
               </div>
 
+              {/* Cabinet/Organisation */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Cabinet/Organisation
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.organization} <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>({t.optional})</span>
                 </label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Building className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                   <input
                     type="text"
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent"
+                    className={`w-full ${isAr ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                    } border rounded-lg focus:outline-none focus:ring-2 focus:ring-legal-gold focus:border-transparent transition-all`}
                     placeholder="Cabinet Benali & Associés"
                   />
                 </div>
@@ -637,15 +690,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2.5 sm:py-3 bg-legal-gold text-white rounded-lg font-bold hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Création du compte...
+                    {t.creatingAccount}
                   </>
                 ) : (
-                  'Créer mon compte'
+                  t.createAccount
                 )}
               </button>
             </form>
@@ -654,8 +707,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-slate-500 text-sm mt-6">
-          En vous connectant, vous acceptez nos conditions d'utilisation
+        <p className={`text-center text-xs sm:text-sm mt-4 sm:mt-6 px-4 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>
+          {t.terms}
         </p>
       </div>
 
@@ -663,7 +716,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       {showEmailVerification && (
         <EmailVerificationModal
           email={registeredEmail}
-          language="fr"
+          language={language}
           onClose={() => {
             setShowEmailVerification(false);
             setMode('signin');
