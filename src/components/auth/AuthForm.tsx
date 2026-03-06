@@ -18,6 +18,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Form fields
   const [email, setEmail] = useState('');
@@ -28,6 +30,36 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [organizationName, setOrganizationName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+
+  const isAr = language === 'ar';
+
+  // Traductions
+  const t = {
+    signin: isAr ? 'تسجيل الدخول' : 'Connexion',
+    signup: isAr ? 'التسجيل' : 'Inscription',
+    email: isAr ? 'البريد الإلكتروني' : 'Email',
+    password: isAr ? 'كلمة المرور' : 'Mot de passe',
+    firstName: isAr ? 'الاسم الأول' : 'Prénom',
+    lastName: isAr ? 'اسم العائلة' : 'Nom',
+    profession: isAr ? 'المهنة' : 'Profession',
+    registrationNumber: isAr ? 'رقم التسجيل' : 'N° Inscription',
+    phone: isAr ? 'الهاتف' : 'Téléphone',
+    organization: isAr ? 'المنظمة/المكتب' : 'Cabinet/Organisation',
+    forgotPassword: isAr ? 'نسيت كلمة المرور؟' : 'Mot de passe oublié ?',
+    createAccount: isAr ? 'إنشاء حسابي' : 'Créer mon compte',
+    signInButton: isAr ? 'تسجيل الدخول' : 'Se connecter',
+    loading: isAr ? 'جاري التحميل...' : 'Chargement...',
+    signingIn: isAr ? 'جاري تسجيل الدخول...' : 'Connexion...',
+    creatingAccount: isAr ? 'جاري إنشاء الحساب...' : 'Création du compte...',
+    minChars: isAr ? 'الحد الأدنى 6 أحرف' : 'Minimum 6 caractères',
+    terms: isAr ? 'بالتسجيل، أنت توافق على شروط الاستخدام' : 'En vous connectant, vous acceptez nos conditions d\'utilisation',
+    professionalEmail: isAr ? 'البريد الإلكتروني المهني' : 'Email professionnel',
+    backToSignin: isAr ? '← العودة إلى تسجيل الدخول' : '← Retour à la connexion',
+    resetPassword: isAr ? 'إعادة تعيين كلمة المرور' : 'Réinitialiser le mot de passe',
+    resetPasswordDesc: isAr ? 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين' : 'Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe',
+    sendResetLink: isAr ? 'إرسال رابط إعادة التعيين' : 'Envoyer le lien de réinitialisation',
+    sending: isAr ? 'جاري الإرسال...' : 'Envoi en cours...',
+  };
 
   const professions: { value: Profession; label: string; icon: string }[] = [
     { value: 'avocat', label: 'Avocat', icon: '⚖️' },
@@ -210,7 +242,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'} flex items-center justify-center p-4`} dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -218,63 +250,85 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             <div className="w-12 h-12 bg-gradient-to-br from-legal-gold to-amber-600 rounded-xl flex items-center justify-center">
               <span className="text-2xl">⚖️</span>
             </div>
-            <h1 className="text-3xl font-bold text-white">JuristDZ</h1>
+            <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>JuristDZ</h1>
           </div>
-          <p className="text-slate-400">Assistant IA Juridique Algérien</p>
+          <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+            {isAr ? 'مساعد قانوني ذكي جزائري' : 'Assistant IA Juridique Algérien'}
+          </p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+        <div className={`${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'} backdrop-blur-xl rounded-2xl border shadow-2xl overflow-hidden`}>
           {/* Header avec langue et mode */}
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
+          <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-800/30' : 'border-slate-200 bg-slate-50'} flex items-center justify-between`}>
             <div className="flex gap-2">
               <button
-                onClick={() => {/* TODO: Changer langue */}}
-                className="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
-                title="Changer la langue"
+                onClick={() => setLanguage('fr')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  language === 'fr'
+                    ? 'bg-legal-gold text-white'
+                    : theme === 'dark'
+                    ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
+                    : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                }`}
+                title="Français"
               >
                 🇫🇷 FR
               </button>
               <button
-                onClick={() => {/* TODO: Changer langue */}}
-                className="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
-                title="تغيير اللغة"
+                onClick={() => setLanguage('ar')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  language === 'ar'
+                    ? 'bg-legal-gold text-white'
+                    : theme === 'dark'
+                    ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
+                    : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                }`}
+                title="العربية"
               >
                 🇩🇿 AR
               </button>
             </div>
             <button
-              onClick={() => {/* TODO: Toggle theme */}}
-              className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"
-              title="Changer le thème"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className={`p-2 rounded-lg transition-colors ${
+                theme === 'dark'
+                  ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
+                  : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+              }`}
+              title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
             >
-              🌙
+              {theme === 'dark' ? '☀️' : '🌙'}
             </button>
           </div>
 
           {/* Content avec scroll */}
           <div className="p-8 max-h-[70vh] overflow-y-auto">
             {/* Mode Toggle */}
-            <div className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-xl">
+            <div className={`flex gap-2 mb-6 p-1 rounded-xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
               <button
                 onClick={() => setMode('signin')}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
                   mode === 'signin'
                     ? 'bg-legal-gold text-white shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    : theme === 'dark'
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Connexion
+                {t.signin}
               </button>
               <button
                 onClick={() => setMode('signup')}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
                   mode === 'signup'
                     ? 'bg-legal-gold text-white shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    : theme === 'dark'
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Inscription
+                {t.signup}
               </button>
             </div>
 
