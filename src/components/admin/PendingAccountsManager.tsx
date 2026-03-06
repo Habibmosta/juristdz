@@ -12,7 +12,6 @@ interface PendingAccount {
   email: string;
   first_name: string;
   last_name: string;
-  role: string;
   account_status: 'trial' | 'suspended';
   trial_started_at: string;
   trial_ends_at: string;
@@ -213,7 +212,7 @@ export const PendingAccountsManager: React.FC<PendingAccountsManagerProps> = ({ 
                         <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                           {account.first_name} {account.last_name}
                         </h3>
-                        <p className="text-sm text-slate-500">{account.role}</p>
+                        <p className="text-sm text-slate-500">{account.email}</p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(account.account_status, account.days_remaining)}`}>
                         {account.account_status === 'trial' 
