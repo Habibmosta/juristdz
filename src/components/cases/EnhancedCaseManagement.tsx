@@ -8,6 +8,7 @@ import {
 import { CaseService } from '../../services/caseService';
 import CaseDetailView from './CaseDetailView';
 import { useRoleTerminology } from '../../hooks/useRoleTerminology';
+import { LimitChecker } from '../trial/LimitChecker';
 
 interface EnhancedCaseManagementProps {
   language: Language;
@@ -483,13 +484,15 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
                 : `Gestion complète de vos ${t.case(true).toLowerCase()}`}
             </p>
           </div>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
-          >
-            <Plus size={20} />
-            {t.createCase()}
-          </button>
+          <LimitChecker resourceType="case" language={language}>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
+            >
+              <Plus size={20} />
+              {t.createCase()}
+            </button>
+          </LimitChecker>
         </div>
 
         {/* Statistics Cards */}

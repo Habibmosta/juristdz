@@ -22,6 +22,11 @@ import InvoiceManager from './src/components/billing/InvoiceManager';
 import CalendarView from './src/components/calendar/CalendarView';
 import ClientPortal from './src/components/portal/ClientPortal';
 import TimeTracker from './src/components/time/TimeTracker';
+// Composants Trial System
+import TrialBanner from './src/components/trial/TrialBanner';
+import WelcomeModal from './src/components/trial/WelcomeModal';
+import PendingAccountsManager from './src/components/admin/PendingAccountsManager';
+import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
 import { routingService } from './services/routingService';
@@ -46,6 +51,10 @@ const App: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [translationSystemReady, setTranslationSystemReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  
+  // Account status
+  const { accountStatus, loading: accountLoading } = useAccountStatus();
   
   // Legacy state for backward compatibility
   // Note: Setters prefixed with _ are kept for potential future use but not currently used
@@ -67,6 +76,13 @@ const App: React.FC = () => {
           const defaultMode = getDefaultMode(profile.activeRole);
           setMode(defaultMode);
           setIsInitialized(true);
+          
+          // Vérifier si c'est la première connexion (afficher modal de bienvenue)
+          const hasSeenWelcome = localStorage.getItem(`welcome_seen_${profile.id}`);
+          if (!hasSeenWelcome && profile.account_status === 'trial') {
+            setShowWelcomeModal(true);
+            localStorage.setItem(`welcome_seen_${profile.id}`, 'true');
+          }
         }
         
         setIsDataLoaded(true);
@@ -202,6 +218,18 @@ const App: React.FC = () => {
       onLanguageChange={handleLanguageChange}
       onThemeToggle={toggleTheme}
     >
+      {/* Trial Banner */}
+      <TrialBanner language={language} />
+      
+      {/* Welcome Modal */}
+      {showWelcomeModal && accountStatus && (
+        <WelcomeModal
+          language={language}
+          daysRemaining={accountStatus.daysRemaining}
+          onClose={() => setShowWelcomeModal(false)}
+        />
+      )}
+      
       {currentMode === AppMode.DASHBOARD && (
         <Dashboard 
           language={language} 
@@ -291,6 +319,12 @@ const App: React.FC = () => {
           transactions={transactions} 
           onGenerateKey={generateLicenseKey} 
           onSetUserPlan={setUserPlan} 
+        />
+      )}
+      {currentMode === AppMode.PENDING_ACCOUNTS && (
+        <PendingAccountsManager 
+          language={language} 
+          adminId={profile.id}
         />
       )}
       {currentMode === AppMode.DOCS && (

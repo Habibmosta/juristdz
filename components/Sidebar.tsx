@@ -198,15 +198,28 @@ const Sidebar: React.FC<SidebarProps> = ({
 
               <div className={`pt-6 mt-6 border-t space-y-1 ${theme === 'light' ? 'border-slate-100' : 'border-slate-800/50'}`}>
                 {userStats.role === 'admin' && (
-                  <button
-                    onClick={() => setMode(AppMode.ADMIN)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                      theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <Settings size={18} />
-                    <span className="font-medium text-sm">{t.menu_admin}</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setMode(AppMode.ADMIN)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                        theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <Settings size={18} />
+                      <span className="font-medium text-sm">{t.menu_admin}</span>
+                    </button>
+                    <button
+                      onClick={() => setMode(AppMode.PENDING_ACCOUNTS)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                        currentMode === AppMode.PENDING_ACCOUNTS
+                          ? 'bg-legal-gold text-white shadow-lg shadow-legal-gold/20'
+                          : theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <Users size={18} />
+                      <span className="font-medium text-sm">{isAr ? 'الحسابات المعلقة' : 'Comptes en Attente'}</span>
+                    </button>
+                  </>
                 )}
             </>
           )}

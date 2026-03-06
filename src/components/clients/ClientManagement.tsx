@@ -5,6 +5,7 @@ import {
   Briefcase, DollarSign, Calendar, MoreVertical, Edit2,
   Trash2, Eye, FileText, TrendingUp
 } from 'lucide-react';
+import { LimitChecker } from '../trial/LimitChecker';
 
 interface Client {
   id: string;
@@ -270,13 +271,15 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
               {isAr ? 'قاعدة بيانات العملاء الشاملة' : 'Base de données complète de vos clients'}
             </p>
           </div>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
-          >
-            <Plus size={20} />
-            {isAr ? 'عميل جديد' : 'Nouveau Client'}
-          </button>
+          <LimitChecker resourceType="client" language={language}>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-legal-gold/20 hover:bg-legal-gold/90 active:scale-95 transition-all"
+            >
+              <Plus size={20} />
+              {isAr ? 'عميل جديد' : 'Nouveau Client'}
+            </button>
+          </LimitChecker>
         </div>
 
         {/* Statistics Cards */}

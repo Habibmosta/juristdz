@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Download, Send, Eye, DollarSign, Calendar, User } from 'lucide-react';
 import type { Language } from '../../types';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
+import { LimitChecker } from '../trial/LimitChecker';
 
 interface InvoiceManagerProps {
   userId: string;
@@ -225,13 +226,15 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
             {isAr ? 'إدارة الفواتير والمدفوعات' : 'Gestion des factures et paiements'}
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition-colors"
-        >
-          <Plus size={20} />
-          {isAr ? 'فاتورة جديدة' : 'Nouvelle Facture'}
-        </button>
+        <LimitChecker resourceType="invoice" language={language}>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition-colors"
+          >
+            <Plus size={20} />
+            {isAr ? 'فاتورة جديدة' : 'Nouvelle Facture'}
+          </button>
+        </LimitChecker>
       </div>
 
       {/* Statistics */}
