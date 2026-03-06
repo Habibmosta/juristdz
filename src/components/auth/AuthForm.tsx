@@ -166,7 +166,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         await supabase.auth.signOut();
       }
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création du compte');
+      // Améliorer le message d'erreur pour les doublons d'email
+      let errorMessage = err.message || 'Erreur lors de la création du compte';
+      
+      if (err.message?.includes('already registered') || err.message?.includes('User already registered')) {
+        errorMessage = 'Cet email est déjà utilisé. Essayez de vous connecter ou utilisez "Mot de passe oublié".';
+      } else if (err.message?.includes('email')) {
+        errorMessage = 'Email invalide. Veuillez vérifier votre adresse email.';
+      } else if (err.message?.includes('password')) {
+        errorMessage = 'Le mot de passe doit contenir au moins 6 caractères.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
