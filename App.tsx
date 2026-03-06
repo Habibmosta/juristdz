@@ -97,9 +97,13 @@ const App: React.FC = () => {
   }, [profile, isInitialized]);
 
   useEffect(() => {
-    if (theme === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem('juristdz_theme', theme);
+    console.log('🎨 Theme changed to:', theme, '- Dark class:', document.documentElement.classList.contains('dark'));
   }, [theme]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');

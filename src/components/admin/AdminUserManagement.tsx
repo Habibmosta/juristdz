@@ -49,12 +49,12 @@ const StatCard: React.FC<{
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
       <div className={`inline-flex p-3 rounded-lg ${colorClasses[color as keyof typeof colorClasses]} mb-4`}>
         {icon}
       </div>
-      <p className="text-slate-400 text-sm mb-1">{title}</p>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{title}</p>
+      <p className="text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 };
@@ -83,11 +83,11 @@ const UserRow: React.FC<{
   const professionColor = PROFESSION_COLORS[user.profession] || PROFESSION_COLORS.avocat;
 
   return (
-    <tr className="hover:bg-slate-800/50 transition-colors">
+    <tr className="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
       <td className="px-6 py-4">
         <div>
-          <p className="font-medium">{user.first_name} {user.last_name}</p>
-          <p className="text-sm text-slate-400">{user.email}</p>
+          <p className="font-medium text-slate-900 dark:text-white">{user.first_name} {user.last_name}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
         </div>
       </td>
       <td className="px-6 py-4">
@@ -99,24 +99,24 @@ const UserRow: React.FC<{
         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
           user.subscription?.plan === 'pro' ? 'bg-legal-gold/20 text-legal-gold' :
           user.subscription?.plan === 'cabinet' ? 'bg-purple-500/20 text-purple-400' :
-          'bg-slate-700 text-slate-300'
+          'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
         }`}>
           {user.subscription?.plan || 'free'}
         </span>
       </td>
       <td className="px-6 py-4">
-        <p className="text-sm">
+        <p className="text-sm text-slate-900 dark:text-white">
           {user.subscription?.documents_used || 0} / {user.subscription?.documents_limit === -1 ? '∞' : user.subscription?.documents_limit || 5}
         </p>
       </td>
       <td className="px-6 py-4">
         {user.is_active ? (
-          <span className="flex items-center gap-2 text-green-400">
+          <span className="flex items-center gap-2 text-green-600 dark:text-green-400">
             <CheckCircle className="w-4 h-4" />
             Actif
           </span>
         ) : (
-          <span className="flex items-center gap-2 text-red-400">
+          <span className="flex items-center gap-2 text-red-600 dark:text-red-400">
             <XCircle className="w-4 h-4" />
             Inactif
           </span>
@@ -277,14 +277,14 @@ export const AdminUserManagement: React.FC = () => {
   const activeUsers = filteredUsers.filter(u => u.is_active || u.is_admin);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <Users className="w-8 h-8 text-legal-gold" />
             <div>
               <h1 className="text-3xl font-bold">Gestion des Utilisateurs</h1>
-              <p className="text-slate-400">Gérez les comptes et abonnements</p>
+              <p className="text-slate-600 dark:text-slate-400">Gérez les comptes et abonnements</p>
             </div>
           </div>
           <button
@@ -332,7 +332,7 @@ export const AdminUserManagement: React.FC = () => {
               placeholder="Rechercher par email ou nom..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-legal-gold"
+              className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-legal-gold"
             />
           </div>
 
@@ -347,7 +347,7 @@ export const AdminUserManagement: React.FC = () => {
             <select
               value={filterProfession}
               onChange={(e) => setFilterProfession(e.target.value)}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-legal-gold"
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-legal-gold"
             >
               <option value="all">Toutes les professions</option>
               <option value="avocat">Avocat</option>
@@ -363,7 +363,7 @@ export const AdminUserManagement: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-legal-gold"
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-legal-gold"
             >
               <option value="all">Tous les statuts</option>
               <option value="active">Actifs</option>
@@ -375,7 +375,7 @@ export const AdminUserManagement: React.FC = () => {
             <select
               value={filterPlan}
               onChange={(e) => setFilterPlan(e.target.value)}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-legal-gold"
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-legal-gold"
             >
               <option value="all">Tous les plans</option>
               <option value="free">Gratuit</option>
@@ -410,32 +410,32 @@ export const AdminUserManagement: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-slate-900 rounded-2xl border border-amber-500/30 overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-amber-300 dark:border-amber-500/30 overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-amber-900/20">
+                    <thead className="bg-amber-100 dark:bg-amber-900/20">
                       <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Utilisateur</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Profession</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date d'inscription</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Utilisateur</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Profession</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Date d'inscription</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                       {pendingUsers.map(user => (
-                        <tr key={user.id} className="hover:bg-slate-800/50 transition-colors">
+                        <tr key={user.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="px-6 py-4">
                             <div>
-                              <p className="font-medium">{user.first_name} {user.last_name}</p>
-                              <p className="text-sm text-slate-400">{user.email}</p>
+                              <p className="font-medium text-slate-900 dark:text-white">{user.first_name} {user.last_name}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${PROFESSION_COLORS[user.profession]?.bg || 'bg-slate-700'} ${PROFESSION_COLORS[user.profession]?.text || 'text-slate-300'}`}>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${PROFESSION_COLORS[user.profession]?.bg || 'bg-slate-200 dark:bg-slate-700'} ${PROFESSION_COLORS[user.profession]?.text || 'text-slate-700 dark:text-slate-300'}`}>
                               {PROFESSION_COLORS[user.profession]?.label || user.profession}
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-sm text-slate-400">
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
                               {new Date(user.created_at).toLocaleDateString('fr-FR')}
                             </p>
                           </td>
@@ -473,7 +473,7 @@ export const AdminUserManagement: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => setSelectedUser(user)}
-                                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-700 dark:text-slate-300"
                                 title="Voir les détails"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -498,16 +498,16 @@ export const AdminUserManagement: React.FC = () => {
             {/* Section Utilisateurs Actifs */}
             <div>
               <h2 className="text-xl font-bold mb-4">Utilisateurs {activeUsers.length > 0 ? 'Actifs' : ''}</h2>
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-slate-800">
+                  <thead className="bg-slate-100 dark:bg-slate-800">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Utilisateur</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Profession</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Plan</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Documents</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Statut</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Utilisateur</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Profession</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Plan</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Documents</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Statut</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">

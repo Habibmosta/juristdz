@@ -135,7 +135,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
-      // 1. Create auth user
+      // Étape 1: Créer l'utilisateur dans auth.users
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -154,46 +154,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        // 2. Create profile with is_active = false (waiting for admin approval)
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            profession,
-            registration_number: registrationNumber,
-            organization_name: organizationName,
-            phone_number: phoneNumber,
-            is_admin: false,
-            is_active: false // En attente de validation admin
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw new Error('Erreur lors de la création du profil');
-        }
-
-        // 3. Create subscription with is_active = false
-        const { error: subError } = await supabase
-          .from('subscriptions')
-          .insert({
-            user_id: authData.user.id,
-            plan: 'free',
-            status: 'pending', // En attente
-            documents_used: 0,
-            documents_limit: 5,
-            cases_limit: 3,
-            is_active: false,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          });
-
-        if (subError) {
-          console.error('Subscription creation error:', subError);
-        }
-
-        // ✅ NOUVEAU: Afficher le modal de vérification d'email
+        console.log('✅ User created in auth.users:', authData.user.id);
+        console.log('✅ Profile will be created automatically by trigger');
+        
+        // Afficher le modal de vérification d'email
         setRegisteredEmail(email);
         setShowEmailVerification(true);
         
@@ -201,11 +165,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         await supabase.auth.signOut();
       }
     } catch (err: any) {
-      // Améliorer le message d'erreur pour les doublons d'email
+      // Améliorer le message d'erreur
       let errorMessage = err.message || 'Erreur lors de la création du compte';
       
       if (err.message?.includes('already registered') || err.message?.includes('User already registered')) {
         errorMessage = 'Cet email est déjà utilisé. Essayez de vous connecter ou utilisez "Mot de passe oublié".';
+      } else if (err.message?.includes('already exists')) {
+        errorMessage = 'Un profil existe déjà pour cet utilisateur.';
       } else if (err.message?.includes('email')) {
         errorMessage = 'Email invalide. Veuillez vérifier votre adresse email.';
       } else if (err.message?.includes('password')) {
