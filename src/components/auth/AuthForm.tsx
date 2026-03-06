@@ -224,45 +224,74 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         </div>
 
         {/* Auth Card */}
-        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 p-8 shadow-2xl">
-          {/* Mode Toggle */}
-          <div className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-xl">
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+          {/* Header avec langue et mode */}
+          <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
+            <div className="flex gap-2">
+              <button
+                onClick={() => {/* TODO: Changer langue */}}
+                className="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
+                title="Changer la langue"
+              >
+                🇫🇷 FR
+              </button>
+              <button
+                onClick={() => {/* TODO: Changer langue */}}
+                className="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
+                title="تغيير اللغة"
+              >
+                🇩🇿 AR
+              </button>
+            </div>
             <button
-              onClick={() => setMode('signin')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                mode === 'signin'
-                  ? 'bg-legal-gold text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => {/* TODO: Toggle theme */}}
+              className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"
+              title="Changer le thème"
             >
-              Connexion
-            </button>
-            <button
-              onClick={() => setMode('signup')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                mode === 'signup'
-                  ? 'bg-legal-gold text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Inscription
+              🌙
             </button>
           </div>
 
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-red-200 text-sm">{error}</p>
+          {/* Content avec scroll */}
+          <div className="p-8 max-h-[70vh] overflow-y-auto">
+            {/* Mode Toggle */}
+            <div className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-xl">
+              <button
+                onClick={() => setMode('signin')}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                  mode === 'signin'
+                    ? 'bg-legal-gold text-white shadow-lg'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Connexion
+              </button>
+              <button
+                onClick={() => setMode('signup')}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                  mode === 'signup'
+                    ? 'bg-legal-gold text-white shadow-lg'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Inscription
+              </button>
             </div>
-          )}
 
-          {success && (
-            <div className="mb-4 p-3 bg-green-900/20 border border-green-800 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-200 text-sm">{success}</p>
-            </div>
-          )}
+            {/* Error/Success Messages */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-red-200 text-sm">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-4 p-3 bg-green-900/20 border border-green-800 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <p className="text-green-200 text-sm">{success}</p>
+              </div>
+            )}
 
           {/* Sign In Form */}
           {mode === 'signin' && (
@@ -567,6 +596,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               </button>
             </form>
           )}
+          </div>
         </div>
 
         {/* Footer */}
