@@ -232,7 +232,7 @@ SELECT
   p.email,
   p.first_name,
   p.last_name,
-  p.activeRole as role,
+  p.active_role as role,
   p.account_status,
   p.trial_started_at,
   p.trial_ends_at,
