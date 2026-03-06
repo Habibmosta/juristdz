@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Phone, Building, Hash, Briefcase, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { EmailVerificationModal } from './EmailVerificationModal';
 
 interface AuthFormProps {
   onSuccess: () => void;
@@ -15,6 +16,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Form fields
   const [email, setEmail] = useState('');
@@ -49,10 +52,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (signInError) throw signInError;
 
       if (data.user) {
+        // ✅ NOUVEAU: Vérifier si l'email est confirmé
+        if (!data.user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          setError('Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.');
+          return;
+        }
+
         // Vérifier si le compte est actif
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('is_active, first_name, last_name')
+          .select('is_active, first_name, last_name, account_status')
           .eq('id', data.user.id)
           .single();
 
@@ -61,8 +71,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           throw new Error('Erreur lors de la vérification du profil');
         }
 
+        // Vérifier le statut du compte
+        if (profile.account_status === 'blocked') {
+          await supabase.auth.signOut();
+          setError('Votre compte a été bloqué. Veuillez contacter l\'administration.');
+          return;
+        }
+
         if (!profile.is_active) {
-          // Déconnecter l'utilisateur
           await supabase.auth.signOut();
           setError('Votre compte est en attente de validation par un administrateur. Vous recevrez un email une fois votre compte activé.');
           return;
@@ -142,16 +158,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           console.error('Subscription creation error:', subError);
         }
 
-        setSuccess('Compte créé avec succès! Votre compte est en attente de validation par un administrateur. Vous recevrez un email une fois votre compte activé.');
+        // ✅ NOUVEAU: Afficher le modal de vérification d'email
+        setRegisteredEmail(email);
+        setShowEmailVerification(true);
         
         // Déconnecter l'utilisateur car son compte n'est pas encore actif
         await supabase.auth.signOut();
-        
-        // Retour au mode connexion après 5 secondes
-        setTimeout(() => {
-          setMode('signin');
-          setSuccess(null);
-        }, 5000);
       }
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la création du compte');
@@ -551,6 +563,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           En vous connectant, vous acceptez nos conditions d'utilisation
         </p>
       </div>
+
+      {/* Email Verification Modal */}
+      {showEmailVerification && (
+        <EmailVerificationModal
+          email={registeredEmail}
+          language="fr"
+          onClose={() => {
+            setShowEmailVerification(false);
+            setMode('signin');
+          }}
+        />
+      )}
     </div>
   );
 };
