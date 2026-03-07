@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
+import { professionalDataService } from '../../src/services/professionalDataService';
 import { 
   Building, 
   FileText, 
@@ -78,6 +79,43 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
   
+  // Real data from Supabase
+  const [contratsEnCours, setContratsEnCours] = useState<ContratEnCours[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, [user.id]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les contrats
+      const data = await professionalDataService.getByProfession(user.id, 'juriste_entreprise', 20);
+      
+      // Transformer les données
+      const transformedData = data.map((item: any) => ({
+        id: item.id,
+        nom: item.title,
+        contrepartie: item.metadata?.cocontractant || 'Non spécifié',
+        type: item.metadata?.type_contrat || 'Contrat',
+        valeur: item.metadata?.montant || 0,
+        dateSignature: item.metadata?.date_signature ? new Date(item.metadata.date_signature) : undefined,
+        dateEcheance: item.metadata?.date_echeance ? new Date(item.metadata.date_echeance) : new Date(),
+        statut: item.status === 'draft' ? 'negociation' : item.status === 'archived' ? 'expire' : 'signe',
+        risque: item.metadata?.risque || 'faible'
+      }));
+      
+      setContratsEnCours(transformedData);
+    } catch (error) {
+      console.error('Erreur chargement données juriste entreprise:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   // Mock data for compliance alerts
   const [alertesConformite] = useState<AlerteConformite[]>([
     {
@@ -109,41 +147,7 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
     }
   ]);
 
-  // Mock data for contracts
-  const [contratsEnCours] = useState<ContratEnCours[]>([
-    {
-      id: '1',
-      nom: 'Contrat de fourniture IT',
-      contrepartie: 'TechSolutions SARL',
-      type: 'Fourniture',
-      valeur: 2500000,
-      dateSignature: new Date('2024-01-15'),
-      dateEcheance: new Date('2024-12-31'),
-      statut: 'signe',
-      risque: 'faible'
-    },
-    {
-      id: '2',
-      nom: 'Accord de partenariat commercial',
-      contrepartie: 'Global Trading SPA',
-      type: 'Partenariat',
-      valeur: 5000000,
-      dateEcheance: new Date('2024-06-30'),
-      statut: 'negociation',
-      risque: 'moyen'
-    },
-    {
-      id: '3',
-      nom: 'Contrat de maintenance',
-      contrepartie: 'Maintenance Pro',
-      type: 'Service',
-      valeur: 800000,
-      dateSignature: new Date('2023-12-01'),
-      dateEcheance: new Date('2024-03-25'),
-      statut: 'expire',
-      risque: 'eleve'
-    }
-  ]);
+  // Mock data for contracts - REMOVED (using real data now)
 
   // Mock data for legal watch
   const [veilleJuridique] = useState<VeilleJuridique[]>([
@@ -221,21 +225,6 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">        
-        {/* DEMO Badge */}
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className="text-amber-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                {isAr ? 'بيانات تجريبية - الوظيفة قيد التطوير' : 'Données de démonstration - Fonctionnalité en développement'}
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                {isAr ? 'سيتم استبدال هذه البيانات ببيانات حقيقية قريباً' : 'Ces données seront remplacées par des données réelles prochainement'}
-              </p>
-            </div>
-          </div>
-        </div>
-        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -420,7 +409,25 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
               </div>
               
               <div className="p-6 space-y-4">
-                {contratsEnCours.map(contrat => (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
+                  </div>
+                ) : contratsEnCours.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                    <p className="text-slate-400 mb-4">
+                      {isAr ? 'لا توجد عقود بعد' : 'Aucun contrat pour le moment'}
+                    </p>
+                    <button
+                      className="px-6 py-2 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors"
+                    >
+                      {isAr ? 'إنشاء أول عقد' : 'Créer votre premier contrat'}
+                    </button>
+                  </div>
+                ) : (
+                  contratsEnCours.map(contrat => (
                   <div key={contrat.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-blue-500 transition-colors cursor-pointer">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -480,7 +487,8 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
                       </div>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </div>
           </div>

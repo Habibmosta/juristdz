@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search';
 import { UI_TRANSLATIONS } from '../../constants';
@@ -6,6 +6,7 @@ import AdvancedSearch from '../search/AdvancedSearch';
 import SearchResults from '../search/SearchResults';
 import NewJugementModal from '../modals/NewJugementModal';
 import { searchService } from '../../services/searchService';
+import { professionalDataService } from '../../src/services/professionalDataService';
 import { 
   Crown, 
   FileText, 
@@ -75,68 +76,57 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
   // Modal state
   const [showNewJugementModal, setShowNewJugementModal] = useState(false);
   
-  // Mock data for pending cases
-  const [affairesEnInstance] = useState<Affaire[]>([
-    {
-      id: '1',
-      numero: '2024/C/0156',
-      type: 'Civil - Responsabilité contractuelle',
-      parties: ['SPA BATIMENT MODERNE', 'M. Ahmed Benali'],
-      objet: 'Demande de dommages-intérêts pour malfaçons',
-      dateAudience: new Date('2024-03-15'),
-      statut: 'instruction',
-      urgence: 'normale'
-    },
-    {
-      id: '2',
-      numero: '2024/C/0157',
-      type: 'Commercial - Résolution de contrat',
-      parties: ['SARL IMPORT-EXPORT', 'Banque Nationale d\'Algérie'],
-      objet: 'Résolution de contrat de crédit commercial',
-      dateAudience: new Date('2024-03-18'),
-      statut: 'delibere',
-      urgence: 'urgente'
-    },
-    {
-      id: '3',
-      numero: '2024/F/0089',
-      type: 'Famille - Divorce',
-      parties: ['Mme Fatima Khelifi', 'M. Yacine Khelifi'],
-      objet: 'Divorce pour faute avec garde d\'enfants',
-      dateAudience: new Date('2024-03-20'),
-      statut: 'instruction',
-      urgence: 'tres_urgente'
-    }
-  ]);
-
-  // Mock data for recent judgments
-  const [jugementsRecents] = useState<Jugement[]>([
-    {
-      id: '1',
-      numero: '2024/J/0234',
-      affaire: '2024/C/0145',
-      type: 'Jugement au fond',
-      dateRendu: new Date('2024-03-01'),
-      dispositif: 'Condamne le défendeur au paiement de 2.500.000 DA',
-      statut: 'definitif'
-    },
-    {
-      id: '2',
-      numero: '2024/J/0235',
-      affaire: '2024/C/0148',
-      type: 'Ordonnance de référé',
-      dateRendu: new Date('2024-03-05'),
-      dispositif: 'Ordonne la cessation des troubles de voisinage',
-      statut: 'appel_possible'
-    }
-  ]);
-
-  const [statistiques] = useState({
-    affairesEnInstance: 23,
-    jugementsRendus: 45,
-    audiencesSemaine: 8,
-    tauxConfirmation: 87
+  // Real data from Supabase
+  const [affairesEnInstance, setAffairesEnInstance] = useState<Affaire[]>([]);
+  const [jugementsRecents, setJugementsRecents] = useState<Jugement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statistiques, setStatistiques] = useState({
+    affairesEnInstance: 0,
+    jugementsRendus: 0,
+    audiencesSemaine: 0,
+    tauxConfirmation: 0
   });
+
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, [user.id]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les affaires
+      const data = await professionalDataService.getByProfession(user.id, 'magistrat', 20);
+      
+      // Transformer les données
+      const transformedData = data.map((item: any) => ({
+        id: item.id,
+        numero: item.metadata?.numero_rg || `RG-${item.id.slice(0, 8)}`,
+        type: item.title,
+        parties: item.metadata?.parties || [],
+        objet: item.description || '',
+        dateAudience: item.metadata?.date_audience ? new Date(item.metadata.date_audience) : undefined,
+        statut: item.status === 'draft' ? 'instruction' : item.status === 'archived' ? 'juge' : 'delibere',
+        urgence: item.metadata?.urgence || 'normale'
+      }));
+      
+      setAffairesEnInstance(transformedData);
+      
+      // Charger les statistiques
+      const stats = await professionalDataService.getStats(user.id, 'magistrat');
+      setStatistiques({
+        affairesEnInstance: stats.active,
+        jugementsRendus: stats.archived,
+        audiencesSemaine: 0,
+        tauxConfirmation: 0
+      });
+    } catch (error) {
+      console.error('Erreur chargement données magistrat:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle search functionality
   const handleSearch = async (query: any) => {
@@ -192,21 +182,6 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">        
-        {/* DEMO Badge */}
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className="text-amber-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                {isAr ? 'بيانات تجريبية - الوظيفة قيد التطوير' : 'Données de démonstration - Fonctionnalité en développement'}
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                {isAr ? 'سيتم استبدال هذه البيانات ببيانات حقيقية قريباً' : 'Ces données seront remplacées par des données réelles prochainement'}
-              </p>
-            </div>
-          </div>
-        </div>
-        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -369,7 +344,26 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               </div>
               
               <div className="p-6 space-y-4">
-                {affairesEnInstance.map(affaire => (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
+                  </div>
+                ) : affairesEnInstance.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Crown size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                    <p className="text-slate-400 mb-4">
+                      {isAr ? 'لا توجد قضايا بعد' : 'Aucune affaire pour le moment'}
+                    </p>
+                    <button
+                      onClick={() => setShowNewJugementModal(true)}
+                      className="px-6 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors"
+                    >
+                      {isAr ? 'إنشاء أول قضية' : 'Créer votre première affaire'}
+                    </button>
+                  </div>
+                ) : (
+                  affairesEnInstance.map(affaire => (
                   <div key={affaire.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-purple-600 transition-colors cursor-pointer">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -428,7 +422,8 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
                       </div>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </div>
 

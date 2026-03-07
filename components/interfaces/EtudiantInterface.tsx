@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
+import { professionalDataService } from '../../src/services/professionalDataService';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -23,7 +24,8 @@ import {
   Trophy,
   ChevronRight,
   Lock,
-  Unlock
+  Unlock,
+  AlertTriangle
 } from 'lucide-react';
 
 interface EtudiantInterfaceProps {
@@ -67,50 +69,44 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
   
-  // Mock data for courses
-  const [cours] = useState<Cours[]>([
-    {
-      id: '1',
-      titre: 'Introduction au Droit Civil Algérien',
-      domaine: 'Droit Civil',
-      niveau: 'debutant',
-      progression: 85,
-      duree: '12h',
-      statut: 'en_cours',
-      verrouille: false
-    },
-    {
-      id: '2',
-      titre: 'Droit des Obligations et Contrats',
-      domaine: 'Droit Civil',
-      niveau: 'intermediaire',
-      progression: 45,
-      duree: '18h',
-      statut: 'en_cours',
-      verrouille: false
-    },
-    {
-      id: '3',
-      titre: 'Procédure Civile Algérienne',
-      domaine: 'Procédure',
-      niveau: 'avance',
-      progression: 0,
-      duree: '15h',
-      statut: 'non_commence',
-      verrouille: true
-    },
-    {
-      id: '4',
-      titre: 'Droit Commercial et des Sociétés',
-      domaine: 'Droit Commercial',
-      niveau: 'intermediaire',
-      progression: 100,
-      duree: '14h',
-      statut: 'termine',
-      verrouille: false
-    }
-  ]);
+  // Real data from Supabase
+  const [cours, setCours] = useState<Cours[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, [user.id]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les ressources pédagogiques
+      const data = await professionalDataService.getByProfession(user.id, 'etudiant', 20);
+      
+      // Transformer les données
+      const transformedData = data.map((item: any) => ({
+        id: item.id,
+        titre: item.title,
+        domaine: item.metadata?.matiere || 'Droit',
+        niveau: item.metadata?.niveau || 'debutant',
+        progression: item.metadata?.progression || 0,
+        duree: item.metadata?.duree || '10h',
+        statut: item.status === 'draft' ? 'non_commence' : item.status === 'archived' ? 'termine' : 'en_cours',
+        verrouille: item.metadata?.verrouille || false
+      }));
+      
+      setCours(transformedData);
+    } catch (error) {
+      console.error('Erreur chargement données étudiant:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Mock data for courses - REMOVED (using real data now)
+  
   // Mock data for exercises
   const [exercices] = useState<Exercice[]>([
     {
@@ -183,21 +179,6 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">        
-        {/* DEMO Badge */}
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className="text-amber-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                {isAr ? 'بيانات تجريبية - الوظيفة قيد التطوير' : 'Données de démonstration - Fonctionnalité en développement'}
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                {isAr ? 'سيتم استبدال هذه البيانات ببيانات حقيقية قريباً' : 'Ces données seront remplacées par des données réelles prochainement'}
-              </p>
-            </div>
-          </div>
-        </div>
-        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -287,7 +268,25 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
               </div>
               
               <div className="p-6 space-y-4">
-                {cours.map(cour => (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
+                  </div>
+                ) : cours.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                    <p className="text-slate-400 mb-4">
+                      {isAr ? 'لا توجد موارد بعد' : 'Aucune ressource pour le moment'}
+                    </p>
+                    <button
+                      className="px-6 py-2 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors"
+                    >
+                      {isAr ? 'إضافة أول مورد' : 'Ajouter votre première ressource'}
+                    </button>
+                  </div>
+                ) : (
+                  cours.map(cour => (
                   <div key={cour.id} className={`p-4 border border-slate-200 dark:border-slate-800 rounded-xl transition-colors cursor-pointer ${cour.verrouille ? 'opacity-60' : 'hover:border-blue-500'}`}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -352,7 +351,8 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
                       </div>
                     )}
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </div>
 
