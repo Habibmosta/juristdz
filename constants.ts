@@ -73,7 +73,7 @@ export const UI_TRANSLATIONS = {
     analysis_task_clauses: "Clauses"
   },
   ar: {
-    sidebar_title: "محامي دي زاد",
+    sidebar_title: "منصة القانون الجزائري",
     sidebar_subtitle: "ذكاء اصطناعي للمحاماة",
     menu_dashboard: "لوحة التحكم",
     menu_research: "بحث قانوني",
