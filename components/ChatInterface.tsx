@@ -227,6 +227,84 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
     setIsLoading(false);
   };
 
+  // Auto-translate messages when language changes
+  useEffect(() => {
+    const autoTranslateMessages = async () => {
+      if (currentMessages.length === 0) return;
+      
+      console.log(`🌐 Changement de langue détecté: ${language}`);
+      
+      try {
+        const translatedMessages = await Promise.all(
+          currentMessages.map(async (message) => {
+            const sourceText = message.originalText || message.text;
+            const sourceLang = message.originalLang || improvedTranslationService.detectLanguage(sourceText);
+            
+            // Si même langue, retourner le texte original
+            if (sourceLang === language) {
+              return {
+                ...message,
+                text: sourceText,
+                isTranslated: false,
+                translationQuality: 'excellent' as const,
+                translationError: undefined
+              };
+            }
+
+            try {
+              const translatedText = await improvedTranslationService.translateText(
+                sourceText,
+                sourceLang,
+                language
+              );
+
+              const isSuccessful = translatedText !== sourceText && 
+                                 translatedText.trim().length > 0;
+              
+              return {
+                ...message,
+                text: isSuccessful ? translatedText : sourceText,
+                originalText: sourceText,
+                originalLang: sourceLang,
+                isTranslated: isSuccessful,
+                translationQuality: (isSuccessful ? 'good' : 'poor') as const,
+                translationError: isSuccessful ? undefined : 'Traduction échouée'
+              };
+            } catch (error) {
+              console.error('❌ Erreur de traduction:', error);
+              return {
+                ...message,
+                text: sourceText,
+                originalText: sourceText,
+                originalLang: sourceLang,
+                isTranslated: false,
+                translationQuality: 'poor' as const,
+                translationError: `Erreur: ${error}`
+              };
+            }
+          })
+        );
+
+        console.log(`✨ Traduction automatique terminée`);
+        setCurrentMessages(translatedMessages);
+        
+        // Mettre à jour la session active
+        if (activeSessionId) {
+          setSearchSessions(prev => prev.map(session => 
+            session.id === activeSessionId 
+              ? { ...session, messages: translatedMessages }
+              : session
+          ));
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur de traduction automatique:', error);
+      }
+    };
+
+    autoTranslateMessages();
+  }, [language]); // Se déclenche quand la langue change
+
   // Function to switch to a different search session
   const switchToSession = (sessionId: string) => {
     const session = searchSessions.find(s => s.id === sessionId);
