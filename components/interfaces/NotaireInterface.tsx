@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import NewActeNotarialModal from '../modals/NewActeNotarialModal';
+import { professionalDataService } from '../../src/services/professionalDataService';
 import { 
   FileSignature, 
   BookOpen, 
@@ -56,46 +57,58 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
   // Modal state
   const [showNewActeModal, setShowNewActeModal] = useState(false);
   
-  // Mock data for notarial acts - DEMO DATA
-  const [recentActes, setRecentActes] = useState<Acte[]>([
-    {
-      id: '1',
-      numero: '2024/001',
-      type: 'Vente immobilière',
-      parties: ['M. Benali Ahmed', 'Mme Khadija Mansouri'],
-      objet: 'Appartement F3 - Alger Centre',
-      dateCreation: new Date('2024-03-01'),
-      montant: 15000000,
-      statut: 'signe'
-    },
-    {
-      id: '2',
-      numero: '2024/002', 
-      type: 'Contrat de mariage',
-      parties: ['M. Yacine Boumediene', 'Mlle Amina Cherif'],
-      objet: 'Régime de la communauté réduite aux acquêts',
-      dateCreation: new Date('2024-03-05'),
-      statut: 'brouillon'
-    },
-    {
-      id: '3',
-      numero: '2024/003',
-      type: 'Testament',
-      parties: ['M. Mohamed Larbi'],
-      objet: 'Testament olographe avec legs particuliers',
-      dateCreation: new Date('2024-03-08'),
-      statut: 'archive'
-    }
-  ]);
-
-  const [minutierStats] = useState({
-    totalActes: 1247,
-    actesMois: 15,
-    droitsEnregistrement: '285,400',
-    honoraires: '156,800'
+  // Real data from Supabase
+  const [recentActes, setRecentActes] = useState<Acte[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [minutierStats, setMinutierStats] = useState({
+    totalActes: 0,
+    actesMois: 0,
+    droitsEnregistrement: '0',
+    honoraires: '0'
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, [user.id]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les actes
+      const data = await professionalDataService.getByProfession(user.id, 'notaire', 20);
+      
+      // Transformer les données pour correspondre à l'interface Acte
+      const transformedData = data.map((item: any) => ({
+        id: item.id,
+        numero: item.metadata?.numero || `ACT-${item.id.slice(0, 8)}`,
+        type: item.metadata?.type_acte || item.title,
+        parties: item.metadata?.parties || [],
+        objet: item.description || '',
+        dateCreation: new Date(item.created_at),
+        montant: item.metadata?.montant,
+        statut: item.status === 'draft' ? 'brouillon' : item.status === 'archived' ? 'archive' : 'signe'
+      }));
+      
+      setRecentActes(transformedData);
+      
+      // Charger les statistiques
+      const stats = await professionalDataService.getStats(user.id, 'notaire');
+      setMinutierStats({
+        totalActes: stats.total,
+        actesMois: stats.thisMonth,
+        droitsEnregistrement: '0', // À calculer selon les montants
+        honoraires: '0' // À calculer selon les montants
+      });
+    } catch (error) {
+      console.error('Erreur chargement données notaire:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatutColor = (statut: string) => {
     switch (statut) {
@@ -118,21 +131,6 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* DEMO Badge */}
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertCircle size={20} className="text-amber-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                {isAr ? 'بيانات تجريبية - الوظيفة قيد التطوير' : 'Données de démonstration - Fonctionnalité en développement'}
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                {isAr ? 'سيتم استبدال هذه البيانات ببيانات حقيقية قريباً' : 'Ces données seront remplacées par des données réelles prochainement'}
-              </p>
-            </div>
-          </div>
-        </div>
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -261,7 +259,26 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
             </div>
             
             <div className="p-6 space-y-4">
-              {recentActes.map(acte => (
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+                  <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
+                </div>
+              ) : recentActes.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileSignature size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                  <p className="text-slate-400 mb-4">
+                    {isAr ? 'لا توجد عقود بعد' : 'Aucun acte pour le moment'}
+                  </p>
+                  <button
+                    onClick={() => setShowNewActeModal(true)}
+                    className="px-6 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-colors"
+                  >
+                    {isAr ? 'إنشاء أول عقد' : 'Créer votre premier acte'}
+                  </button>
+                </div>
+              ) : (
+                recentActes.map(acte => (
                 <div key={acte.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors cursor-pointer">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -320,7 +337,7 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                     )}
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
 
@@ -468,9 +485,27 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
       <NewActeNotarialModal
         isOpen={showNewActeModal}
         onClose={() => setShowNewActeModal(false)}
-        onSave={(newActe) => {
-          setRecentActes(prev => [newActe, ...prev]);
-          console.log('✅ Nouvel acte créé:', newActe);
+        onSave={async (newActe) => {
+          try {
+            // Créer l'acte dans Supabase
+            await professionalDataService.create(user.id, 'notaire', {
+              title: newActe.type,
+              description: newActe.objet,
+              status: 'draft',
+              metadata: {
+                numero: newActe.numero,
+                type_acte: newActe.type,
+                parties: newActe.parties,
+                montant: newActe.montant
+              }
+            });
+            
+            // Recharger les données
+            loadData();
+            console.log('✅ Nouvel acte créé');
+          } catch (error) {
+            console.error('Erreur création acte:', error);
+          }
         }}
         language={language}
         theme={theme}
