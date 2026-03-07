@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import NewConstatHuissierModal from '../modals/NewConstatatHuissierModal';
+import { professionalDataService } from '../../src/services/professionalDataService';
 import { 
   Gavel, 
   FileText, 
@@ -70,71 +71,59 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
   // Modal state
   const [showNewConstatModal, setShowNewConstatModal] = useState(false);
   
-  // Mock data for exploits
-  const [recentExploits, setRecentExploits] = useState<Exploit[]>([
-    {
-      id: '1',
-      numero: '2024/H/001',
-      type: 'Commandement de payer',
-      debiteur: 'SARL BENALI FRERES',
-      creancier: 'Banque Nationale d\'Algérie',
-      montant: 2500000,
-      adresse: '15 Rue Didouche Mourad, Alger',
-      dateCreation: new Date('2024-03-01'),
-      dateSignification: new Date('2024-03-02'),
-      statut: 'signifie'
-    },
-    {
-      id: '2',
-      numero: '2024/H/002',
-      type: 'Assignation en référé',
-      debiteur: 'M. Ahmed Khelifi',
-      creancier: 'SPA CONSTRUCTION MODERNE',
-      montant: 850000,
-      adresse: '42 Cité des Palmiers, Oran',
-      dateCreation: new Date('2024-03-05'),
-      statut: 'preparation'
-    },
-    {
-      id: '3',
-      numero: '2024/H/003',
-      type: 'Procès-verbal de saisie',
-      debiteur: 'Mme Fatima Boudiaf',
-      creancier: 'Cabinet Médical Dr. Mansouri',
-      montant: 125000,
-      adresse: '8 Boulevard Zighout Youcef, Constantine',
-      dateCreation: new Date('2024-03-08'),
-      dateSignification: new Date('2024-03-10'),
-      statut: 'execute'
-    }
-  ]);
-
-  // Mock data for execution procedures
-  const [proceduresExecution] = useState<ProcedureExecution[]>([
-    {
-      id: '1',
-      type: 'Saisie immobilière',
-      debiteur: 'M. Larbi Benali',
-      montantDu: 5200000,
-      biensSaisis: ['Appartement F4 - Hydra', 'Local commercial - Centre-ville'],
-      statut: 'en_cours'
-    },
-    {
-      id: '2',
-      type: 'Saisie mobilière',
-      debiteur: 'EURL TRANSPORT RAPIDE',
-      montantDu: 1800000,
-      biensSaisis: ['Camion Mercedes 2020', 'Équipements bureau'],
-      statut: 'terminee'
-    }
-  ]);
-
-  const [monthlyStats] = useState({
-    exploitsSignifies: 28,
-    fraisPerçus: '186,500',
-    proceduresEnCours: 12,
-    tauxRecouvrement: 78
+  // Real data from Supabase
+  const [recentExploits, setRecentExploits] = useState<Exploit[]>([]);
+  const [proceduresExecution, setProceduresExecution] = useState<ProcedureExecution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [monthlyStats, setMonthlyStats] = useState({
+    exploitsSignifies: 0,
+    fraisPerçus: '0',
+    proceduresEnCours: 0,
+    tauxRecouvrement: 0
   });
+
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, [user.id]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les exploits
+      const data = await professionalDataService.getByProfession(user.id, 'huissier', 20);
+      
+      // Transformer les données
+      const transformedData = data.map((item: any) => ({
+        id: item.id,
+        numero: item.metadata?.numero || `H-${item.id.slice(0, 8)}`,
+        type: item.metadata?.type_exploit || item.title,
+        debiteur: item.metadata?.debiteur || '',
+        creancier: item.metadata?.creancier || '',
+        montant: item.metadata?.montant || 0,
+        adresse: item.metadata?.adresse || '',
+        dateCreation: new Date(item.created_at),
+        dateSignification: item.metadata?.date_signification ? new Date(item.metadata.date_signification) : undefined,
+        statut: item.status === 'draft' ? 'preparation' : item.status === 'archived' ? 'execute' : 'signifie'
+      }));
+      
+      setRecentExploits(transformedData);
+      
+      // Charger les statistiques
+      const stats = await professionalDataService.getStats(user.id, 'huissier');
+      setMonthlyStats({
+        exploitsSignifies: stats.active,
+        fraisPerçus: '0',
+        proceduresEnCours: stats.draft,
+        tauxRecouvrement: 0
+      });
+    } catch (error) {
+      console.error('Erreur chargement données huissier:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatutColor = (statut: string) => {
     switch (statut) {
@@ -163,21 +152,6 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* DEMO Badge */}
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className="text-amber-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                {isAr ? 'بيانات تجريبية - الوظيفة قيد التطوير' : 'Données de démonstration - Fonctionnalité en développement'}
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                {isAr ? 'سيتم استبدال هذه البيانات ببيانات حقيقية قريباً' : 'Ces données seront remplacées par des données réelles prochainement'}
-              </p>
-            </div>
-          </div>
-        </div>
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
