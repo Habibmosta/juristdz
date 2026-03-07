@@ -72,6 +72,10 @@ TOUS_*.md
 TERMINE.md
 TRAVAIL_*.md
 
+# Scripts de configuration avec clés API
+configure-vercel.sh
+configure-*.sh
+
 # Fichiers de formulaires temporaires
 components/forms/*.txt
 components/forms/*.backup
