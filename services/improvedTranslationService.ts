@@ -16,10 +16,10 @@ export class ImprovedTranslationService {
   private translationErrors: Array<{ text: string; error: string; timestamp: Date }> = [];
 
   /**
-   * Main translation method using Pure Translation System
+   * Main translation method using API Service
    */
   async translateText(text: string, fromLang: Language, toLang: Language): Promise<string> {
-    console.log(`🔧 IMPROVED Translation using Pure Translation System: ${fromLang} -> ${toLang}`);
+    console.log(`🔧 IMPROVED Translation: ${fromLang} -> ${toLang}`);
     console.log(`🔧 Input: "${text.substring(0, 100)}..."`);
     console.log(`🔧 Input length: ${text.length} characters`);
     
@@ -37,45 +37,26 @@ export class ImprovedTranslationService {
     }
 
     try {
-      console.log(`🔧 Using Pure Translation System for high-quality translation...`);
+      console.log(`🔧 Using API Service for translation...`);
       
-      // Create translation request for Pure Translation System
-      const request: TranslationRequest = {
-        text: cleanedText,
-        sourceLanguage: fromLang,
-        targetLanguage: toLang,
-        contentType: ContentType.LEGAL_DOCUMENT, // Use legal document type for better terminology
-        priority: TranslationPriority.HIGH,
-        context: {
-          userRole: 'legal_professional',
-          jurisdiction: 'Algeria',
-          previousTranslations: []
-        }
-      };
-
-      // Use Pure Translation System
-      const result = await pureTranslationSystemIntegration.translateContent(request);
+      // Use API Service for translation
+      const result = await apiService.translateText(cleanedText, fromLang, toLang);
       
-      console.log(`🔧 Pure Translation result: "${result.translatedText.substring(0, 100)}..."`);
-      console.log(`🔧 Purity score: ${result.purityScore}%`);
-      console.log(`🔧 Confidence: ${result.confidence}`);
-      
-      // Log warnings if any
-      if (result.warnings.length > 0) {
-        console.warn(`🔧 Translation warnings:`, result.warnings);
-      }
-      
-      // Cache the result if it meets quality standards
-      if (result.purityScore >= 95) {
+      if (result.success && result.translatedText) {
+        console.log(`🔧 Translation successful: "${result.translatedText.substring(0, 100)}..."`);
+        console.log(`🔧 Confidence: ${result.confidence || 'N/A'}`);
+        
+        // Cache the result
         this.cacheTranslation(text, fromLang, result.translatedText, toLang);
+        
+        return result.translatedText;
       } else {
-        console.warn(`🔧 Low purity score: ${result.purityScore}%, not caching`);
+        console.warn(`🔧 Translation failed, using fallback`);
+        throw new Error('Translation API returned no result');
       }
-      
-      return result.translatedText;
       
     } catch (error) {
-      console.error('🔧 Pure Translation System failed:', error);
+      console.error('🔧 Translation API failed:', error);
       this.logTranslationError(text, error.message);
       
       // Fallback to original text
