@@ -12,33 +12,34 @@ export const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({ 
   const isAr = language === 'ar';
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
       <div 
-        className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full"
+        className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full my-8 max-h-[90vh] overflow-y-auto custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
         dir={isAr ? 'rtl' : 'ltr'}
       >
         {/* Header */}
-        <div className="relative p-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-t-2xl">
+        <div className="relative p-6 sm:p-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-t-2xl">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+            aria-label="Fermer"
           >
             <X size={20} />
           </button>
           
           <div className="text-center">
-            <div className="inline-flex p-4 bg-white/20 rounded-full mb-4">
-              <Mail size={48} />
+            <div className="inline-flex p-3 sm:p-4 bg-white/20 rounded-full mb-3 sm:mb-4">
+              <Mail size={40} className="sm:w-12 sm:h-12" />
             </div>
-            <h2 className="text-3xl font-bold mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">
               {isAr ? '📧 تحقق من بريدك الإلكتروني' : '📧 Vérifiez votre email'}
             </h2>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-8 space-y-6">
+        <div className="p-6 sm:p-8 space-y-4 sm:space-y-6">
           <div className="text-center">
             <p className="text-slate-600 dark:text-slate-400 mb-4">
               {isAr 
