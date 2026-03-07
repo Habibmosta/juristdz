@@ -270,7 +270,26 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               </div>
               
               <div className="p-6 space-y-4">
-                {recentExploits.map(exploit => (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+                    <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
+                  </div>
+                ) : recentExploits.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Gavel size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                    <p className="text-slate-400 mb-4">
+                      {isAr ? 'لا توجد إجراءات بعد' : 'Aucun exploit pour le moment'}
+                    </p>
+                    <button
+                      onClick={() => setShowNewConstatModal(true)}
+                      className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors"
+                    >
+                      {isAr ? 'إنشاء أول إجراء' : 'Créer votre premier exploit'}
+                    </button>
+                  </div>
+                ) : (
+                  recentExploits.map(exploit => (
                   <div key={exploit.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-green-600 transition-colors cursor-pointer">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -337,7 +356,7 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
                       )}
                     </div>
                   </div>
-                ))}
+                )))}
               </div>
             </div>
 
