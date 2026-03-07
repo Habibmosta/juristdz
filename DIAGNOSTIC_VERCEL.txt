@@ -1,0 +1,107 @@
+═══════════════════════════════════════════════════════════════
+🔍 DIAGNOSTIC VERCEL - Variables d'Environnement
+═══════════════════════════════════════════════════════════════
+
+PROBLÈME IDENTIFIÉ:
+Vous avez des variables EN DOUBLE sur Vercel!
+
+───────────────────────────────────────────────────────────────
+📊 VARIABLES ACTUELLES SUR VERCEL
+───────────────────────────────────────────────────────────────
+
+✅ CORRECTES (À GARDER):
+   VITE_SUPABASE_URL
+   VITE_SUPABASE_ANON_KEY
+   VITE_GROQ_API_KEY
+   VITE_GEMINI_API_KEY
+   VITE_OPENAI_API_KEY
+
+❌ INCORRECTES (À SUPPRIMER):
+   SUPABASE_URL          ← Supprimer cette ligne
+   SUPABASE_ANON_KEY     ← Supprimer cette ligne
+
+───────────────────────────────────────────────────────────────
+⚠️ POURQUOI C'EST UN PROBLÈME?
+───────────────────────────────────────────────────────────────
+
+Vite.js (votre outil de build) fonctionne ainsi:
+
+1. Variables AVEC "VITE_" → Exposées au frontend ✅
+   Exemple: VITE_SUPABASE_URL → Accessible dans le code
+
+2. Variables SANS "VITE_" → Ignorées/Cachées ❌
+   Exemple: SUPABASE_URL → Non accessible dans le code
+
+Avoir les deux peut causer des conflits et des erreurs!
+
+───────────────────────────────────────────────────────────────
+🔧 SOLUTION IMMÉDIATE
+───────────────────────────────────────────────────────────────
+
+ÉTAPE 1: Aller sur Vercel
+→ vercel.com
+→ Votre projet "juristdz"
+→ Settings
+→ Environment Variables
+
+ÉTAPE 2: Supprimer 2 Variables
+
+Variable 1 à supprimer:
+  Nom: SUPABASE_URL
+  Action: Cliquez ••• → Delete → Confirmer
+
+Variable 2 à supprimer:
+  Nom: SUPABASE_ANON_KEY
+  Action: Cliquez ••• → Delete → Confirmer
+
+ÉTAPE 3: Vérifier
+Vous devriez avoir UNIQUEMENT des variables VITE_*
+
+ÉTAPE 4: Redéployer (déjà fait automatiquement)
+Le push que nous venons de faire va redéployer l'app.
+
+───────────────────────────────────────────────────────────────
+✅ APRÈS LA CORRECTION
+───────────────────────────────────────────────────────────────
+
+Variables finales sur Vercel:
+✓ VITE_SUPABASE_URL
+✓ VITE_SUPABASE_ANON_KEY
+✓ VITE_GROQ_API_KEY
+✓ VITE_GEMINI_API_KEY
+✓ VITE_OPENAI_API_KEY
+
+Résultat:
+✓ Application fonctionne en production
+✓ Connexion Supabase OK
+✓ Plus d'erreur ERR_NAME_NOT_RESOLVED
+
+───────────────────────────────────────────────────────────────
+⏱️ TEMPS REQUIS
+───────────────────────────────────────────────────────────────
+
+Suppression des variables: 1 minute
+Redéploiement automatique: 2-3 minutes
+Vérification: 1 minute
+TOTAL: ~5 minutes
+
+───────────────────────────────────────────────────────────────
+🎯 RÈGLE À RETENIR
+───────────────────────────────────────────────────────────────
+
+Pour Vite.js (votre projet):
+→ TOUTES les variables frontend doivent commencer par VITE_
+→ Jamais de variables sans VITE_ pour le frontend
+→ Les variables sans VITE_ sont pour le backend uniquement
+
+───────────────────────────────────────────────────────────────
+📖 DOCUMENTATION
+───────────────────────────────────────────────────────────────
+
+Guide détaillé: CORRECTION_VERCEL_VARIABLES.md
+
+═══════════════════════════════════════════════════════════════
+Action: Supprimer SUPABASE_URL et SUPABASE_ANON_KEY sur Vercel
+Temps: 1 minute
+Résultat: Application fonctionnelle ✅
+═══════════════════════════════════════════════════════════════
