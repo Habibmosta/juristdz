@@ -1,0 +1,115 @@
+═══════════════════════════════════════════════════════════════
+🚨 ACTION URGENTE - FORCER REBUILD VERCEL
+═══════════════════════════════════════════════════════════════
+
+PROBLÈME:
+L'URL est toujours tronquée: fcteljnmcdelbratudnc.supabase.c
+Le cache Vercel sert encore l'ancien build.
+
+───────────────────────────────────────────────────────────────
+⚡ SOLUTION RAPIDE (2 MINUTES)
+───────────────────────────────────────────────────────────────
+
+ÉTAPE 1: Aller sur Vercel
+→ vercel.com
+→ Connectez-vous
+→ Projet "juristdz"
+→ Cliquez sur "Deployments"
+
+ÉTAPE 2: Forcer Rebuild SANS Cache
+→ Trouvez le dernier déploiement (en haut)
+→ Cliquez sur les 3 points (•••)
+→ Cliquez "Redeploy"
+→ ⚠️  IMPORTANT: DÉCOCHEZ "Use existing Build Cache"
+→ Cliquez "Redeploy"
+
+ÉTAPE 3: Attendre
+→ Le build va prendre 2-3 minutes
+→ Attendez que le statut soit "Ready" (vert)
+
+ÉTAPE 4: Vérifier
+→ Videz le cache navigateur (Ctrl+Shift+Delete)
+→ Ou ouvrez en mode incognito
+→ Testez la connexion
+
+───────────────────────────────────────────────────────────────
+🔍 VÉRIFICATION AVANT REBUILD
+───────────────────────────────────────────────────────────────
+
+Sur Vercel → Settings → Environment Variables
+
+Vous devez avoir UNIQUEMENT:
+✅ VITE_SUPABASE_URL
+✅ VITE_SUPABASE_ANON_KEY
+✅ VITE_GROQ_API_KEY
+✅ VITE_GEMINI_API_KEY
+✅ VITE_OPENAI_API_KEY
+
+Vous NE devez PAS avoir:
+❌ SUPABASE_URL (sans VITE_)
+❌ SUPABASE_ANON_KEY (sans VITE_)
+
+Si vous les voyez encore, SUPPRIMEZ-LES avant le rebuild!
+
+───────────────────────────────────────────────────────────────
+⏱️ TEMPS REQUIS
+───────────────────────────────────────────────────────────────
+
+Vérification variables: 1 minute
+Lancement rebuild: 30 secondes
+Build complet: 2-3 minutes
+Vérification: 1 minute
+TOTAL: ~5 minutes
+
+───────────────────────────────────────────────────────────────
+✅ RÉSULTAT ATTENDU
+───────────────────────────────────────────────────────────────
+
+Après le rebuild:
+✓ URL complète: fcteljnmcdelbratudnc.supabase.co
+✓ Connexion fonctionne
+✓ Plus d'erreur ERR_NAME_NOT_RESOLVED
+
+───────────────────────────────────────────────────────────────
+🐛 SI LE PROBLÈME PERSISTE
+───────────────────────────────────────────────────────────────
+
+1. Vérifier les logs du build:
+   Deployments → Dernier build → Logs
+   Chercher: "VITE_SUPABASE_URL"
+
+2. Supprimer et recréer les variables:
+   Settings → Environment Variables
+   Supprimer TOUTES les variables Supabase
+   Attendre 1 minute
+   Recréer VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
+   Forcer un nouveau rebuild
+
+3. Consulter la documentation:
+   VERCEL_CACHE_PROBLEM.md
+
+───────────────────────────────────────────────────────────────
+📋 CHECKLIST
+───────────────────────────────────────────────────────────────
+
+Avant le rebuild:
+□ Variables VITE_* existent sur Vercel
+□ Variables sans VITE_ sont supprimées
+□ "Production" est coché pour chaque variable
+
+Pendant le rebuild:
+□ "Use existing Build Cache" est DÉCOCHÉ
+□ Build en cours (statut jaune)
+□ Attendre statut "Ready" (vert)
+
+Après le rebuild:
+□ Vider cache navigateur
+□ Tester en mode incognito
+□ Vérifier console (F12)
+□ Connexion fonctionne
+
+═══════════════════════════════════════════════════════════════
+Action: Forcer rebuild SANS cache sur Vercel
+Temps: 5 minutes
+Priorité: 🚨 URGENT
+═══════════════════════════════════════════════════════════════
