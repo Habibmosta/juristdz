@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, Clock, TrendingUp, AlertCircle, Calendar, 
-  CheckCircle, XCircle, Timer, Award, Filter 
+  CheckCircle, XCircle, Timer, Award, Filter, Mail, 
+  UserCheck, UserX, Shield 
 } from 'lucide-react';
 
 interface UserWithSubscription {
@@ -12,6 +13,7 @@ interface UserWithSubscription {
   last_name: string;
   profession: string;
   is_active: boolean;
+  email_verified: boolean;
   created_at: string;
   account_status: string;
   subscription: {
@@ -29,22 +31,27 @@ interface UserWithSubscription {
 interface Stats {
   totalUsers: number;
   activeUsers: number;
+  freeUsers: number;
   trialUsers: number;
   paidUsers: number;
   expiringSoon: number;
   expired: number;
+  unverifiedEmails: number;
 }
 
 export const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<UserWithSubscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     activeUsers: 0,
+    freeUsers: 0,
     trialUsers: 0,
     paidUsers: 0,
     expiringSoon: 0,
-    expired: 0
+    expired: 0,
+    unverifiedEmails: 0
   });
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
@@ -93,6 +100,10 @@ export const AdminDashboard: React.FC = () => {
     const newStats: Stats = {
       totalUsers: usersData.length,
       activeUsers: usersData.filter(u => u.is_active).length,
+      freeUsers: usersData.filter(u => 
+        u.subscription?.plan === 'free' && 
+        u.subscription?.status === 'active'
+      ).length,
       trialUsers: usersData.filter(u => 
         u.subscription?.status === 'trial' || 
         u.subscription?.status === 'pending'
@@ -110,7 +121,8 @@ export const AdminDashboard: React.FC = () => {
         if (!u.subscription) return false;
         const expiryDate = new Date(u.subscription.trial_ends_at || u.subscription.expires_at);
         return expiryDate < now && u.subscription.status !== 'active';
-      }).length
+      }).length,
+      unverifiedEmails: usersData.filter(u => !u.email_verified).length
     };
 
     setStats(newStats);
@@ -184,21 +196,114 @@ export const AdminDashboard: React.FC = () => {
     return labels[plan] || plan;
   };
 
+  // Activer l'email d'un utilisateur
+  const handleActivateEmail = async (userId: string, userEmail: string) => {
+    if (!confirm(`Voulez-vous activer l'email de ${userEmail} ?`)) {
+      return;
+    }
+
+    setActionLoading(userId);
+
+    try {
+      const { data, error } = await supabase.rpc('admin_activate_user_email', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        alert(`✅ ${data.message}\n\nEmail: ${data.user_email}`);
+        // Recharger les données
+        await loadData();
+      } else {
+        alert(`❌ Erreur: ${data.message}`);
+      }
+    } catch (error: any) {
+      console.error('Erreur activation email:', error);
+      alert(`❌ Erreur lors de l'activation: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Désactiver un utilisateur
+  const handleDeactivateUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`⚠️ Voulez-vous désactiver le compte de ${userEmail} ?\n\nL'utilisateur ne pourra plus se connecter.`)) {
+      return;
+    }
+
+    setActionLoading(userId);
+
+    try {
+      const { data, error } = await supabase.rpc('admin_deactivate_user', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        alert(`✅ ${data.message}`);
+        await loadData();
+      } else {
+        alert(`❌ Erreur: ${data.message}`);
+      }
+    } catch (error: any) {
+      console.error('Erreur désactivation:', error);
+      alert(`❌ Erreur lors de la désactivation: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Réactiver un utilisateur
+  const handleReactivateUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Voulez-vous réactiver le compte de ${userEmail} ?`)) {
+      return;
+    }
+
+    setActionLoading(userId);
+
+    try {
+      const { data, error } = await supabase.rpc('admin_reactivate_user', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        alert(`✅ ${data.message}`);
+        await loadData();
+      } else {
+        alert(`❌ Erreur: ${data.message}`);
+      }
+    } catch (error: any) {
+      console.error('Erreur réactivation:', error);
+      alert(`❌ Erreur lors de la réactivation: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     if (filterCategory === 'all') return true;
     
     const daysRemaining = getDaysRemaining(user);
     const status = user.subscription?.status || 'unknown';
+    const plan = user.subscription?.plan || 'free';
 
     switch (filterCategory) {
+      case 'free':
+        return plan === 'free' && status === 'active';
       case 'trial':
         return status === 'trial' || status === 'pending';
       case 'paid':
-        return status === 'active' && user.subscription?.plan !== 'free';
+        return status === 'active' && plan !== 'free';
       case 'expiring':
         return daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7;
       case 'expired':
         return daysRemaining !== null && daysRemaining <= 0;
+      case 'unverified':
+        return !user.email_verified;
       default:
         return true;
     }
@@ -256,6 +361,20 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-slate-600 dark:text-slate-400 text-sm">Essais Gratuits (7j)</p>
             <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
               En période d'essai
+            </p>
+          </div>
+
+          {/* Utilisateurs Gratuits */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-slate-500/10 rounded-lg">
+                <Users className="w-6 h-6 text-slate-400" />
+              </div>
+              <span className="text-3xl font-bold">{stats.freeUsers}</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Plan Gratuit</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+              Utilisateurs gratuits
             </p>
           </div>
 
@@ -318,6 +437,20 @@ export const AdminDashboard: React.FC = () => {
               Essai → Payant
             </p>
           </div>
+
+          {/* Emails Non Vérifiés */}
+          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-500/30 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-amber-500/10 rounded-lg">
+                <Mail className="w-6 h-6 text-amber-400" />
+              </div>
+              <span className="text-3xl font-bold text-amber-400">{stats.unverifiedEmails}</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Emails Non Vérifiés</p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+              ⚠️ Nécessite activation
+            </p>
+          </div>
         </div>
 
         {/* Filtres */}
@@ -347,6 +480,17 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             Essais gratuits ({stats.trialUsers})
+          </button>
+
+          <button
+            onClick={() => setFilterCategory('free')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filterCategory === 'free'
+                ? 'bg-slate-500 text-white'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-500'
+            }`}
+          >
+            Gratuits ({stats.freeUsers})
           </button>
 
           <button
@@ -381,6 +525,18 @@ export const AdminDashboard: React.FC = () => {
           >
             Expirés ({stats.expired})
           </button>
+
+          <button
+            onClick={() => setFilterCategory('unverified')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filterCategory === 'unverified'
+                ? 'bg-amber-500 text-white'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-amber-500'
+            }`}
+          >
+            <Mail className="w-4 h-4 inline mr-1" />
+            Non vérifiés ({stats.unverifiedEmails})
+          </button>
         </div>
 
         {/* Table des Utilisateurs */}
@@ -406,6 +562,9 @@ export const AdminDashboard: React.FC = () => {
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Statut
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -479,12 +638,68 @@ export const AdminDashboard: React.FC = () => {
                           </span>
                         )}
                       </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {/* Bouton Activer Email */}
+                          {!user.email_verified && (
+                            <button
+                              onClick={() => handleActivateEmail(user.id, user.email)}
+                              disabled={actionLoading === user.id}
+                              className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Activer l'email"
+                            >
+                              {actionLoading === user.id ? (
+                                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Mail className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                          
+                          {/* Bouton Désactiver/Réactiver */}
+                          {user.is_active ? (
+                            <button
+                              onClick={() => handleDeactivateUser(user.id, user.email)}
+                              disabled={actionLoading === user.id}
+                              className="p-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Désactiver l'utilisateur"
+                            >
+                              {actionLoading === user.id ? (
+                                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <UserX className="w-4 h-4" />
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleReactivateUser(user.id, user.email)}
+                              disabled={actionLoading === user.id}
+                              className="p-2 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Réactiver l'utilisateur"
+                            >
+                              {actionLoading === user.id ? (
+                                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <UserCheck className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                          
+                          {/* Badge Email Non Vérifié */}
+                          {!user.email_verified && (
+                            <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Non vérifié
+                            </span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                       <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>Aucun utilisateur dans cette catégorie</p>
                     </td>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, User, Phone, Building, Hash, Briefcase, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { EmailVerificationModal } from './EmailVerificationModal';
+import { PlanSelectionModal } from './PlanSelectionModal';
 
 interface AuthFormProps {
   onSuccess: () => void;
@@ -17,7 +18,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [success, setSuccess] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [showPlanSelection, setShowPlanSelection] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'cabinet'>('free');
   const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -131,11 +134,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Valider les champs requis
+    if (!email || !password || !firstName || !lastName) {
+      setError('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    
+    // Afficher le modal de sélection de plan
+    setShowPlanSelection(true);
+  };
+
+  const handlePlanSelected = async (plan: 'free' | 'pro' | 'cabinet') => {
+    setSelectedPlan(plan);
+    setShowPlanSelection(false);
     setLoading(true);
     setError(null);
 
     try {
-      // Étape 1: Créer l'utilisateur dans auth.users
+      // Créer l'utilisateur avec le plan choisi
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -146,7 +163,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             profession,
             registration_number: registrationNumber,
             organization_name: organizationName,
-            phone_number: phoneNumber
+            phone_number: phoneNumber,
+            plan: plan  // ← IMPORTANT: Passer le plan choisi
           }
         }
       });
@@ -156,6 +174,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (authData.user) {
         console.log('✅ User created in auth.users:', authData.user.id);
         console.log('✅ Profile will be created automatically by trigger');
+        console.log('✅ Plan selected:', plan);
         
         // Afficher le modal de vérification d'email
         setRegisteredEmail(email);
@@ -689,6 +708,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           }}
         />
       )}
+
+      {/* Plan Selection Modal */}
+      <PlanSelectionModal
+        isOpen={showPlanSelection}
+        onClose={() => setShowPlanSelection(false)}
+        onSelectPlan={handlePlanSelected}
+        isAr={isAr}
+      />
     </div>
   );
 };

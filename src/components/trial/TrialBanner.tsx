@@ -72,6 +72,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ language }) => {
   if (accountStatus.status === 'trial') {
     const { daysRemaining, usage } = accountStatus;
     const isExpiringSoon = daysRemaining <= 2;
+    const isLastDay = daysRemaining <= 1;
 
     return (
       <div 

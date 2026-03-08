@@ -25,6 +25,7 @@ import TimeTracker from './src/components/time/TimeTracker';
 // Composants Trial System
 import TrialBanner from './src/components/trial/TrialBanner';
 import WelcomeModal from './src/components/trial/WelcomeModal';
+import { TrialExpiredModal } from './src/components/trial/TrialExpiredModal';
 import PendingAccountsManager from './src/components/admin/PendingAccountsManager';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const [translationSystemReady, setTranslationSystemReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   
   // Account status
   const { accountStatus, loading: accountLoading } = useAccountStatus();
@@ -82,6 +84,11 @@ const App: React.FC = () => {
           if (!hasSeenWelcome && profile.account_status === 'trial') {
             setShowWelcomeModal(true);
             localStorage.setItem(`welcome_seen_${profile.id}`, 'true');
+          }
+          
+          // Vérifier si l'essai a expiré
+          if (accountStatus?.status === 'expired') {
+            setShowTrialExpiredModal(true);
           }
         }
         
@@ -231,6 +238,16 @@ const App: React.FC = () => {
           language={language}
           daysRemaining={accountStatus.daysRemaining}
           onClose={() => setShowWelcomeModal(false)}
+        />
+      )}
+
+      {/* Trial Expired Modal */}
+      {showTrialExpiredModal && profile && (
+        <TrialExpiredModal
+          isOpen={showTrialExpiredModal}
+          onClose={() => setShowTrialExpiredModal(false)}
+          userPlan={(profile as any).subscription?.plan || 'pro'}
+          isAr={language === 'ar'}
         />
       )}
       
