@@ -141,11 +141,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       return;
     }
     
+    console.log('🎯 Affichage du modal de sélection de plan...');
     // Afficher le modal de sélection de plan
     setShowPlanSelection(true);
   };
 
   const handlePlanSelected = async (plan: 'free' | 'pro' | 'cabinet') => {
+    console.log('✅ Plan sélectionné:', plan);
     setSelectedPlan(plan);
     setShowPlanSelection(false);
     setLoading(true);

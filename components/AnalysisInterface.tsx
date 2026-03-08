@@ -8,7 +8,6 @@ import { AppMode, Language, Citation } from '../types';
 import { Scale, Activity, FileSearch, AlertCircle, ArrowRight, PenTool, Eye, ExternalLink, Upload, Image as ImageIcon, X, ShieldAlert, CheckCircle, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { UI_TRANSLATIONS } from '../constants';
-import { useNavigate } from 'react-router-dom';
 
 interface AnalysisInterfaceProps {
   language: Language;
@@ -16,7 +15,7 @@ interface AnalysisInterfaceProps {
 
 const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
   const t = UI_TRANSLATIONS[language];
-  const navigate = useNavigate();
+  // Removed: const navigate = useNavigate(); - not needed and causing error
   
   // Hook de gestion des limites
   const { 

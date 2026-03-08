@@ -40,8 +40,8 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           </div>
           <p className="mt-2 text-slate-600 dark:text-slate-400">
             {isAr 
-              ? 'ابدأ بخطة مجانية أو جرب Pro مجانًا لمدة 7 أيام'
-              : 'Commencez avec un plan gratuit ou essayez Pro gratuitement pendant 7 jours'}
+              ? 'انقر على الخطة التي تريدها ثم انقر على "متابعة"'
+              : '👆 Cliquez sur le plan de votre choix, puis sur "Continuer"'}
           </p>
         </div>
 
@@ -50,10 +50,10 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           {/* Plan Gratuit */}
           <div
             onClick={() => setSelectedPlan('free')}
-            className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all ${
+            className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all hover:scale-105 hover:shadow-xl ${
               selectedPlan === 'free'
-                ? 'border-slate-500 bg-slate-50 dark:bg-slate-800/50'
-                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                ? 'border-slate-500 bg-slate-50 dark:bg-slate-800/50 shadow-lg scale-105'
+                : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'
             }`}
           >
             {selectedPlan === 'free' && (
@@ -111,10 +111,10 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           {/* Plan Pro - RECOMMANDÉ */}
           <div
             onClick={() => setSelectedPlan('pro')}
-            className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all ${
+            className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all hover:scale-105 hover:shadow-2xl ${
               selectedPlan === 'pro'
-                ? 'border-legal-gold bg-legal-gold/5 dark:bg-legal-gold/10'
-                : 'border-slate-200 dark:border-slate-700 hover:border-legal-gold/50'
+                ? 'border-legal-gold bg-legal-gold/5 dark:bg-legal-gold/10 shadow-2xl scale-105'
+                : 'border-slate-200 dark:border-slate-700 hover:border-legal-gold'
             }`}
           >
             {/* Badge Recommandé */}
@@ -197,10 +197,10 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
           {/* Plan Cabinet */}
           <div
             onClick={() => setSelectedPlan('cabinet')}
-            className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all ${
+            className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all hover:scale-105 hover:shadow-xl ${
               selectedPlan === 'cabinet'
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg scale-105'
+                : 'border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500'
             }`}
           >
             {selectedPlan === 'cabinet' && (
@@ -270,21 +270,27 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
 
         {/* Footer */}
         <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-slate-600 dark:text-slate-400">
               {selectedPlan === 'free' ? (
-                isAr ? 'لا حاجة لبطاقة ائتمان' : 'Aucune carte requise'
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  {isAr ? 'لا حاجة لبطاقة ائتمان' : 'Aucune carte requise'}
+                </span>
               ) : (
-                isAr 
-                  ? 'يمكنك الإلغاء في أي وقت خلال الفترة التجريبية'
-                  : 'Annulez à tout moment pendant l\'essai'
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-legal-gold" />
+                  {isAr 
+                    ? 'يمكنك الإلغاء في أي وقت خلال الفترة التجريبية'
+                    : 'Annulez à tout moment pendant l\'essai'}
+                </span>
               )}
             </div>
             <button
               onClick={handleContinue}
-              className="px-6 py-3 bg-legal-gold hover:bg-legal-gold/90 text-slate-900 font-semibold rounded-lg transition-colors"
+              className="w-full sm:w-auto px-8 py-4 bg-legal-gold hover:bg-legal-gold/90 text-slate-900 font-bold text-lg rounded-lg transition-all hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              {isAr ? 'متابعة' : 'Continuer'}
+              {isAr ? '✓ متابعة' : '✓ Continuer'}
             </button>
           </div>
         </div>
