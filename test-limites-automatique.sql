@@ -6,17 +6,115 @@
 -- Durée: ~5 minutes
 -- ============================================
 
--- IMPORTANT: Remplacer 'test-user-id' par votre véritable user_id
-\set test_user_id 'test-user-id'
+-- ============================================
+-- OPTION 1: UTILISER UN UTILISATEUR EXISTANT
+-- ============================================
+-- Décommentez cette ligne et remplacez par votre user_id réel:
+-- \set test_user_id 'votre-user-id-ici'
 
 -- ============================================
--- PRÉPARATION: Créer un utilisateur de test
+-- OPTION 2: CRÉER UN NOUVEL UTILISATEUR DE TEST (RECOMMANDÉ)
+-- ============================================
+-- Le script créera automatiquement un utilisateur de test
+
+-- ============================================
+-- PRÉPARATION: Créer/Récupérer un utilisateur de test
 -- ============================================
 
 DO $$
 DECLARE
-  v_user_id UUID := 'test-user-id'::UUID;
+  v_user_id UUID;
+  v_test_email TEXT := 'test-limites@juristdz.com';
+  v_user_exists BOOLEAN;
 BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '========================================';
+  RAISE NOTICE 'PRÉPARATION: Utilisateur de Test';
+  RAISE NOTICE '========================================';
+  
+  -- Vérifier si un utilisateur de test existe déjà
+  SELECT EXISTS(
+    SELECT 1 FROM auth.users WHERE email = v_test_email
+  ) INTO v_user_exists;
+  
+  IF v_user_exists THEN
+    -- Récupérer l'ID de l'utilisateur existant
+    SELECT id INTO v_user_id FROM auth.users WHERE email = v_test_email;
+    RAISE NOTICE '📋 Utilisateur de test existant trouvé: %', v_user_id;
+  ELSE
+    -- Créer un nouvel utilisateur de test
+    -- Note: Ceci nécessite les permissions appropriées
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      created_at,
+      updated_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      is_super_admin,
+      confirmation_token,
+      email_change,
+      email_change_token_new,
+      recovery_token
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      gen_random_uuid(),
+      'authenticated',
+      'authenticated',
+      v_test_email,
+      crypt('TestPassword123!', gen_salt('bf')),
+      NOW(),
+      NOW(),
+      NOW(),
+      '{"provider":"email","providers":["email"]}',
+      '{}',
+      false,
+      '',
+      '',
+      '',
+      ''
+    )
+    RETURNING id INTO v_user_id;
+    
+    RAISE NOTICE '✅ Nouvel utilisateur de test créé: %', v_user_id;
+    RAISE NOTICE '📧 Email: %', v_test_email;
+    RAISE NOTICE '🔑 Mot de passe: TestPassword123!';
+  END IF;
+  
+  -- Créer ou mettre à jour le profil
+  INSERT INTO profiles (
+    id,
+    email,
+    first_name,
+    last_name,
+    profession,
+    is_active,
+    email_verified,
+    created_at,
+    updated_at
+  ) VALUES (
+    v_user_id,
+    v_test_email,
+    'Test',
+    'Limites',
+    'avocat',
+    true,
+    true,
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id)
+  DO UPDATE SET
+    email = v_test_email,
+    is_active = true,
+    email_verified = true,
+    updated_at = NOW();
+  
   -- Créer ou mettre à jour l'abonnement de test
   INSERT INTO subscriptions (
     user_id,
@@ -67,7 +165,15 @@ BEGIN
     last_reset_date = CURRENT_DATE,
     last_monthly_reset = DATE_TRUNC('month', CURRENT_DATE);
 
-  RAISE NOTICE '✅ Utilisateur de test créé/réinitialisé: %', v_user_id;
+  RAISE NOTICE '✅ Abonnement et stats initialisés';
+  RAISE NOTICE '';
+  RAISE NOTICE '🎯 USER_ID À UTILISER POUR LES TESTS: %', v_user_id;
+  RAISE NOTICE '📝 Copiez cet ID pour l''utiliser dans les tests suivants';
+  RAISE NOTICE '';
+  
+  -- Stocker l'ID dans une variable temporaire pour les tests suivants
+  -- Note: Remplacer manuellement 'test-user-id' par cet ID dans les tests ci-dessous
+  
 END $$;
 
 -- ============================================
