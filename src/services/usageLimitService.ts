@@ -8,8 +8,8 @@
  * - Limites de fonctionnalités
  */
 
-import { supabase } from '../src/lib/supabase';
-import { SubscriptionPlan } from '../types';
+import { supabase } from '../lib/supabase';
+import { SubscriptionPlan } from '../../types';
 
 // Types de limites
 export enum LimitType {

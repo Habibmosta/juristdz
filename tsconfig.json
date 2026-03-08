@@ -65,7 +65,7 @@
     "services/**/*",
     "types/**/*",
     "utils/**/*"
-, "src/hooks/useUsageLimits.ts"  ],
+, "src/hooks/useUsageLimits.ts", "src/services/usageLimitService.ts"  ],
   "exclude": [
     "node_modules",
     "dist",

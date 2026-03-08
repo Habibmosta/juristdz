@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { X, AlertTriangle, Clock, CreditCard, Database, Zap, TrendingUp } from 'lucide-react';
-import { LimitCheckResult, LimitType, LimitStatus } from '../services/usageLimitService';
+import { LimitCheckResult, LimitType, LimitStatus } from '../src/services/usageLimitService';
 import { Language } from '../types';
 
 interface LimitReachedModalProps {
