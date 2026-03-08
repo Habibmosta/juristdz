@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════════
+🚨 ACTION IMMÉDIATE REQUISE - ERREUR PRODUCTION VERCEL
+═══════════════════════════════════════════════════════════════
+
+PROBLÈME DÉTECTÉ:
+❌ L'application en production sur Vercel ne peut pas se connecter
+❌ Erreur: ERR_NAME_NOT_RESOLVED
+❌ Cause: Variables d'environnement manquantes sur Vercel
+
+───────────────────────────────────────────────────────────────
+⚡ SOLUTION RAPIDE (5 MINUTES)
+───────────────────────────────────────────────────────────────
+
+ÉTAPE 1: Ouvrir Vercel
+→ Allez sur vercel.com
+→ Connectez-vous
+→ Cliquez sur votre projet "juristdz"
+→ Cliquez sur "Settings"
+→ Cliquez sur "Environment Variables"
+
+ÉTAPE 2: Ajouter 2 Variables CRITIQUES
+
+Variable 1:
+  Name: VITE_SUPABASE_URL
+  Value: https://fcteljnmcdelbratudnc.supabase.co
+  Environments: ☑ Production ☑ Preview ☑ Development
+  → Cliquez SAVE
+
+Variable 2:
+  Name: VITE_SUPABASE_ANON_KEY
+  Value: [Copiez depuis votre fichier .env.local]
+  Environments: ☑ Production ☑ Preview ☑ Development
+  → Cliquez SAVE
+
+ÉTAPE 3: Redéployer
+
+Option A (Plus Simple):
+  git commit --allow-empty -m "chore: trigger redeploy"
+  git push origin main
+
+Option B (Via Vercel):
+  → Allez dans "Deployments"
+  → Cliquez sur ••• du dernier déploiement
+  → Cliquez "Redeploy"
+
+───────────────────────────────────────────────────────────────
+📚 DOCUMENTATION DISPONIBLE
+───────────────────────────────────────────────────────────────
+
+1. SOLUTION_RAPIDE_VERCEL.md
+   → Guide visuel en 3 étapes
+
+2. CONFIGURATION_VERCEL_URGENT.md
+   → Guide complet avec captures d'écran
+
+3. verifier-env-vercel.cjs
+   → Script pour vérifier vos variables locales
+   → Usage: node verifier-env-vercel.cjs
+
+───────────────────────────────────────────────────────────────
+⏱️ TEMPS ESTIMÉ
+───────────────────────────────────────────────────────────────
+
+Ajout des variables: 2 minutes
+Redéploiement: 2-3 minutes
+TOTAL: ~5 minutes
+
+───────────────────────────────────────────────────────────────
+✅ VÉRIFICATION
+───────────────────────────────────────────────────────────────
+
+Après 5 minutes:
+1. Ouvrez votre site en production
+2. Essayez de vous connecter
+3. Ça devrait fonctionner!
+
+Si problème persiste:
+→ Vérifiez que "Production" est coché pour chaque variable
+→ Attendez 5 minutes après le redéploiement
+→ Videz le cache du navigateur (Ctrl+Shift+Delete)
+→ Essayez en mode incognito
+
+───────────────────────────────────────────────────────────────
+🎯 POURQUOI CE PROBLÈME?
+───────────────────────────────────────────────────────────────
+
+Vercel n'a PAS accès à votre fichier .env.local local.
+Vous devez configurer les variables manuellement sur Vercel.
+
+C'est une étape UNIQUE à faire une seule fois.
+
+───────────────────────────────────────────────────────────────
+📞 BESOIN D'AIDE?
+───────────────────────────────────────────────────────────────
+
+1. Consultez SOLUTION_RAPIDE_VERCEL.md
+2. Exécutez: node verifier-env-vercel.cjs
+3. Vérifiez les logs Vercel (Deployments > Logs)
+
+═══════════════════════════════════════════════════════════════
+Date: 7 mars 2026
+Priorité: 🚨 URGENT
+Action: Configuration Vercel Requise
+═══════════════════════════════════════════════════════════════

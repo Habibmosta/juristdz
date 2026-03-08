@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessageToGemini } from '../services/geminiService';
 import { autoTranslationService } from '../services/autoTranslationService';
-import { useUsageLimits } from '../hooks/useUsageLimits';
+import { useUsageLimits } from '../src/hooks/useUsageLimits';
 import LimitReachedModal from './LimitReachedModal';
 import { 
   TEMPLATES, 

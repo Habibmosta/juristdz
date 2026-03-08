@@ -3,7 +3,7 @@ import { Message, Sender, AppMode, Language, UserFeedback } from '../types';
 import { sendMessageToGemini } from '../services/geminiService';
 import { databaseService } from '../services/databaseService';
 import { improvedTranslationService } from '../services/improvedTranslationService';
-import { useUsageLimits } from '../hooks/useUsageLimits';
+import { useUsageLimits } from '../src/hooks/useUsageLimits';
 import LimitReachedModal from './LimitReachedModal';
 import { Send, Bot, User, BookOpen, ExternalLink, RefreshCw, Mic, ThumbsUp, ThumbsDown, MessageSquare, Share2, Check, Languages, AlertTriangle, History, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
