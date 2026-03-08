@@ -3,9 +3,12 @@ import { Message, Sender, AppMode, Language, UserFeedback } from '../types';
 import { sendMessageToGemini } from '../services/geminiService';
 import { databaseService } from '../services/databaseService';
 import { improvedTranslationService } from '../services/improvedTranslationService';
+import { useUsageLimits } from '../hooks/useUsageLimits';
+import LimitReachedModal from './LimitReachedModal';
 import { Send, Bot, User, BookOpen, ExternalLink, RefreshCw, Mic, ThumbsUp, ThumbsDown, MessageSquare, Share2, Check, Languages, AlertTriangle, History, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { UI_TRANSLATIONS } from '../constants';
+import { useNavigate } from 'react-router-dom';
 
 interface ChatInterfaceProps {
   language: Language;
@@ -32,6 +35,18 @@ interface SearchSession {
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
   const t = UI_TRANSLATIONS[language];
+  const navigate = useNavigate();
+  
+  // Hook de gestion des limites
+  const { 
+    checkLimits, 
+    deductCredits, 
+    limitResult, 
+    showLimitModal, 
+    closeLimitModal,
+    isChecking
+  } = useUsageLimits();
+  
   const [input, setInput] = useState('');
   const [currentMessages, setCurrentMessages] = useState<TranslatableMessage[]>([]);
   const [searchSessions, setSearchSessions] = useState<SearchSession[]>([]);
@@ -151,7 +166,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isChecking) return;
+    
+    // ✅ VÉRIFIER LES LIMITES AVANT L'ACTION
+    console.log('🔍 Vérification des limites pour recherche juridique...');
+    const allowed = await checkLimits('research');
+    
+    if (!allowed) {
+      console.log('❌ Action bloquée par les limites');
+      return; // Le modal s'affiche automatiquement
+    }
+    
+    console.log('✅ Limites OK, envoi du message...');
     
     const detectedLang = improvedTranslationService.detectLanguage(input);
     const userMsg: TranslatableMessage = { 
@@ -194,37 +220,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
       parts: [{ text: m.originalText || m.text }] 
     }));
     
-    const response = await sendMessageToGemini(userMsg.originalText || userMsg.text, history, AppMode.RESEARCH, detectedLang);
-    
-    // CRITICAL: Bot response is always in the same language as the user query initially
-    const botMsg: TranslatableMessage = { 
-      id: (Date.now() + 1).toString(), 
-      text: response.text, 
-      sender: Sender.BOT, 
-      timestamp: new Date(), 
-      citations: response.citations,
-      originalText: response.text,
-      originalLang: detectedLang, // Bot responds in same language as user query
-      isTranslated: false,
-      translationQuality: 'excellent'
-    };
-    
-    // CRITICAL FIX: Don't auto-translate the response here
-    // Let the useEffect handle translation when user changes language
-    
-    // Update current messages and session
-    const updatedMessages = [userMsg, botMsg];
-    setCurrentMessages(updatedMessages);
-    
-    // Update the session with the bot response
-    setSearchSessions(prev => prev.map(session => 
-      session.id === newSessionId 
-        ? { ...session, messages: updatedMessages }
-        : session
-    ));
-    
-    await databaseService.saveMessage(userId, botMsg);
-    setIsLoading(false);
+    try {
+      const response = await sendMessageToGemini(userMsg.originalText || userMsg.text, history, AppMode.RESEARCH, detectedLang);
+      
+      // CRITICAL: Bot response is always in the same language as the user query initially
+      const botMsg: TranslatableMessage = { 
+        id: (Date.now() + 1).toString(), 
+        text: response.text, 
+        sender: Sender.BOT, 
+        timestamp: new Date(), 
+        citations: response.citations,
+        originalText: response.text,
+        originalLang: detectedLang, // Bot responds in same language as user query
+        isTranslated: false,
+        translationQuality: 'excellent'
+      };
+      
+      // CRITICAL FIX: Don't auto-translate the response here
+      // Let the useEffect handle translation when user changes language
+      
+      // Update current messages and session
+      const updatedMessages = [userMsg, botMsg];
+      setCurrentMessages(updatedMessages);
+      
+      // Update the session with the bot response
+      setSearchSessions(prev => prev.map(session => 
+        session.id === newSessionId 
+          ? { ...session, messages: updatedMessages }
+          : session
+      ));
+      
+      await databaseService.saveMessage(userId, botMsg);
+      
+      // ✅ DÉDUIRE 1 CRÉDIT APRÈS SUCCÈS
+      console.log('💰 Déduction de 1 crédit pour recherche...');
+      await deductCredits(1);
+      console.log('✅ Crédit déduit avec succès');
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'envoi du message:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Auto-translate messages when language changes
@@ -593,9 +630,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
       <div className="p-4 bg-white dark:bg-slate-900 border-t shrink-0">
         <div className="max-w-4xl mx-auto flex gap-2 items-end">
           <textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder={t.chat_placeholder} className="flex-1 px-4 py-4 border rounded-xl outline-none resize-none dark:bg-slate-800" rows={1} />
-          <button onClick={handleSend} className="p-4 bg-legal-blue text-white rounded-xl"><Send size={20} /></button>
+          <button 
+            onClick={handleSend} 
+            disabled={isLoading || isChecking}
+            className="p-4 bg-legal-blue text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={20} />
+          </button>
         </div>
       </div>
+      
+      {/* Modal de limite atteinte */}
+      {showLimitModal && limitResult && (
+        <LimitReachedModal
+          limitResult={limitResult}
+          language={language}
+          onClose={closeLimitModal}
+          onUpgrade={() => navigate('/billing')}
+        />
+      )}
     </div>
   );
 };

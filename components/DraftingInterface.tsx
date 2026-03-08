@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessageToGemini } from '../services/geminiService';
 import { autoTranslationService } from '../services/autoTranslationService';
+import { useUsageLimits } from '../hooks/useUsageLimits';
+import LimitReachedModal from './LimitReachedModal';
 import { 
   TEMPLATES, 
   NOTAIRE_TEMPLATES, 
@@ -15,6 +17,7 @@ import { AppMode, Language, Citation, UserRole } from '../types';
 import { FileText, Download, CheckCircle, List, ChevronRight, PenTool, Layout, Eye, ExternalLink, Printer, Mic, MicOff, Share2, Check, Edit3, Save, Scale, Settings, Languages } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import StructuredLegalForm from './StructuredLegalForm';
+import { useNavigate } from 'react-router-dom';
 
 interface DraftingInterfaceProps {
   language: Language;
@@ -23,6 +26,17 @@ interface DraftingInterfaceProps {
 
 const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRole = UserRole.AVOCAT }) => {
   const t = UI_TRANSLATIONS[language];
+  const navigate = useNavigate();
+  
+  // Hook de gestion des limites
+  const { 
+    checkLimits, 
+    deductCredits, 
+    limitResult, 
+    showLimitModal, 
+    closeLimitModal,
+    isChecking
+  } = useUsageLimits();
   
   // Sélectionner les templates selon le rôle utilisateur
   const getTemplatesForRole = (role: UserRole) => {
@@ -128,6 +142,17 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
   const handleGenerate = async () => {
     if (!selectedTemplate) return;
     
+    // ✅ VÉRIFIER LES LIMITES AVANT L'ACTION
+    console.log('🔍 Vérification des limites pour rédaction...');
+    const allowed = await checkLimits('drafting');
+    
+    if (!allowed) {
+      console.log('❌ Action bloquée par les limites');
+      return; // Le modal s'affiche automatiquement
+    }
+    
+    console.log('✅ Limites OK, génération du document...');
+    
     let prompt = getPrompt(selectedTemplate);
     
     if (useStructuredForm && Object.keys(structuredFormData).length > 0) {
@@ -227,15 +252,26 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
     
     setMobileTab('preview');
     setIsGenerating(true);
-    const response = await sendMessageToGemini(prompt, [], AppMode.DRAFTING, language);
     
-    // Store both original and current document
-    setOriginalDoc(response.text);
-    setOriginalDocLang(language);
-    setGeneratedDoc(response.text);
-    setIsDocTranslated(false);
-    
-    setIsGenerating(false);
+    try {
+      const response = await sendMessageToGemini(prompt, [], AppMode.DRAFTING, language);
+      
+      // Store both original and current document
+      setOriginalDoc(response.text);
+      setOriginalDocLang(language);
+      setGeneratedDoc(response.text);
+      setIsDocTranslated(false);
+      
+      // ✅ DÉDUIRE 2 CRÉDITS APRÈS SUCCÈS (rédaction coûte plus cher)
+      console.log('💰 Déduction de 2 crédits pour rédaction...');
+      await deductCredits(2);
+      console.log('✅ Crédits déduits avec succès');
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de la génération:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handlePrint = () => {
@@ -351,8 +387,8 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
          <div className="mt-auto p-4 border-t dark:border-slate-800">
             <button 
               onClick={handleGenerate}
-              disabled={isGenerating || (!useStructuredForm && !details.trim()) || (useStructuredForm && Object.keys(structuredFormData).length === 0 && !details.trim())}
-              className="w-full py-4 bg-legal-blue dark:bg-legal-gold text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-50"
+              disabled={isGenerating || isChecking || (!useStructuredForm && !details.trim()) || (useStructuredForm && Object.keys(structuredFormData).length === 0 && !details.trim())}
+              className="w-full py-4 bg-legal-blue dark:bg-legal-gold text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
                {isGenerating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FileText size={18} />}
                {isGenerating ? t.draft_btn_generating : t.draft_btn_generate}
@@ -426,6 +462,16 @@ const DraftingInterface: React.FC<DraftingInterfaceProps> = ({ language, userRol
          <button onClick={() => setMobileTab('config')} className={`flex-1 py-3 text-xs font-bold rounded-xl ${mobileTab === 'config' ? 'bg-legal-gold text-white' : 'text-slate-500'}`}>Configuration</button>
          <button onClick={() => setMobileTab('preview')} className={`flex-1 py-3 text-xs font-bold rounded-xl ${mobileTab === 'preview' ? 'bg-legal-gold text-white' : 'text-slate-500'}`}>Document</button>
       </div>
+      
+      {/* Modal de limite atteinte */}
+      {showLimitModal && limitResult && (
+        <LimitReachedModal
+          limitResult={limitResult}
+          language={language}
+          onClose={closeLimitModal}
+          onUpgrade={() => navigate('/billing')}
+        />
+      )}
     </div>
   );
 };

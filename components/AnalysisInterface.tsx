@@ -1,11 +1,14 @@
 
 import React, { useState, useRef } from 'react';
 import { sendMessageToGemini } from '../services/geminiService';
+import { useUsageLimits } from '../hooks/useUsageLimits';
+import LimitReachedModal from './LimitReachedModal';
 import { AppMode, Language, Citation } from '../types';
 // Fixed: Added missing Loader2 import
 import { Scale, Activity, FileSearch, AlertCircle, ArrowRight, PenTool, Eye, ExternalLink, Upload, Image as ImageIcon, X, ShieldAlert, CheckCircle, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { UI_TRANSLATIONS } from '../constants';
+import { useNavigate } from 'react-router-dom';
 
 interface AnalysisInterfaceProps {
   language: Language;
@@ -13,6 +16,18 @@ interface AnalysisInterfaceProps {
 
 const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
   const t = UI_TRANSLATIONS[language];
+  const navigate = useNavigate();
+  
+  // Hook de gestion des limites
+  const { 
+    checkLimits, 
+    deductCredits, 
+    limitResult, 
+    showLimitModal, 
+    closeLimitModal,
+    isChecking
+  } = useUsageLimits();
+  
   const [legalText, setLegalText] = useState('');
   const [analysisResult, setAnalysisResult] = useState('');
   const [citations, setCitations] = useState<Citation[]>([]);
@@ -44,6 +59,18 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
 
   const handleAnalyze = async () => {
     if (!legalText.trim() && !selectedImage) return;
+    
+    // ✅ VÉRIFIER LES LIMITES AVANT L'ACTION
+    console.log('🔍 Vérification des limites pour analyse...');
+    const allowed = await checkLimits('analysis');
+    
+    if (!allowed) {
+      console.log('❌ Action bloquée par les limites');
+      return; // Le modal s'affiche automatiquement
+    }
+    
+    console.log('✅ Limites OK, analyse en cours...');
+    
     setMobileTab('result');
     setIsAnalyzing(true);
     setAnalysisResult('');
@@ -52,10 +79,21 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
     const task = tasks.find(t => t.id === activeTask);
     let prompt = `Tâche : ${task?.prompt}\nDocument à analyser : ${legalText}`;
 
-    const response = await sendMessageToGemini(prompt, [], AppMode.ANALYSIS, language, selectedImage || undefined);
-    setAnalysisResult(response.text);
-    setCitations(response.citations || []);
-    setIsAnalyzing(false);
+    try {
+      const response = await sendMessageToGemini(prompt, [], AppMode.ANALYSIS, language, selectedImage || undefined);
+      setAnalysisResult(response.text);
+      setCitations(response.citations || []);
+      
+      // ✅ DÉDUIRE 3 CRÉDITS APRÈS SUCCÈS (analyse coûte le plus cher)
+      console.log('💰 Déduction de 3 crédits pour analyse...');
+      await deductCredits(3);
+      console.log('✅ Crédits déduits avec succès');
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'analyse:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -111,8 +149,8 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
         <div className="p-6 border-t dark:border-slate-800">
            <button 
              onClick={handleAnalyze}
-             disabled={isAnalyzing || (!legalText.trim() && !selectedImage)}
-             className="w-full py-4 bg-legal-blue dark:bg-legal-gold text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all disabled:opacity-50"
+             disabled={isAnalyzing || isChecking || (!legalText.trim() && !selectedImage)}
+             className="w-full py-4 bg-legal-blue dark:bg-legal-gold text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
            >
               {isAnalyzing ? <Loader2 className="animate-spin" /> : <ShieldAlert size={20} />}
               {isAnalyzing ? t.analysis_btn_running : t.analysis_btn_start}
@@ -179,6 +217,16 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
          <button onClick={() => setMobileTab('input')} className={`flex-1 py-3 text-xs font-bold rounded-xl ${mobileTab === 'input' ? 'bg-legal-gold text-white' : 'text-slate-500'}`}>Saisie</button>
          <button onClick={() => setMobileTab('result')} className={`flex-1 py-3 text-xs font-bold rounded-xl ${mobileTab === 'result' ? 'bg-legal-gold text-white' : 'text-slate-500'}`}>Résultat</button>
       </div>
+      
+      {/* Modal de limite atteinte */}
+      {showLimitModal && limitResult && (
+        <LimitReachedModal
+          limitResult={limitResult}
+          language={language}
+          onClose={closeLimitModal}
+          onUpgrade={() => navigate('/billing')}
+        />
+      )}
     </div>
   );
 };
