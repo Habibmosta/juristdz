@@ -351,7 +351,7 @@ const App: React.FC = () => {
       {currentMode === AppMode.DOCS && (
         <Documentation 
           language={language}
-          userRole={user?.profession}
+          userRole={profile?.profession as UserRole}
         />
       )}
     </RoleBasedLayout>
