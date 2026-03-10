@@ -166,7 +166,7 @@ const Documentation: React.FC<DocumentationProps> = ({ language, userRole = User
       // Support
       support_title: "Support & Assistance",
       support_desc: "Besoin d'aide ? Nous sommes là pour vous.",
-      support_email: "Email: support@juristdz.com",
+      support_email: "Email: juristdz@outlook.com",
       support_hours: "Disponibilité: Lun-Ven 9h-18h",
       support_response: "Temps de réponse: < 24h",
       
@@ -314,7 +314,7 @@ const Documentation: React.FC<DocumentationProps> = ({ language, userRole = User
       // Support
       support_title: "الدعم والمساعدة",
       support_desc: "تحتاج مساعدة؟ نحن هنا من أجلك.",
-      support_email: "البريد الإلكتروني: support@juristdz.com",
+      support_email: "البريد الإلكتروني: juristdz@outlook.com",
       support_hours: "التوفر: الإثنين-الجمعة 9ص-6م",
       support_response: "وقت الاستجابة: < 24 ساعة",
       
