@@ -325,6 +325,7 @@ const App: React.FC = () => {
           language={language} 
           userRole={profile.activeRole}
           userId={profile.id}
+          user={profile}
         />
       )}
       {currentMode === AppMode.ANALYSIS && (

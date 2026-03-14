@@ -346,6 +346,13 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     return result;
   };
 
+  // Sync userProfile when user prop changes (loads professionalInfo from DB)
+  useEffect(() => {
+    if (user) {
+      setUserProfile(user);
+    }
+  }, [user]);
+
   // Auto translation
   useEffect(() => {
     autoTranslationService.registerComponent(componentId, handleAutoTranslation);
@@ -400,17 +407,16 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
   const handleSaveProfessionalInfo = async (professionalInfo: ProfessionalInfo) => {
     try {
-      // TODO: Sauvegarder dans la base de données
-      // await updateUserProfile(userProfile.id, { professionalInfo });
-      
+      const { supabase } = await import('../src/lib/supabase');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ professional_info: professionalInfo })
+        .eq('id', userId);
+
+      if (error) throw error;
+
       setUserProfile({ ...userProfile, professionalInfo });
       setShowProfileModal(false);
-      
-      // Message de confirmation
-      alert(language === 'ar' ? 
-        'تم حفظ معلوماتك المهنية بنجاح' :
-        'Vos informations professionnelles ont été enregistrées avec succès'
-      );
     } catch (error) {
       console.error('Error saving professional info:', error);
       alert(language === 'ar' ? 
@@ -1091,7 +1097,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+          <div className="h-full flex flex-col items-center justify-center text-center relative">
             <Layers size={80} className="mb-6 text-slate-300" />
             <h3 className="text-xl font-serif">
               {language === 'ar' ? 'جاهز للتوليد' : 'Prêt pour la génération'}
@@ -1102,6 +1108,31 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
                 : 'Complétez les étapes et cliquez sur Générer pour obtenir un document juridique complet'}
             </p>
           </div>
+          
+          {/* Bannière alerte profil manquant */}
+          {!userProfile.professionalInfo && userRole !== UserRole.ETUDIANT && userRole !== UserRole.MAGISTRAT && (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-4">
+              <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600 rounded-xl p-4 flex items-start gap-3 shadow-lg">
+                <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+                <div className="flex-1">
+                  <p className="font-bold text-amber-800 dark:text-amber-200 text-sm">
+                    {language === 'ar' ? 'معلوماتك المهنية غير مكتملة' : 'Profil professionnel incomplet'}
+                  </p>
+                  <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
+                    {language === 'ar' 
+                      ? 'أضف معلوماتك المهنية لإنشاء وثائق قانونية تحمل توقيعك'
+                      : 'Ajoutez vos informations pour que vos documents portent votre signature'}
+                  </p>
+                  <button
+                    onClick={() => setShowProfileModal(true)}
+                    className="mt-2 px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors"
+                  >
+                    {language === 'ar' ? 'إكمال الملف الشخصي' : 'Compléter mon profil'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         )}
       </div>
 

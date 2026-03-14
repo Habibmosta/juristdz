@@ -77,11 +77,12 @@ export const useAuth = () => {
           phoneNumber: data.phone_number || '',
           languages: data.languages || ['fr'],
           specializations: data.specializations || [],
-          roles: [mapProfessionToRole(data.profession)], // Single role for now
+          roles: [mapProfessionToRole(data.profession)],
           activeRole: mapProfessionToRole(data.profession),
           isActive: data.is_active,
           emailVerified: data.email_verified,
-          mfaEnabled: data.mfa_enabled
+          mfaEnabled: data.mfa_enabled,
+          professionalInfo: data.professional_info || undefined
         };
 
         setProfile(enhancedProfile);
@@ -120,11 +121,28 @@ export const useAuth = () => {
         .eq('id', user.id);
 
       if (error) throw error;
-
-      // Reload profile
       await loadProfile(user.id);
     } catch (error) {
       console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
+
+  const updateProfessionalInfo = async (professionalInfo: import('../../types').ProfessionalInfo) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ professional_info: professionalInfo })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Mettre à jour le profil local sans recharger
+      setProfile(prev => prev ? { ...prev, professionalInfo } : prev);
+    } catch (error) {
+      console.error('Error updating professional info:', error);
       throw error;
     }
   };
@@ -135,7 +153,8 @@ export const useAuth = () => {
     session,
     loading,
     signOut,
-    updateProfile
+    updateProfile,
+    updateProfessionalInfo
   };
 };
 
