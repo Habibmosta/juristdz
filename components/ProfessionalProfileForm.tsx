@@ -12,7 +12,8 @@ import {
   CheckCircle,
   Scale,
   FileSignature,
-  Gavel
+  Gavel,
+  DollarSign
 } from 'lucide-react';
 
 interface ProfessionalProfileFormProps {
@@ -496,6 +497,21 @@ const ProfessionalProfileForm: React.FC<ProfessionalProfileFormProps> = ({
                 value={formData.anneesExperience || ''}
                 onChange={(e) => handleChange('anneesExperience', parseInt(e.target.value))}
                 placeholder="5"
+                min="0"
+                className="w-full p-3 border border-slate-300 rounded-lg dark:bg-slate-800 dark:border-slate-700"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                <DollarSign size={16} className="inline mr-2" />
+                {isAr ? 'الأتعاب بالساعة (دج)' : 'Taux horaire (DA)'}
+              </label>
+              <input
+                type="number"
+                value={formData.hourlyRate || ''}
+                onChange={(e) => handleChange('hourlyRate', parseInt(e.target.value))}
+                placeholder="15000"
                 min="0"
                 className="w-full p-3 border border-slate-300 rounded-lg dark:bg-slate-800 dark:border-slate-700"
               />

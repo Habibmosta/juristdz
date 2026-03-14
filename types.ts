@@ -76,6 +76,7 @@ export interface ProfessionalInfo {
   wilayaExercice?: string;          // Wilaya principale d'exercice
   anneesExperience?: number;        // Années d'expérience
   specialites?: string[];           // Spécialités juridiques
+  hourlyRate?: number;              // Taux horaire en DA
 }
 
 // Enhanced user profile for role-based access

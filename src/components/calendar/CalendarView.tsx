@@ -350,12 +350,65 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
         </div>
       )}
 
-      {/* Week/Day View - À implémenter */}
+      {/* Week/Day View */}
       {(view === 'week' || view === 'day') && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 p-6">
-          <p className="text-center text-slate-500">
-            {isAr ? 'عرض الأسبوع/اليوم قيد التطوير' : 'Vue semaine/jour en développement'}
-          </p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 overflow-hidden">
+          {/* Jours de la semaine / jour sélectionné */}
+          {(() => {
+            const days: Date[] = [];
+            if (view === 'week') {
+              const start = new Date(currentDate);
+              start.setDate(start.getDate() - start.getDay() + 1); // Lundi
+              for (let i = 0; i < 7; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                days.push(d);
+              }
+            } else {
+              days.push(selectedDate || currentDate);
+            }
+            const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 7h à 20h
+            return (
+              <div className="overflow-x-auto">
+                {/* Header jours */}
+                <div className={`grid border-b dark:border-slate-700`} style={{ gridTemplateColumns: `60px repeat(${days.length}, 1fr)` }}>
+                  <div className="p-2" />
+                  {days.map((day, i) => {
+                    const isToday = day.toDateString() === new Date().toDateString();
+                    return (
+                      <div key={i} className={`p-3 text-center border-l dark:border-slate-700 ${isToday ? 'bg-legal-gold/10' : ''}`}>
+                        <p className="text-xs text-slate-500">{day.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR', { weekday: 'short' })}</p>
+                        <p className={`text-lg font-bold ${isToday ? 'text-legal-gold' : ''}`}>{day.getDate()}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Grille horaire */}
+                <div className="max-h-[500px] overflow-y-auto">
+                  {hours.map(hour => (
+                    <div key={hour} className={`grid border-b dark:border-slate-800`} style={{ gridTemplateColumns: `60px repeat(${days.length}, 1fr)`, minHeight: '60px' }}>
+                      <div className="p-2 text-xs text-slate-400 text-right pr-3 pt-1">{hour}:00</div>
+                      {days.map((day, i) => {
+                        const dayEvents = events.filter(ev => {
+                          const evDate = new Date(ev.start_time);
+                          return evDate.toDateString() === day.toDateString() && evDate.getHours() === hour;
+                        });
+                        return (
+                          <div key={i} className="border-l dark:border-slate-700 p-1 relative">
+                            {dayEvents.map(ev => (
+                              <div key={ev.id} className={`text-xs p-1 rounded mb-1 truncate font-medium ${getEventColor(ev.event_type)}`}>
+                                {getEventIcon(ev.event_type)} {ev.title}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

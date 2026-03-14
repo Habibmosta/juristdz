@@ -63,30 +63,40 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
     try {
       const { supabase } = await import('../../lib/supabase');
       
+      // Charger clients + stats en une seule requête
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          cases:cases(id, status),
+          invoices:invoices(total_amount, status)
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transform data to match Client interface
-      const transformedClients: Client[] = (data || []).map(client => ({
-        id: client.id,
-        firstName: client.first_name || '',
-        lastName: client.last_name || '',
-        email: client.email,
-        phone: client.phone,
-        address: client.address,
-        createdAt: new Date(client.created_at),
-        totalCases: 0, // TODO: Calculate from cases table
-        activeCases: 0, // TODO: Calculate from cases table
-        totalRevenue: 0, // TODO: Calculate from invoices table
-        lastContact: client.updated_at ? new Date(client.updated_at) : undefined,
-        notes: client.notes,
-        tags: []
-      }));
+      const transformedClients: Client[] = (data || []).map(client => {
+        const allCases = client.cases || [];
+        const allInvoices = client.invoices || [];
+        return {
+          id: client.id,
+          firstName: client.first_name || '',
+          lastName: client.last_name || '',
+          email: client.email,
+          phone: client.phone,
+          address: client.address,
+          createdAt: new Date(client.created_at),
+          totalCases: allCases.length,
+          activeCases: allCases.filter((c: any) => c.status === 'active').length,
+          totalRevenue: allInvoices
+            .filter((inv: any) => inv.status === 'paid')
+            .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0),
+          lastContact: client.updated_at ? new Date(client.updated_at) : undefined,
+          notes: client.notes,
+          tags: []
+        };
+      });
 
       setClients(transformedClients);
     } catch (error) {

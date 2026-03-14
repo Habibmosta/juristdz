@@ -31,7 +31,7 @@ export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, case
   const [description, setDescription] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState(caseId || '');
   const [isBillable, setIsBillable] = useState(true);
-  const [hourlyRate, setHourlyRate] = useState<number>(15000); // 15,000 DA par défaut
+  const [hourlyRate, setHourlyRate] = useState<number>(15000);
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [cases, setCases] = useState<any[]>([]);
   
@@ -41,6 +41,7 @@ export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, case
     loadCases();
     loadRecentEntries();
     checkRunningTimer();
+    loadHourlyRate();
   }, [userId]);
 
   useEffect(() => {
@@ -54,6 +55,20 @@ export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, case
     }
     return () => clearInterval(interval);
   }, [isRunning, currentEntry]);
+
+  const loadHourlyRate = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { data } = await supabase
+        .from('profiles')
+        .select('professional_info')
+        .eq('id', userId)
+        .single();
+      if (data?.professional_info?.hourlyRate) {
+        setHourlyRate(data.professional_info.hourlyRate);
+      }
+    } catch (_) {}
+  };
 
   const loadCases = async () => {
     try {
