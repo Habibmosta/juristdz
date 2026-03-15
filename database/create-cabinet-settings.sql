@@ -1,6 +1,3 @@
--- Table: cabinet_settings
--- Stores per-user cabinet configuration and preferences
-
 CREATE TABLE IF NOT EXISTS cabinet_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -25,7 +22,6 @@ CREATE TABLE IF NOT EXISTS cabinet_settings (
   UNIQUE(user_id)
 );
 
--- RLS
 ALTER TABLE cabinet_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users manage own settings" ON cabinet_settings

@@ -19,6 +19,7 @@ export interface DashboardData {
   urgentCases: number;
   recentCases: { id: string; title: string; clientName: string; status: string; priority?: string; createdAt: string }[];
   monthlyRevenue: number;
+  billableHours: number;
 
   // Notaire
   notarialActsTotal: number;
@@ -41,7 +42,7 @@ export interface DashboardData {
 
 const EMPTY: DashboardData = {
   urgentDeadlines: 0, overdueDeadlines: 0, upcomingDeadlines: [],
-  activeCases: 0, totalCases: 0, urgentCases: 0, recentCases: [], monthlyRevenue: 0,
+  activeCases: 0, totalCases: 0, urgentCases: 0, recentCases: [], monthlyRevenue: 0, billableHours: 0,
   notarialActsTotal: 0, notarialActsMonth: 0, notarialActsValue: 0, notarialActsByStatus: {}, recentNotarialActs: [],
   exploitsTotal: 0, exploitsMonth: 0, exploitsPending: 0, exploitsExecuted: 0, exploitsFailed: 0, exploitsTotalFees: 0, recentExploits: [],
   loading: true,
@@ -75,8 +76,20 @@ export function useDashboardData(userId: string | null, role: UserRole | null): 
         ? supabase.from('bailiff_exploits').select('id,exploit_number,exploit_type,recipient_name,requester_name,exploit_date,status,bailiff_fees,travel_fees,exploit_year').eq('user_id', userId).order('sequence_number', { ascending: false }).limit(50)
         : Promise.resolve({ data: [], error: null });
 
-      const [deadlines, casesRes, notarialRes, exploitsRes] = await Promise.all([
-        deadlinesPromise, casesPromise, notarialPromise, exploitsPromise,
+      // ── Heures facturables (semaine en cours) ─────────────────────────────
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const timePromise = supabase
+        .from('time_entries')
+        .select('duration_minutes')
+        .eq('user_id', userId)
+        .eq('is_billable', true)
+        .gte('start_time', weekStart.toISOString())
+        .not('duration_minutes', 'is', null);
+
+      const [deadlines, casesRes, notarialRes, exploitsRes, timeRes] = await Promise.all([
+        deadlinesPromise, casesPromise, notarialPromise, exploitsPromise, timePromise,
       ]);
 
       // Process deadlines
@@ -119,6 +132,7 @@ export function useDashboardData(userId: string | null, role: UserRole | null): 
       setData({
         urgentDeadlines, overdueDeadlines, upcomingDeadlines,
         activeCases, totalCases: cases.length, urgentCases, recentCases, monthlyRevenue: 0,
+        billableHours: Math.round((timeRes.data || []).reduce((s: number, e: any) => s + (e.duration_minutes || 0), 0) / 60),
         notarialActsTotal: actsThisYear.length,
         notarialActsMonth: actsThisMonth.length,
         notarialActsValue,

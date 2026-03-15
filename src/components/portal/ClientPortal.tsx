@@ -1,11 +1,124 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, MessageSquare, Download, Eye, Lock, User, Calendar, DollarSign, Bell } from 'lucide-react';
+import { FileText, MessageSquare, Download, Eye, Lock, User, Calendar, DollarSign, Bell, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import type { Language } from '../../types';
 
 interface ClientPortalProps {
   clientId: string;
   language: Language;
 }
+
+// ─── Invoices Tab ────────────────────────────────────────────────────────────
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  due_date: string;
+  total_amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  description?: string;
+}
+
+const InvoicesTab: React.FC<{ clientId: string; isAr: boolean }> = ({ clientId, isAr }) => {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        const { data } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, invoice_date, due_date, total_amount, status, description')
+          .eq('client_id', clientId)
+          .neq('status', 'draft')
+          .order('invoice_date', { ascending: false });
+        if (data) setInvoices(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [clientId]);
+
+  const statusConfig: Record<string, { label: string; labelAr: string; icon: React.ReactNode; cls: string }> = {
+    sent:      { label: 'Envoyée',   labelAr: 'مرسلة',    icon: <Clock size={14} />,        cls: 'bg-blue-100 text-blue-700' },
+    paid:      { label: 'Payée',     labelAr: 'مدفوعة',   icon: <CheckCircle size={14} />,  cls: 'bg-green-100 text-green-700' },
+    overdue:   { label: 'En retard', labelAr: 'متأخرة',   icon: <AlertCircle size={14} />,  cls: 'bg-red-100 text-red-700' },
+    cancelled: { label: 'Annulée',   labelAr: 'ملغاة',    icon: <AlertCircle size={14} />,  cls: 'bg-slate-100 text-slate-500' },
+  };
+
+  const fmt = (n: number) => new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', minimumFractionDigits: 0 }).format(n);
+
+  const total = invoices.reduce((s, i) => s + i.total_amount, 0);
+  const paid  = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.total_amount, 0);
+  const due   = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((s, i) => s + i.total_amount, 0);
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: isAr ? 'الإجمالي' : 'Total facturé', value: fmt(total), cls: 'text-white' },
+          { label: isAr ? 'مدفوع' : 'Payé', value: fmt(paid), cls: 'text-green-400' },
+          { label: isAr ? 'مستحق' : 'Restant dû', value: fmt(due), cls: 'text-orange-400' },
+        ].map((s, i) => (
+          <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 p-5 text-center">
+            <p className="text-xs text-slate-500 mb-1">{s.label}</p>
+            <p className={`text-xl font-bold ${s.cls}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* List */}
+      {invoices.length === 0 ? (
+        <div className="text-center py-20 text-slate-400">
+          <DollarSign size={48} className="mx-auto mb-3 opacity-20" />
+          <p>{isAr ? 'لا توجد فواتير' : 'Aucune facture'}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {invoices.map(inv => {
+            const s = statusConfig[inv.status] || statusConfig.sent;
+            return (
+              <div key={inv.id} className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                    <FileText size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-slate-100">{inv.invoice_number}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {isAr ? 'تاريخ' : 'Date'}: {new Date(inv.invoice_date).toLocaleDateString()}
+                      {inv.due_date && ` · ${isAr ? 'الاستحقاق' : 'Échéance'}: ${new Date(inv.due_date).toLocaleDateString()}`}
+                    </p>
+                    {inv.description && <p className="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{inv.description}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${s.cls}`}>
+                    {s.icon}
+                    {isAr ? s.labelAr : s.label}
+                  </span>
+                  <p className="text-lg font-bold text-slate-900 dark:text-slate-100 min-w-[100px] text-right">
+                    {fmt(inv.total_amount)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface Case {
   id: string;
@@ -326,10 +439,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({ clientId, language }
 
             {/* Invoices Tab */}
             {activeTab === 'invoices' && (
-              <div className="text-center py-20 text-slate-400">
-                <DollarSign size={48} className="mx-auto mb-3 opacity-20" />
-                <p>{isAr ? 'قريباً' : 'Bientôt disponible'}</p>
-              </div>
+              <InvoicesTab clientId={clientId} isAr={isAr} />
             )}
           </>
         )}

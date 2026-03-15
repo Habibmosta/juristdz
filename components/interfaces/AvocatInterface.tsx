@@ -365,7 +365,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     revenue: caseStats ? caseStats.totalEstimatedValue.toLocaleString() : '0',
     newCases: dashboardData.activeCases || caseStats?.activeCases || activeCases.length,
     closedCases: caseStats?.archivedCases || 0,
-    billableHours: 156 // This would come from time tracking
+    billableHours: dashboardData.billableHours || 0
   };
 
   // Handle search functionality
@@ -541,7 +541,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               {isAr ? 'ساعات قابلة للفوترة' : 'Heures Facturables'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'هذا الشهر' : 'Ce mois-ci'}
+              {isAr ? 'هذا الأسبوع' : 'Cette semaine'}
             </p>
           </div>
         </div>
