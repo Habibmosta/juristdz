@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Language, EnhancedUserProfile } from '../../types';
+import { Language, EnhancedUserProfile, AppMode } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import NewActeNotarialModal from '../modals/NewActeNotarialModal';
-import { professionalDataService } from '../../src/services/professionalDataService';
+import { useDashboardData } from '../../src/hooks/useDashboardData';
+import { UserRole } from '../../types';
+import { ACT_TYPE_LABELS, ACT_STATUS_CONFIG } from '../../src/services/notarialActService';
 import { 
   FileSignature, 
   BookOpen, 
@@ -21,7 +23,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle
 } from 'lucide-react';
 
 interface NotaireInterfaceProps {
@@ -57,58 +60,10 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
   // Modal state
   const [showNewActeModal, setShowNewActeModal] = useState(false);
   
-  // Real data from Supabase
-  const [recentActes, setRecentActes] = useState<Acte[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [minutierStats, setMinutierStats] = useState({
-    totalActes: 0,
-    actesMois: 0,
-    droitsEnregistrement: '0',
-    honoraires: '0'
-  });
+  // Real data from new hook
+  const dash = useDashboardData(user.id, UserRole.NOTAIRE);
 
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Load data on mount
-  useEffect(() => {
-    loadData();
-  }, [user.id]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      
-      // Charger les actes
-      const data = await professionalDataService.getByProfession(user.id, 'notaire', 20);
-      
-      // Transformer les données pour correspondre à l'interface Acte
-      const transformedData = data.map((item: any) => ({
-        id: item.id,
-        numero: item.metadata?.numero || `ACT-${item.id.slice(0, 8)}`,
-        type: item.metadata?.type_acte || item.title,
-        parties: item.metadata?.parties || [],
-        objet: item.description || '',
-        dateCreation: new Date(item.created_at),
-        montant: item.metadata?.montant,
-        statut: item.status === 'draft' ? 'brouillon' : item.status === 'archived' ? 'archive' : 'signe'
-      }));
-      
-      setRecentActes(transformedData);
-      
-      // Charger les statistiques
-      const stats = await professionalDataService.getStats(user.id, 'notaire');
-      setMinutierStats({
-        totalActes: stats.total,
-        actesMois: stats.thisMonth,
-        droitsEnregistrement: '0', // À calculer selon les montants
-        honoraires: '0' // À calculer selon les montants
-      });
-    } catch (error) {
-      console.error('Erreur chargement données notaire:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const formatDA = (n: number) => `${Math.round(n).toLocaleString('fr-DZ')} DA`;
 
   const getStatutColor = (statut: string) => {
     switch (statut) {
@@ -167,7 +122,7 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                 <FileSignature size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {minutierStats.actesMois}
+                {dash.notarialActsMonth}
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
@@ -184,7 +139,7 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                 <DollarSign size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {minutierStats.droitsEnregistrement}
+                {formatDA(dash.notarialActsValue)}
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
@@ -201,7 +156,7 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                 <BookOpen size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {minutierStats.totalActes}
+                {dash.notarialActsTotal}
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
@@ -218,14 +173,17 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                 <TrendingUp size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {minutierStats.honoraires}
+                {dash.urgentDeadlines + dash.overdueDeadlines > 0
+                  ? <span className="text-red-500">{dash.urgentDeadlines + dash.overdueDeadlines}</span>
+                  : <span className="text-green-500">0</span>
+                }
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
-              {isAr ? 'الأتعاب (دج)' : 'Honoraires (DA)'}
+              {isAr ? 'مواعيد عاجلة' : 'Délais urgents'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'هذا الشهر' : 'Ce mois-ci'}
+              {isAr ? 'تحتاج متابعة' : 'À surveiller'}
             </p>
           </div>
         </div>
@@ -259,12 +217,12 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
             </div>
             
             <div className="p-6 space-y-4">
-              {loading ? (
+              {dash.loading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
                   <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
                 </div>
-              ) : recentActes.length === 0 ? (
+              ) : dash.recentNotarialActs.length === 0 ? (
                 <div className="text-center py-12">
                   <FileSignature size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
                   <p className="text-slate-400 mb-4">
@@ -278,33 +236,61 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                   </button>
                 </div>
               ) : (
-                recentActes.map(acte => (
+                dash.recentNotarialActs.map(acte => (
                 <div key={acte.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors cursor-pointer">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="font-mono text-sm font-bold text-amber-600">
-                          {acte.numero}
+                          {acte.act_number}
                         </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${getStatutColor(acte.statut)}`}>
-                          {getStatutIcon(acte.statut)}
-                          {isAr ? 
-                            (acte.statut === 'brouillon' ? 'مسودة' : acte.statut === 'signe' ? 'موقع' : 'مؤرشف') :
-                            acte.statut.toUpperCase()
-                          }
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.color || 'text-slate-400'}`}>
+                          {isAr
+                            ? ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.ar
+                            : ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.fr}
                         </span>
                       </div>
                       
                       <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
-                        {acte.type}
+                        {isAr
+                          ? ACT_TYPE_LABELS[acte.act_type as keyof typeof ACT_TYPE_LABELS]?.ar
+                          : ACT_TYPE_LABELS[acte.act_type as keyof typeof ACT_TYPE_LABELS]?.fr}
                       </h3>
                       
                       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                        <strong>{isAr ? 'الأطراف:' : 'Parties:'}</strong> {acte.parties.join(' / ')}
+                        <strong>{isAr ? 'الطرف:' : 'Partie:'}</strong> {acte.party_last_name} {acte.party_first_name}
                       </div>
                       
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        <strong>{isAr ? 'الموضوع:' : 'Objet:'}</strong> {acte.objet}
+                      {acte.act_value && (
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                          <strong>{isAr ? 'القيمة:' : 'Valeur:'}</strong> {Number(acte.act_value).toLocaleString('fr-DZ')} DA
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 text-slate-400 hover:text-amber-600 transition-colors">
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <Clock size={12} />
+                      {new Date(acte.act_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-DZ')}
+                    </span>
+                    {acte.status === 'signed' && (
+                      <div className="flex items-center gap-1 text-xs text-green-600">
+                        <Shield size={12} />
+                        {isAr ? 'موقع' : 'Signé'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )))}
+            </div>
+          </div>
                       </p>
                       
                       {acte.montant && (

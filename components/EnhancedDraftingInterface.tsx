@@ -18,7 +18,8 @@ import { AppMode, Language, UserRole, EnhancedUserProfile, ProfessionalInfo } fr
 import { 
   FileText, Download, CheckCircle, ChevronRight, PenTool, Eye, 
   Printer, Share2, Check, Edit3, Save, Scale, Languages,
-  MapPin, BookOpen, Plus, Layers, User, AlertCircle
+  MapPin, BookOpen, Plus, Layers, User, AlertCircle, Search,
+  RefreshCw, Zap, Tag, ChevronDown, ChevronUp, History
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import WilayaSelector from './WilayaSelector';
@@ -26,6 +27,9 @@ import ClauseSelector from './ClauseSelector';
 import TemplateContribution from './TemplateContribution';
 import DynamicLegalForm from './forms/DynamicLegalForm';
 import ProfessionalProfileForm from './ProfessionalProfileForm';
+import DocumentVersionHistory from '../src/components/documents/DocumentVersionHistory';
+import { documentVersionService } from '../src/services/documentVersionService';
+import { pdfExportService } from '../src/services/pdfExportService';
 
 interface EnhancedDraftingInterfaceProps {
   language: Language;
@@ -109,68 +113,99 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   // UI state
   const [mobileTab, setMobileTab] = useState<'config' | 'preview'>('config');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['famille', 'civil', 'penal', 'notarial', 'huissier', 'commercial', 'administratif', 'travail', 'etudiant']));
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [currentDocumentId, setCurrentDocumentId] = useState<string>('');
+
+  // Group templates by category
+  const getTemplateCategory = (id: string): { key: string; label_fr: string; label_ar: string } => {
+    if (id.includes('divorce') || id.includes('pension') || id.includes('garde') || id.includes('succession') || id.includes('famille') || id.includes('kafala') || id.includes('mariage')) return { key: 'famille', label_fr: 'Droit de la Famille', label_ar: 'قانون الأسرة' };
+    if (id.includes('penal') || id.includes('plainte') || id.includes('appel_penal') || id.includes('mise_en_demeure_penale')) return { key: 'penal', label_fr: 'Droit Pénal', label_ar: 'القانون الجزائي' };
+    if (id.includes('vente') || id.includes('donation') || id.includes('hypotheque') || id.includes('bail') || id.includes('testament') || id.includes('notair')) return { key: 'notarial', label_fr: 'Actes Notariaux', label_ar: 'العقود التوثيقية' };
+    if (id.includes('exploit') || id.includes('signification') || id.includes('constat') || id.includes('saisie') || id.includes('commandement')) return { key: 'huissier', label_fr: 'Actes d\'Huissier', label_ar: 'أعمال المحضر' };
+    if (id.includes('commercial') || id.includes('faillite') || id.includes('societe') || id.includes('contrat_comm')) return { key: 'commercial', label_fr: 'Droit Commercial', label_ar: 'القانون التجاري' };
+    if (id.includes('administratif') || id.includes('recours') || id.includes('admin')) return { key: 'administratif', label_fr: 'Droit Administratif', label_ar: 'القانون الإداري' };
+    if (id.includes('travail') || id.includes('emploi') || id.includes('licenciement') || id.includes('contrat_travail')) return { key: 'travail', label_fr: 'Droit du Travail', label_ar: 'قانون العمل' };
+    if (id.includes('etudiant') || id.includes('exercice') || id.includes('analyse')) return { key: 'etudiant', label_fr: 'Exercices', label_ar: 'تمارين' };
+    return { key: 'civil', label_fr: 'Droit Civil', label_ar: 'القانون المدني' };
+  };
+
+  const filteredTemplates = availableTemplates.filter(tpl => {
+    if (!templateSearch) return true;
+    const q = templateSearch.toLowerCase();
+    return (tpl.name?.toLowerCase().includes(q) || tpl.name_ar?.includes(q) || tpl.description?.toLowerCase().includes(q));
+  });
+
+  const groupedTemplates = filteredTemplates.reduce((acc, tpl) => {
+    const cat = getTemplateCategory(tpl.id);
+    if (!acc[cat.key]) acc[cat.key] = { ...cat, templates: [] };
+    acc[cat.key].templates.push(tpl);
+    return acc;
+  }, {} as Record<string, { key: string; label_fr: string; label_ar: string; templates: typeof availableTemplates }>);
+
+  const toggleCategory = (key: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  // Auto-fill form from professional profile
+  const getProfileAutoFill = (): Record<string, string> => {
+    if (!userProfile.professionalInfo) return {};
+    const info = userProfile.professionalInfo;
+    return {
+      avocatNom: userProfile.lastName,
+      avocatPrenom: userProfile.firstName,
+      avocatAdresse: info.cabinetAddress || '',
+      avocatTel: info.cabinetPhone || '',
+      avocatEmail: info.cabinetEmail || '',
+      avocatBarreau: info.barreauInscription || '',
+      avocatNumero: info.numeroInscription || '',
+    };
+  };
 
   const componentId = `enhanced-drafting-${userRole}`;
   const selectedTemplate = availableTemplates.find(t => t.id === selectedTemplateId) || availableTemplates[0];
 
+  const isTranslatingRef = React.useRef(false);
+
   // Traduction automatique quand la langue change
   useEffect(() => {
-    console.log('🌐 [useEffect] Language changed to:', language);
-    console.log('🌐 [useEffect] Original doc exists:', !!originalDoc);
-    console.log('🌐 [useEffect] Original doc lang:', originalDocLang);
-    console.log('🌐 [useEffect] Is translating:', isTranslating);
-    
     const translateDocument = async () => {
-      // Ne traduire que si un document a été généré
-      if (!originalDoc) {
-        console.log('🌐 [useEffect] No original document, skipping translation');
-        return;
-      }
-      
-      // Ne pas traduire si on est déjà dans la langue d'origine
+      if (!originalDoc) return;
       if (language === originalDocLang) {
-        console.log('🌐 [useEffect] Same as original language, restoring original');
-        if (generatedDoc !== originalDoc) {
-          setGeneratedDoc(originalDoc);
-          setIsDocTranslated(false);
-        }
+        setGeneratedDoc(originalDoc);
+        setIsDocTranslated(false);
         return;
       }
-      
-      // Ne pas retraduire si déjà en cours
-      if (isTranslating) {
-        console.log('🌐 [useEffect] Translation already in progress, skipping');
-        return;
-      }
-      
-      // Traduire le document
-      console.log(`🌐 [useEffect] Starting translation: ${originalDocLang} → ${language}`);
+      if (isTranslatingRef.current) return;
+
+      isTranslatingRef.current = true;
       setIsTranslating(true);
-      
+
       try {
         const translatedDoc = await autoTranslationService.translateContent(
           originalDoc,
           originalDocLang,
           language
         );
-        
-        console.log('🌐 [useEffect] Translation completed successfully');
-        console.log('🌐 [useEffect] Translated doc preview:', translatedDoc.substring(0, 200));
-        
         setGeneratedDoc(translatedDoc);
         setIsDocTranslated(true);
       } catch (error) {
-        console.error('🌐 [useEffect] Translation error:', error);
-        // En cas d'erreur, garder le document original
+        console.error('🌐 Translation error:', error);
         setGeneratedDoc(originalDoc);
         setIsDocTranslated(false);
       } finally {
+        isTranslatingRef.current = false;
         setIsTranslating(false);
       }
     };
-    
+
     translateDocument();
-  }, [language, originalDoc, originalDocLang]); // Pas de dépendance sur generatedDoc ou isTranslating pour éviter la boucle
+  }, [language, originalDoc, originalDocLang]);
 
   // Helper function to replace placeholders with form data
   const replacePlaceholdersWithFormData = (document: string, formData: any): string => {
@@ -394,6 +429,23 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
   const getName = (tpl: any) => language === 'ar' ? tpl.name_ar : tpl.name;
   const getDesc = (tpl: any) => language === 'ar' ? tpl.description_ar : tpl.description;
+
+  // Manual retranslation trigger
+  const handleRetranslate = async () => {
+    if (!originalDoc || isTranslatingRef.current) return;
+    isTranslatingRef.current = true;
+    setIsTranslating(true);
+    try {
+      const translated = await autoTranslationService.translateContent(originalDoc, originalDocLang, language);
+      setGeneratedDoc(translated);
+      setIsDocTranslated(true);
+    } catch {
+      setGeneratedDoc(originalDoc);
+    } finally {
+      isTranslatingRef.current = false;
+      setIsTranslating(false);
+    }
+  };
 
   const canProceed = () => {
     switch (currentStep) {
@@ -793,6 +845,19 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       setOriginalDocLang(language);
       setGeneratedDoc(finalDocument);
       setIsDocTranslated(false);
+
+      // Auto-save version
+      const docId = `${selectedTemplateId}_${userId}`;
+      setCurrentDocumentId(docId);
+      documentVersionService.saveVersion({
+        userId,
+        documentId: docId,
+        documentTitle: language === 'ar' ? (selectedTemplate.name_ar || selectedTemplate.name) : selectedTemplate.name,
+        templateId: selectedTemplateId,
+        content: finalDocument,
+        language,
+        changeSummary: language === 'ar' ? 'توليد تلقائي' : 'Génération automatique',
+      });
       
     } catch (error) {
       console.error('Generation error:', error);
@@ -825,102 +890,186 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   ];
 
   return (
-    <div className="flex flex-col md:flex-row h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* Configuration Sidebar */}
-      <div className={`w-full md:w-96 bg-white dark:bg-slate-900 border-e dark:border-slate-800 flex flex-col h-full overflow-hidden ${mobileTab === 'config' ? 'flex' : 'hidden md:flex'}`}>
-        {/* Header */}
-        <div className="p-6 border-b dark:border-slate-800">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold font-serif flex items-center gap-2">
-              {t.draft_title}
-              {isTranslating && (
-                <Languages size={16} className="animate-pulse text-blue-500" />
-              )}
-            </h2>
+    <div className="flex flex-col md:flex-row h-full bg-slate-50 dark:bg-slate-950 overflow-hidden" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+
+      {/* ── LEFT PANEL ── */}
+      <div className={`w-full md:w-[420px] flex flex-col h-full bg-white dark:bg-slate-900 border-e dark:border-slate-800 overflow-hidden ${mobileTab === 'config' ? 'flex' : 'hidden md:flex'}`}>
+
+        {/* Panel Header */}
+        <div className="px-6 pt-6 pb-4 border-b dark:border-slate-800 bg-gradient-to-br from-slate-900 to-slate-800">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-legal-gold/20 flex items-center justify-center">
+                <PenTool size={16} className="text-legal-gold" />
+              </div>
+              <h2 className="text-white font-bold text-lg font-serif">
+                {language === 'ar' ? 'رداكتيون' : 'Rédaction'}
+              </h2>
+              {isTranslating && <Languages size={14} className="animate-pulse text-blue-400" />}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="p-2 bg-legal-gold text-white rounded-lg hover:opacity-90"
-                title={language === 'ar' ? 'المعلومات المهنية' : 'Profil Professionnel'}
+                title={language === 'ar' ? 'الملف المهني' : 'Profil professionnel'}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-legal-gold/20 hover:bg-legal-gold/30 text-legal-gold rounded-lg text-xs font-bold transition"
               >
-                <User size={16} />
+                <User size={13} />
+                {language === 'ar' ? 'ملفي' : 'Profil'}
               </button>
               <button
                 onClick={() => setShowContribution(true)}
-                className="p-2 bg-legal-blue text-white rounded-lg hover:opacity-90"
-                title={language === 'ar' ? 'مساهمة بنموذج' : 'Contribuer un template'}
+                title={language === 'ar' ? 'مساهمة' : 'Contribuer'}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition"
               >
-                <Plus size={16} />
+                <Plus size={13} />
               </button>
             </div>
           </div>
-          
-          {/* Progress Steps */}
-          <div className="flex items-center gap-2">
+
+          {/* Step Indicator */}
+          <div className="flex items-center gap-1 mt-4">
             {steps.map((step, index) => {
               const Icon = step.icon;
+              const currentIndex = steps.findIndex(s => s.id === currentStep);
               const isActive = step.id === currentStep;
-              const isCompleted = steps.findIndex(s => s.id === currentStep) > index;
-              
+              const isCompleted = currentIndex > index;
               return (
                 <React.Fragment key={step.id}>
                   <button
                     onClick={() => setCurrentStep(step.id)}
-                    className={`flex-1 p-2 rounded-lg text-xs font-bold transition ${
-                      isActive ? 'bg-legal-blue text-white' :
-                      isCompleted ? 'bg-green-100 text-green-700' :
-                      'bg-slate-100 text-slate-400'
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      isActive
+                        ? 'bg-legal-gold text-white shadow-lg shadow-legal-gold/30'
+                        : isCompleted
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-white/10 text-white/40'
                     }`}
                   >
-                    <Icon size={14} className="mx-auto mb-1" />
-                    <div className="truncate">
-                      {language === 'ar' ? step.label_ar : step.label_fr}
-                    </div>
+                    {isCompleted ? <CheckCircle size={12} /> : <Icon size={12} />}
+                    <span className="hidden sm:inline">{language === 'ar' ? step.label_ar : step.label_fr}</span>
                   </button>
                   {index < steps.length - 1 && (
-                    <ChevronRight size={12} className="text-slate-300" />
+                    <div className={`flex-1 h-px ${isCompleted ? 'bg-green-500/40' : 'bg-white/10'}`} />
                   )}
                 </React.Fragment>
               );
             })}
           </div>
+
+          {/* Global progress bar */}
+          {(() => {
+            const currentIndex = steps.findIndex(s => s.id === currentStep);
+            const hasForm = Object.keys(structuredFormData).length > 0;
+            const progress = currentIndex === 0 ? (selectedTemplateId ? 25 : 5)
+              : currentIndex === 1 ? (selectedWilaya ? 50 : 40)
+              : currentIndex === 2 ? 65
+              : hasForm ? 100 : 80;
+            return (
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-white/40 text-[10px]">{language === 'ar' ? 'التقدم' : 'Progression'}</span>
+                  <span className="text-white/60 text-[10px] font-bold">{progress}%</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-1">
+                  <div className="bg-legal-gold h-1 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Step 1: Template Selection */}
+        <div className="flex-1 overflow-y-auto">
+
+          {/* STEP 1 — Template */}
           {currentStep === 'template' && (
-            <div className="space-y-3">
-              <h3 className="font-bold text-sm mb-3">
-                {language === 'ar' ? 'اختر نموذج الوثيقة' : 'Sélectionner un modèle'}
-              </h3>
-              {availableTemplates.map(tpl => (
-                <button 
-                  key={tpl.id} 
-                  onClick={() => setSelectedTemplateId(tpl.id)}
-                  className={`w-full text-left p-3 rounded-xl border text-sm transition ${
-                    selectedTemplateId === tpl.id 
-                      ? 'border-legal-gold bg-amber-50 dark:bg-amber-900/10 text-legal-gold shadow-sm' 
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-legal-gold/50'
-                  }`}
-                >
-                  <div className="font-bold">{getName(tpl)}</div>
-                  <div className="text-xs opacity-70 mt-1">{getDesc(tpl)}</div>
-                </button>
+            <div className="p-4 space-y-3">
+              {/* Search */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={templateSearch}
+                  onChange={e => setTemplateSearch(e.target.value)}
+                  placeholder={language === 'ar' ? 'بحث في النماذج...' : 'Rechercher un modèle...'}
+                  className="w-full pl-9 pr-3 py-2.5 text-sm border dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-legal-gold/30 outline-none"
+                  dir={language === 'ar' ? 'rtl' : 'ltr'}
+                />
+              </div>
+
+              {/* Grouped templates */}
+              {Object.values(groupedTemplates).map(group => (
+                <div key={group.key} className="border dark:border-slate-800 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => toggleCategory(group.key)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Tag size={12} className="text-legal-gold" />
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                        {language === 'ar' ? group.label_ar : group.label_fr}
+                      </span>
+                      <span className="text-xs text-slate-400 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
+                        {group.templates.length}
+                      </span>
+                    </div>
+                    {expandedCategories.has(group.key)
+                      ? <ChevronUp size={14} className="text-slate-400" />
+                      : <ChevronDown size={14} className="text-slate-400" />}
+                  </button>
+
+                  {expandedCategories.has(group.key) && (
+                    <div className="divide-y dark:divide-slate-800">
+                      {group.templates.map(tpl => {
+                        const isSelected = selectedTemplateId === tpl.id;
+                        return (
+                          <button
+                            key={tpl.id}
+                            onClick={() => { setSelectedTemplateId(tpl.id); setCurrentStep('wilaya'); }}
+                            className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-all ${
+                              isSelected
+                                ? 'bg-amber-50 dark:bg-amber-900/10'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                            }`}
+                          >
+                            <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition ${
+                              isSelected ? 'border-legal-gold bg-legal-gold' : 'border-slate-300 dark:border-slate-600'
+                            }`}>
+                              {isSelected && <Check size={9} className="text-white" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-legal-gold' : 'text-slate-800 dark:text-slate-200'}`}>
+                                {getName(tpl)}
+                              </p>
+                              <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{getDesc(tpl)}</p>
+                            </div>
+                            {isSelected && <Zap size={13} className="text-legal-gold shrink-0 mt-0.5" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               ))}
+
+              {Object.keys(groupedTemplates).length === 0 && (
+                <div className="text-center py-8 text-slate-400 text-sm">
+                  {language === 'ar' ? 'لا توجد نتائج' : 'Aucun résultat'}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Step 2: Wilaya Selection */}
+          {/* STEP 2 — Wilaya */}
           {currentStep === 'wilaya' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm">
-                  {language === 'ar' ? 'معلومات الولاية (اختياري)' : 'Informations Wilaya (optionnel)'}
-                </h3>
-                <span className="text-xs text-slate-500">
-                  {language === 'ar' ? 'اختياري' : 'Optionnel'}
-                </span>
+            <div className="p-4 space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                <MapPin size={16} className="text-blue-500 shrink-0" />
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  {language === 'ar'
+                    ? 'اختيار الولاية يضيف تلقائياً معلومات المحكمة والبريد'
+                    : 'Sélectionner la wilaya ajoute automatiquement les coordonnées du tribunal'}
+                </p>
               </div>
               <WilayaSelector
                 language={language}
@@ -931,16 +1080,16 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
             </div>
           )}
 
-          {/* Step 3: Clauses Selection */}
+          {/* STEP 3 — Clauses */}
           {currentStep === 'clauses' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm">
-                  {language === 'ar' ? 'البنود القانونية (اختياري)' : 'Clauses juridiques (optionnel)'}
-                </h3>
-                <span className="text-xs text-slate-500">
-                  {language === 'ar' ? 'اختياري' : 'Optionnel'}
-                </span>
+            <div className="p-4 space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
+                <BookOpen size={16} className="text-purple-500 shrink-0" />
+                <p className="text-xs text-purple-700 dark:text-purple-300">
+                  {language === 'ar'
+                    ? 'البنود الإلزامية محددة مسبقاً. يمكنك إضافة بنود اختيارية.'
+                    : 'Les clauses obligatoires sont pré-sélectionnées. Ajoutez des clauses optionnelles.'}
+                </p>
               </div>
               <ClauseSelector
                 language={language}
@@ -952,205 +1101,413 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
             </div>
           )}
 
-          {/* Step 4: Details - FORMULAIRE PROFESSIONNEL */}
+          {/* STEP 4 — Details */}
           {currentStep === 'details' && (
-            <div className="space-y-4">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-bold mb-4">
-                  {language === 'ar' ? 'معلومات الوثيقة' : 'Informations du document'}
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-                  {language === 'ar' 
-                    ? 'انقر على الزر أدناه لفتح نموذج الإدخال'
-                    : 'Cliquez sur le bouton ci-dessous pour ouvrir le formulaire de saisie'}
-                </p>
-                <button
-                  onClick={() => setShowFormModal(true)}
-                  className="px-8 py-4 bg-legal-gold text-white rounded-xl font-bold text-lg hover:bg-legal-gold/90 transition-colors shadow-lg"
-                >
-                  {language === 'ar' ? 'فتح نموذج الإدخال' : 'Ouvrir le formulaire'}
-                </button>
-                
-                {Object.keys(structuredFormData).length > 0 && (
-                  <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
-                      <Check size={20} />
-                      <span className="font-semibold">
-                        {language === 'ar' ? 'تم ملء النموذج بنجاح' : 'Formulaire rempli avec succès'}
-                      </span>
-                    </div>
+            <div className="p-4 space-y-4">
+              {/* Profil incomplet warning */}
+              {!userProfile.professionalInfo && userRole !== UserRole.ETUDIANT && userRole !== UserRole.MAGISTRAT && (
+                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700">
+                  <AlertCircle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                      {language === 'ar' ? 'الملف المهني غير مكتمل' : 'Profil professionnel incomplet'}
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
+                      {language === 'ar' ? 'أضف معلوماتك لتوقيع الوثائق' : 'Ajoutez vos infos pour signer les documents'}
+                    </p>
+                    <button
+                      onClick={() => setShowProfileModal(true)}
+                      className="mt-2 px-3 py-1 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition"
+                    >
+                      {language === 'ar' ? 'إكمال الملف' : 'Compléter'}
+                    </button>
                   </div>
+                </div>
+              )}
+
+              {/* Auto-fill from profile hint */}
+              {userProfile.professionalInfo && Object.keys(structuredFormData).length === 0 && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                  <Zap size={14} className="text-green-600 shrink-0" />
+                  <p className="text-xs text-green-700 dark:text-green-300 flex-1">
+                    {language === 'ar'
+                      ? 'سيتم ملء معلوماتك المهنية تلقائياً في الوثيقة'
+                      : 'Vos informations professionnelles seront auto-remplies dans le document'}
+                  </p>
+                </div>
+              )}
+
+              {/* Formulaire CTA */}
+              <div className={`rounded-2xl border-2 p-6 text-center transition-all ${
+                Object.keys(structuredFormData).length > 0
+                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10'
+                  : 'border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30'
+              }`}>
+                {Object.keys(structuredFormData).length > 0 ? (
+                  <>
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle size={24} className="text-green-600" />
+                    </div>
+                    <p className="font-bold text-green-700 dark:text-green-300 mb-1">
+                      {language === 'ar' ? 'النموذج مكتمل' : 'Formulaire complété'}
+                    </p>
+                    {/* Progress bar */}
+                    <div className="w-full bg-green-100 dark:bg-green-900/30 rounded-full h-1.5 mb-3">
+                      <div
+                        className="bg-green-500 h-1.5 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (Object.keys(structuredFormData).filter(k => structuredFormData[k]).length / Math.max(1, Object.keys(structuredFormData).length)) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400 mb-4">
+                      {Object.keys(structuredFormData).filter(k => structuredFormData[k]).length} / {Object.keys(structuredFormData).length} {language === 'ar' ? 'حقل مملوء' : 'champs renseignés'}
+                    </p>
+                    <button
+                      onClick={() => setShowFormModal(true)}
+                      className="px-5 py-2 border-2 border-green-400 text-green-700 dark:text-green-300 rounded-xl text-sm font-bold hover:bg-green-100 transition"
+                    >
+                      {language === 'ar' ? 'تعديل البيانات' : 'Modifier les données'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Edit3 size={24} className="text-slate-400" />
+                    </div>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'ar' ? 'أدخل بيانات الوثيقة' : 'Saisir les données du document'}
+                    </p>
+                    <p className="text-xs text-slate-500 mb-4">
+                      {language === 'ar'
+                        ? 'معلومات الأطراف، التواريخ، المبالغ...'
+                        : 'Parties, dates, montants, références...'}
+                    </p>
+                    <button
+                      onClick={() => setShowFormModal(true)}
+                      className="px-6 py-3 bg-legal-gold text-white rounded-xl font-bold hover:bg-legal-gold/90 transition shadow-lg shadow-legal-gold/20"
+                    >
+                      {language === 'ar' ? 'فتح النموذج' : 'Ouvrir le formulaire'}
+                    </button>
+                  </>
                 )}
               </div>
+
+              {/* Selected template recap */}
+              {selectedTemplate && (
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-slate-700 space-y-2">
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide">{language === 'ar' ? 'ملخص الوثيقة' : 'Récapitulatif'}</p>
+                  <div className="flex items-center gap-2">
+                    <FileText size={13} className="text-legal-gold shrink-0" />
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{getName(selectedTemplate)}</p>
+                  </div>
+                  {selectedWilaya && (
+                    <div className="flex items-center gap-2">
+                      <MapPin size={13} className="text-blue-500 shrink-0" />
+                      <p className="text-xs text-slate-500">Wilaya {selectedWilaya}</p>
+                    </div>
+                  )}
+                  {selectedClauses.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <BookOpen size={13} className="text-purple-500 shrink-0" />
+                      <p className="text-xs text-slate-500">{selectedClauses.length} {language === 'ar' ? 'بند' : 'clause(s)'}</p>
+                    </div>
+                  )}
+                  {userProfile.professionalInfo && (
+                    <div className="flex items-center gap-2">
+                      <User size={13} className="text-green-500 shrink-0" />
+                      <p className="text-xs text-slate-500">
+                        {userProfile.firstName} {userProfile.lastName}
+                        {userProfile.professionalInfo.barreauInscription && ` — ${userProfile.professionalInfo.barreauInscription}`}
+                        {userProfile.professionalInfo.chambreNotariale && ` — ${userProfile.professionalInfo.chambreNotariale}`}
+                        {userProfile.professionalInfo.chambreHuissiers && ` — ${userProfile.professionalInfo.chambreHuissiers}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t dark:border-slate-800 space-y-2">
+        {/* Footer Navigation */}
+        <div className="p-4 border-t dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex gap-2">
             {currentStep !== 'template' && (
               <button
                 onClick={() => {
-                  const currentIndex = steps.findIndex(s => s.id === currentStep);
-                  if (currentIndex > 0) setCurrentStep(steps[currentIndex - 1].id);
+                  const idx = steps.findIndex(s => s.id === currentStep);
+                  if (idx > 0) setCurrentStep(steps[idx - 1].id);
                 }}
-                className="flex-1 py-3 border rounded-xl font-bold text-sm"
+                className="px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-400 hover:border-slate-300 transition"
               >
-                {language === 'ar' ? 'السابق' : 'Précédent'}
+                {language === 'ar' ? '→' : '←'}
               </button>
             )}
             {currentStep !== 'details' ? (
               <button
                 onClick={() => {
-                  const currentIndex = steps.findIndex(s => s.id === currentStep);
-                  if (currentIndex < steps.length - 1) setCurrentStep(steps[currentIndex + 1].id);
+                  const idx = steps.findIndex(s => s.id === currentStep);
+                  if (idx < steps.length - 1) setCurrentStep(steps[idx + 1].id);
                 }}
-                disabled={!canProceed()}
-                className="flex-1 py-3 bg-legal-blue text-white rounded-xl font-bold text-sm disabled:opacity-50"
+                className="flex-1 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-2"
               >
-                {language === 'ar' ? 'التالي' : 'Suivant'}
+                {language === 'ar' ? 'السابق' : 'Suivant'}
+                <ChevronRight size={16} />
               </button>
             ) : (
-              <button 
+              <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !canProceed()}
-                className="flex-1 py-3 bg-legal-gold text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-3 bg-legal-gold text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 hover:bg-legal-gold/90 transition shadow-lg shadow-legal-gold/20"
               >
                 {isGenerating ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {language === 'ar' ? 'جاري التوليد...' : 'Génération en cours...'}
+                  </>
                 ) : (
-                  <FileText size={18} />
+                  <>
+                    <FileText size={16} />
+                    {language === 'ar' ? 'توليد الوثيقة' : 'Générer le document'}
+                  </>
                 )}
-                {isGenerating ? (language === 'ar' ? 'جاري التوليد...' : 'Génération...') : (language === 'ar' ? 'توليد الوثيقة' : 'Générer')}
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Preview & Editor */}
-      <div className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-950 p-4 md:p-8 overflow-y-auto ${mobileTab === 'preview' ? 'flex' : 'hidden md:flex'}`}>
+      {/* ── RIGHT PANEL — Preview ── */}
+      <div className={`flex-1 flex h-full overflow-hidden bg-slate-100 dark:bg-slate-950 ${mobileTab === 'preview' ? 'flex' : 'hidden md:flex'}`}>
+        {/* Document area */}
+        <div className="flex-1 overflow-y-auto">
         {generatedDoc ? (
-          <div className="max-w-3xl mx-auto w-full space-y-4">
-            <div className="flex justify-between items-center px-4">
-              <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border">
-                <button 
-                  onClick={() => setIsEditing(false)} 
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition ${!isEditing ? 'bg-legal-gold text-white' : 'text-slate-500'}`}
+          <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-4">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 px-4 py-2 shadow-sm">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${!isEditing ? 'bg-white dark:bg-slate-700 shadow text-legal-gold' : 'text-slate-500'}`}
                 >
-                  <Eye size={14} className="inline mr-1" />
+                  <Eye size={13} />
                   {language === 'ar' ? 'معاينة' : 'Aperçu'}
                 </button>
-                <button 
-                  onClick={() => setIsEditing(true)} 
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition ${isEditing ? 'bg-legal-gold text-white' : 'text-slate-500'}`}
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${isEditing ? 'bg-white dark:bg-slate-700 shadow text-legal-gold' : 'text-slate-500'}`}
                 >
-                  <Edit3 size={14} className="inline mr-1" />
+                  <Edit3 size={13} />
                   {language === 'ar' ? 'تحرير' : 'Éditer'}
                 </button>
               </div>
               <div className="flex items-center gap-2">
                 {isDocTranslated && (
-                  <div className="flex items-center gap-1 text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
-                    <Languages size={12} />
-                    <span className="text-xs font-bold">
-                      {language === 'ar' ? 'مترجم' : 'Traduit'}
-                    </span>
-                  </div>
+                  <span className="flex items-center gap-1 text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg text-xs font-bold">
+                    <Languages size={11} />
+                    {language === 'ar' ? 'مترجم' : 'Traduit'}
+                  </span>
                 )}
-                <button onClick={handlePrint} className="p-2 bg-white rounded-xl shadow-sm border hover:text-legal-gold">
-                  <Printer size={20} />
+                {/* Retranslate button — shown when doc language differs from current UI language */}
+                {originalDoc && originalDocLang !== language && (
+                  <button
+                    onClick={handleRetranslate}
+                    disabled={isTranslating}
+                    title={language === 'ar' ? 'إعادة الترجمة' : 'Retraduire'}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-bold transition disabled:opacity-50"
+                  >
+                    <RefreshCw size={13} className={isTranslating ? 'animate-spin' : ''} />
+                    {isTranslating
+                      ? (language === 'ar' ? 'جاري...' : 'En cours...')
+                      : (language === 'ar' ? 'ترجمة' : 'Traduire')}
+                  </button>
+                )}
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition"
+                >
+                  <Printer size={14} />
+                  {language === 'ar' ? 'طباعة' : 'Imprimer'}
                 </button>
-                <button onClick={() => navigator.clipboard.writeText(generatedDoc)} className="p-2 bg-white rounded-xl shadow-sm border hover:text-legal-gold">
-                  <Download size={20} />
+                <button
+                  onClick={() => setShowVersionHistory(v => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition ${
+                    showVersionHistory
+                      ? 'bg-legal-blue text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                  title={language === 'ar' ? 'سجل النسخ' : 'Historique des versions'}
+                >
+                  <History size={14} />
+                  {language === 'ar' ? 'النسخ' : 'Versions'}
+                </button>
+                <button
+                  onClick={() => navigator.clipboard.writeText(generatedDoc)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition"
+                >
+                  <Download size={14} />
+                  {language === 'ar' ? 'نسخ' : 'Copier'}
+                </button>
+                <button
+                  onClick={() => pdfExportService.exportDocument({
+                    title: language === 'ar' ? (selectedTemplate?.name_ar || selectedTemplate?.name || 'Document') : (selectedTemplate?.name || 'Document'),
+                    content: generatedDoc,
+                    language,
+                    wilaya: selectedWilaya || undefined,
+                  })}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition"
+                >
+                  <FileText size={14} />
+                  {language === 'ar' ? 'PDF' : 'PDF'}
                 </button>
               </div>
             </div>
 
-            <div id="printable-doc" className="bg-white shadow-2xl p-10 md:p-16 rounded-xl border min-h-[842px] relative">
-              <div className="border-b-2 border-legal-gold/20 pb-8 mb-12 flex justify-between items-start opacity-40">
-                <div className="text-xs font-bold uppercase tracking-widest font-serif">
-                  {selectedWilaya ? `Wilaya de ${selectedWilaya}` : 'Cabinet Juridique'}
+            {/* Document Sheet */}
+            <div id="printable-doc" className="bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border dark:border-slate-800 overflow-hidden">
+              {/* Document top bar */}
+              <div className="flex items-center justify-between px-10 py-4 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-2">
+                  <Scale size={18} className="text-legal-gold" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 font-serif">
+                    {selectedWilaya ? `Wilaya de ${selectedWilaya}` : 'JuristDZ'}
+                  </span>
                 </div>
-                <Scale size={32} className="text-legal-gold" />
+                <span className="text-xs text-slate-400">{new Date().toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR')}</span>
               </div>
 
-              {isEditing ? (
-                <textarea 
-                  value={generatedDoc}
-                  onChange={(e) => setGeneratedDoc(e.target.value)}
-                  className="w-full h-[600px] font-serif leading-loose outline-none bg-transparent resize-none"
-                  dir={language === 'ar' ? 'rtl' : 'ltr'}
-                />
-              ) : (
-                <div className="prose prose-slate max-w-none font-serif leading-loose" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-                  <ReactMarkdown>{generatedDoc}</ReactMarkdown>
-                </div>
-              )}
+              {/* Content */}
+              <div className="p-10 md:p-16 min-h-[700px]">
+                {isEditing ? (
+                  <textarea
+                    value={generatedDoc}
+                    onChange={(e) => setGeneratedDoc(e.target.value)}
+                    className="w-full h-[600px] font-serif text-sm leading-loose outline-none bg-transparent resize-none text-slate-800 dark:text-slate-200"
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                  />
+                ) : (
+                  <div
+                    className="prose prose-slate dark:prose-invert max-w-none font-serif text-sm leading-loose"
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    <ReactMarkdown>{generatedDoc}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
 
-              <div className="absolute bottom-20 right-20 w-32 h-32 border-4 border-dashed border-legal-gold/10 rounded-full flex items-center justify-center rotate-12 opacity-30">
-                <span className="text-xs font-bold text-legal-gold text-center uppercase">
-                  JuristDZ
+              {/* Watermark */}
+              <div className="flex items-center justify-center py-4 border-t dark:border-slate-800">
+                <span className="text-xs text-slate-300 dark:text-slate-700 font-serif tracking-widest uppercase">
+                  JuristDZ — Document généré par IA
                 </span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center relative">
-            <div className="opacity-40">
-              <Layers size={80} className="mb-6 text-slate-300" />
-              <h3 className="text-xl font-serif">
-                {language === 'ar' ? 'جاهز للتوليد' : 'Prêt pour la génération'}
-              </h3>
-              <p className="max-w-xs mx-auto text-sm mt-2">
-                {language === 'ar' 
-                  ? 'أكمل الخطوات وانقر على توليد للحصول على وثيقة قانونية كاملة'
-                  : 'Complétez les étapes et cliquez sur Générer pour obtenir un document juridique complet'}
-              </p>
-            </div>
-
-            {/* Bannière alerte profil manquant */}
-            {!userProfile.professionalInfo && userRole !== UserRole.ETUDIANT && userRole !== UserRole.MAGISTRAT && (
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-4">
-                <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600 rounded-xl p-4 flex items-start gap-3 shadow-lg">
-                  <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={20} />
-                  <div className="flex-1">
-                    <p className="font-bold text-amber-800 dark:text-amber-200 text-sm">
-                      {language === 'ar' ? 'معلوماتك المهنية غير مكتملة' : 'Profil professionnel incomplet'}
-                    </p>
-                    <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
-                      {language === 'ar' 
-                        ? 'أضف معلوماتك المهنية لإنشاء وثائق قانونية تحمل توقيعك'
-                        : 'Ajoutez vos informations pour que vos documents portent votre signature'}
-                    </p>
-                    <button
-                      onClick={() => setShowProfileModal(true)}
-                      className="mt-2 px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors"
-                    >
-                      {language === 'ar' ? 'إكمال الملف الشخصي' : 'Compléter mon profil'}
-                    </button>
+          /* Empty state */
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="max-w-sm w-full text-center space-y-6">
+              {/* Illustration */}
+              <div className="relative mx-auto w-40 h-40">
+                <div className="absolute inset-0 bg-legal-gold/5 rounded-3xl rotate-6"></div>
+                <div className="absolute inset-0 bg-legal-gold/10 rounded-3xl -rotate-3"></div>
+                <div className="relative bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-100 dark:border-slate-800 h-full flex items-center justify-center shadow-xl">
+                  <div className="text-center">
+                    <Scale size={40} className="text-legal-gold mx-auto mb-2" />
+                    <div className="space-y-1.5 px-4">
+                      <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full w-full"></div>
+                      <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full w-4/5 mx-auto"></div>
+                      <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full w-3/5 mx-auto"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
+
+              <div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 font-serif mb-2">
+                  {language === 'ar' ? 'وثيقتك ستظهر هنا' : 'Votre document apparaîtra ici'}
+                </h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  {language === 'ar'
+                    ? 'أكمل الخطوات في اللوحة اليسرى ثم اضغط على "توليد الوثيقة"'
+                    : 'Complétez les étapes dans le panneau gauche puis cliquez sur "Générer le document"'}
+                </p>
+              </div>
+
+              {/* Steps recap */}
+              <div className="grid grid-cols-2 gap-3 text-left">
+                {steps.map((step, i) => {
+                  const Icon = step.icon;
+                  const currentIdx = steps.findIndex(s => s.id === currentStep);
+                  const done = currentIdx > i;
+                  const active = currentStep === step.id;
+                  return (
+                    <div
+                      key={step.id}
+                      className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition ${
+                        done ? 'border-green-200 bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400'
+                        : active ? 'border-legal-gold/40 bg-amber-50 dark:bg-amber-900/10 text-legal-gold'
+                        : 'border-slate-100 dark:border-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {done ? <CheckCircle size={14} className="shrink-0" /> : <Icon size={14} className="shrink-0" />}
+                      {language === 'ar' ? step.label_ar : step.label_fr}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Profil warning */}
+              {!userProfile.professionalInfo && userRole !== UserRole.ETUDIANT && userRole !== UserRole.MAGISTRAT && (
+                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700 text-left">
+                  <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
+                      {language === 'ar' ? 'الملف المهني غير مكتمل' : 'Profil professionnel incomplet'}
+                    </p>
+                    <button
+                      onClick={() => setShowProfileModal(true)}
+                      className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 underline font-semibold"
+                    >
+                      {language === 'ar' ? 'إكمال الملف ←' : '→ Compléter mon profil'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+        )}
+        </div>{/* end document area */}
+
+        {/* Version History Panel */}
+        {showVersionHistory && currentDocumentId && (
+          <DocumentVersionHistory
+            userId={userId}
+            documentId={currentDocumentId}
+            language={language}
+            onRestore={(content, version) => {
+              setGeneratedDoc(content);
+              setOriginalDoc(content);
+              setOriginalDocLang(version.language as Language);
+              setIsDocTranslated(false);
+            }}
+            onClose={() => setShowVersionHistory(false)}
+          />
         )}
       </div>
 
-      {/* Mobile Footer */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex gap-2">
-        <button 
-          onClick={() => setMobileTab('config')} 
-          className={`flex-1 py-3 text-xs font-bold rounded-xl ${mobileTab === 'config' ? 'bg-legal-gold text-white' : 'text-slate-500'}`}
+      {/* Mobile Tab Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t dark:border-slate-800 p-2 flex gap-2 z-10">
+        <button
+          onClick={() => setMobileTab('config')}
+          className={`flex-1 py-3 rounded-xl text-xs font-bold transition ${mobileTab === 'config' ? 'bg-legal-gold text-white' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'}`}
         >
-          Configuration
+          {language === 'ar' ? 'الإعداد' : 'Configuration'}
         </button>
-        <button 
-          onClick={() => setMobileTab('preview')} 
-          className={`flex-1 py-3 text-xs font-bold rounded-xl ${mobileTab === 'preview' ? 'bg-legal-gold text-white' : 'text-slate-500'}`}
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 py-3 rounded-xl text-xs font-bold transition ${mobileTab === 'preview' ? 'bg-legal-gold text-white' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'}`}
         >
-          Document
+          {language === 'ar' ? 'الوثيقة' : 'Document'}
         </button>
       </div>
 
@@ -1169,6 +1526,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
         <DynamicLegalForm
           language={language}
           templateId={selectedTemplateId}
+          initialData={{ ...getProfileAutoFill(), ...structuredFormData }}
           onSubmit={(data) => {
             setStructuredFormData(data);
             setShowFormModal(false);

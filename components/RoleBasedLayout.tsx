@@ -6,6 +6,7 @@ import RoleSwitcher from './RoleSwitcher';
 import NotificationCenter from './notifications/NotificationCenter';
 import GlobalSearch from './search/GlobalSearch';
 import { useAuth } from '../src/hooks/useAuth';
+import { useDeadlineAlerts } from '../src/hooks/useDeadlineAlerts';
 import { 
   Scale, 
   Wifi, 
@@ -69,6 +70,9 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
 
+  // Alertes délais légaux
+  const { counts: deadlineAlerts } = useDeadlineAlerts(user?.id ?? null, user?.activeRole ?? null);
+
   // Initialize routing service with current user
   useEffect(() => {
     routingService.setCurrentUser(user);
@@ -78,7 +82,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   // Update navigation items when user role changes
   useEffect(() => {
     updateNavigationItems();
-  }, [user.activeRole, currentMode, language]);
+  }, [user.activeRole, currentMode, language, deadlineAlerts.total]);
 
   // Monitor online status
   useEffect(() => {
@@ -139,7 +143,14 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   const updateNavigationItems = () => {
     routingService.setLanguage(language);
     const items = routingService.getNavigationItems(language);
-    setNavigationItems(items);
+    // Injecter le badge d'alerte sur l'item DEADLINES
+    const itemsWithBadges = items.map(item => {
+      if (item.mode === AppMode.DEADLINES && deadlineAlerts.total > 0) {
+        return { ...item, badge: String(deadlineAlerts.total) };
+      }
+      return item;
+    });
+    setNavigationItems(itemsWithBadges);
   };
 
   // Smooth language transition handler
@@ -244,17 +255,32 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
             <Search size={20} />
           </button>
 
+          {/* Deadline Alert Badge */}
+          {deadlineAlerts.total > 0 && (
+            <button
+              onClick={() => onModeChange(AppMode.DEADLINES)}
+              title={language === 'ar' ? `${deadlineAlerts.total} مواعيد عاجلة` : `${deadlineAlerts.total} délai(s) urgent(s)`}
+              className="relative p-2 rounded-xl bg-red-900/30 border border-red-700/50 hover:bg-red-800/40 transition-colors"
+            >
+              <AlertTriangle size={18} className="text-red-400" />
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                {deadlineAlerts.total}
+              </span>
+            </button>
+          )}
+
           {/* Notification Center */}
           <NotificationCenter 
             userId={user.id}
             language={language}
+            userRole={user.activeRole}
             onNavigate={(type, id) => {
               // Navigate to the related entity
-              if (type === 'case') {
-                onModeChange(AppMode.CASES);
-              } else if (type === 'event') {
-                onModeChange(AppMode.CALENDAR);
-              }
+              if (type === 'DEADLINES') onModeChange(AppMode.DEADLINES);
+              else if (type === 'BILLING') onModeChange(AppMode.BILLING);
+              else if (type === 'REMINDERS') onModeChange(AppMode.REMINDERS);
+              else if (type === 'case') onModeChange(AppMode.CASES);
+              else if (type === 'event') onModeChange(AppMode.CALENDAR);
             }}
           />
 

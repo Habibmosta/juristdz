@@ -97,6 +97,7 @@ export class AutoTranslationService {
 
   /**
    * SIMPLIFIED: Translate content using Gemini API
+   * Note: appelé directement par les composants — pas de lock global ici
    */
   async translateContent(
     content: string, 
@@ -106,24 +107,15 @@ export class AutoTranslationService {
     const sourceLang = fromLang || this.detectLanguage(content);
     const targetLang = toLang || this.currentLanguage;
 
-    console.log(`🌐 AutoTranslationService: translateContent ${sourceLang} -> ${targetLang}`);
-    console.log(`🌐 Content preview: "${content.substring(0, 100)}..."`);
-
     if (sourceLang === targetLang) {
-      console.log(`🌐 Same language, returning original content`);
       return content;
     }
 
-    // Use Gemini API for real translation
     try {
       const translatedDoc = await this.translateWithGemini(content, sourceLang, targetLang);
-      
-      // Verify quality
       if (this.verifyTranslationQuality(translatedDoc, targetLang)) {
-        console.log(`🌐 Translation quality verified ✓`);
         return translatedDoc;
       } else {
-        console.warn(`🌐 Translation quality check failed, using fallback`);
         return this.getUltraCleanFallbackTranslation(content, sourceLang, targetLang);
       }
     } catch (error) {
@@ -265,46 +257,45 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
   }
 
   /**
-   * Verify translation quality - ensure no mixed languages (RELAXED)
+   * Verify translation quality — documents juridiques contiennent des noms propres en latin,
+   * donc on vérifie juste que la traduction n'est pas vide et a une longueur raisonnable.
    */
   private verifyTranslationQuality(text: string, targetLang: Language): boolean {
+    if (!text || text.trim().length < 50) {
+      console.log(`🌐 Quality check: FAILED — response too short`);
+      return false;
+    }
+
     const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
     const latinChars = (text.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
-    const totalChars = text.replace(/\s/g, '').length;
-    
+    const totalChars = text.replace(/[\s\d\W]/g, '').length;
+
     if (totalChars === 0) return true;
-    
+
     const arabicRatio = arabicChars / totalChars;
     const latinRatio = latinChars / totalChars;
-    
+
     console.log(`🌐 Quality check: Arabic ${Math.round(arabicRatio * 100)}%, Latin ${Math.round(latinRatio * 100)}%`);
-    
+
     if (targetLang === 'ar') {
-      // For Arabic target, should have >70% Arabic characters (RELAXED - noms propres, dates, etc. en latin)
-      const isGoodQuality = arabicRatio > 0.70;
-      console.log(`🌐 Quality check result: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Arabic: ${Math.round(arabicRatio * 100)}%)`);
+      // Documents juridiques algériens contiennent des noms propres, adresses, numéros en latin
+      // Seuil abaissé à 30% — on vérifie juste qu'il y a du contenu arabe
+      const isGoodQuality = arabicRatio > 0.30;
+      console.log(`🌐 Quality check: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Arabic: ${Math.round(arabicRatio * 100)}%)`);
       return isGoodQuality;
     } else {
-      // For French target, should have >70% Latin characters (RELAXED)
-      const isGoodQuality = latinRatio > 0.70;
-      console.log(`🌐 Quality check result: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Latin: ${Math.round(latinRatio * 100)}%)`);
+      const isGoodQuality = latinRatio > 0.30;
+      console.log(`🌐 Quality check: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Latin: ${Math.round(latinRatio * 100)}%)`);
       return isGoodQuality;
     }
   }
 
   /**
-   * Provide ultra clean fallback translation when quality check fails
+   * Fallback: retourner le contenu original plutôt que de le détruire
    */
   private getUltraCleanFallbackTranslation(originalContent: string, fromLang: Language, toLang: Language): string {
-    console.log(`🌐 Providing ultra clean fallback translation`);
-    
-    if (toLang === 'ar') {
-      // Ultra clean Arabic fallback - NO MIXING WHATSOEVER
-      return 'هذا نص قانوني باللغة الفرنسية تم ترجمته إلى العربية. يحتوي على معلومات قانونية مفصلة حسب القانون الجزائري.';
-    } else {
-      // Ultra clean French fallback - NO MIXING WHATSOEVER
-      return 'Ce texte juridique en arabe a été traduit en français. Il contient des informations juridiques détaillées selon le droit algérien.';
-    }
+    console.warn(`🌐 Translation quality failed — returning original content unchanged`);
+    return originalContent;
   }
 
   /**

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Language, EnhancedUserProfile } from '../../types';
+import { Language, EnhancedUserProfile, UserRole } from '../../types';
 import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search';
 import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
@@ -7,6 +7,7 @@ import SearchResults from '../search/SearchResults';
 import NewJugementModal from '../modals/NewJugementModal';
 import { searchService } from '../../services/searchService';
 import { professionalDataService } from '../../src/services/professionalDataService';
+import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { 
   Crown, 
   FileText, 
@@ -67,7 +68,10 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
 }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
-  
+
+  // Real dashboard data (deadlines)
+  const dashboardData = useDashboardData(user.id, UserRole.MAGISTRAT);
+
   // Search state
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult<JurisprudenceResult | LegalText> | null>(null);
@@ -595,6 +599,37 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Urgent Legal Deadlines */}
+            {(dashboardData.urgentDeadlines > 0 || dashboardData.overdueDeadlines > 0) && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-red-200 dark:border-red-800 shadow-sm p-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <AlertTriangle size={18} />
+                  {isAr ? 'تنبيهات الآجال' : 'Alertes Délais'}
+                  <span className="ml-auto bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {dashboardData.urgentDeadlines + dashboardData.overdueDeadlines}
+                  </span>
+                </h3>
+                <div className="space-y-2">
+                  {dashboardData.upcomingDeadlines.map((d, i) => (
+                    <div key={i} className={`p-3 rounded-xl border text-sm ${
+                      d.status === 'overdue'
+                        ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                        : 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800'
+                    }`}>
+                      <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                        {isAr && d.title_ar ? d.title_ar : d.title}
+                      </div>
+                      <div className={`text-xs mt-1 font-medium ${d.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                        {d.status === 'overdue'
+                          ? (isAr ? `متأخر بـ ${Math.abs(d.days_remaining)} يوم` : `En retard de ${Math.abs(d.days_remaining)}j`)
+                          : (isAr ? `${d.days_remaining} يوم متبقي` : `${d.days_remaining}j restants`)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Court Calendar */}
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 rounded-2xl border border-purple-200 dark:border-purple-800 p-6">

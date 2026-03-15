@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Language, Case, EnhancedUserProfile } from '../../types';
+import { Language, Case, EnhancedUserProfile, UserRole } from '../../types';
 import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search';
 import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
@@ -12,6 +12,7 @@ import MemoireEditor from '../documents/MemoireEditor';
 import HonorairesCalculator from '../billing/HonorairesCalculator';
 import { searchService } from '../../services/searchService';
 import { caseService } from '../../services/caseService';
+import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { 
   Scale, 
   Search, 
@@ -60,6 +61,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
 }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
+
+  // Real dashboard data
+  const dashboardData = useDashboardData(user.id, UserRole.AVOCAT);
   
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -354,17 +358,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       }));
   }, [activeCases]);
 
-  // Get updated monthly stats from case service
-  const monthlyStats = caseStats ? {
-    revenue: caseStats.totalEstimatedValue.toLocaleString(),
-    newCases: caseStats.activeCases,
-    closedCases: caseStats.archivedCases,
+  // Get updated monthly stats from case service + dashboard data
+  const monthlyStats = {
+    revenue: caseStats ? caseStats.totalEstimatedValue.toLocaleString() : '0',
+    newCases: dashboardData.activeCases || caseStats?.activeCases || activeCases.length,
+    closedCases: caseStats?.archivedCases || 0,
     billableHours: 156 // This would come from time tracking
-  } : {
-    revenue: '0',
-    newCases: 0,
-    closedCases: 0,
-    billableHours: 0
   };
 
   // Handle search functionality
@@ -509,14 +508,17 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
                 <Clock size={20} />
               </div>
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {caseStats?.upcomingDeadlines || upcomingDeadlines.length}
+                {dashboardData.urgentDeadlines + dashboardData.overdueDeadlines || caseStats?.upcomingDeadlines || upcomingDeadlines.length}
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
               {isAr ? 'المواعيد العاجلة' : 'Délais Urgents'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'خلال 7 أيام' : 'Dans les 7 jours'}
+              {dashboardData.overdueDeadlines > 0 
+                ? (isAr ? `${dashboardData.overdueDeadlines} متأخر` : `${dashboardData.overdueDeadlines} en retard`)
+                : (isAr ? 'خلال 7 أيام' : 'Dans les 7 jours')
+              }
             </p>
           </div>
 
@@ -792,7 +794,41 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
             </div>
             */}
 
-            {/* Upcoming Deadlines */}
+            {/* Urgent Legal Deadlines from legalDeadlineService */}
+            {(dashboardData.urgentDeadlines > 0 || dashboardData.overdueDeadlines > 0) && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-red-200 dark:border-red-800 shadow-sm p-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <AlertTriangle size={18} />
+                  {isAr ? 'تنبيهات الآجال القانونية' : 'Alertes Délais Légaux'}
+                  <span className="ml-auto bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {dashboardData.urgentDeadlines + dashboardData.overdueDeadlines}
+                  </span>
+                </h3>
+                <div className="space-y-2">
+                  {dashboardData.upcomingDeadlines.map((d, i) => (
+                    <div key={i} className={`p-3 rounded-xl border text-sm ${
+                      d.status === 'overdue' 
+                        ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' 
+                        : 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800'
+                    }`}>
+                      <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                        {isAr && d.title_ar ? d.title_ar : d.title}
+                      </div>
+                      <div className={`text-xs mt-1 font-medium ${
+                        d.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {d.status === 'overdue'
+                          ? (isAr ? `متأخر بـ ${Math.abs(d.days_remaining)} يوم` : `En retard de ${Math.abs(d.days_remaining)}j`)
+                          : (isAr ? `${d.days_remaining} يوم متبقي` : `${d.days_remaining}j restants`)
+                        }
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming Deadlines from cases */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                 <AlertTriangle size={18} className="text-amber-500" />

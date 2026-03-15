@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AppMode, Language, UserStats, UserRole, EnhancedUserProfile } from '../types';
 import { UI_TRANSLATIONS } from '../constants';
-import { MessageSquare, Briefcase, FileText, ShieldCheck, ArrowRight, Star, Clock, ShieldAlert } from 'lucide-react';
+import { MessageSquare, Briefcase, FileText, ShieldCheck, ArrowRight, Star, Clock } from 'lucide-react';
 import { ROLE_INTERFACE_CONFIG } from '../config/roleRouting';
 import DashboardWidget from './widgets/DashboardWidget';
-import ApiTestComponent from './ApiTestComponent';
 import { dashboardService } from '../services/dashboardService';
 import {
   AvocatInterface,
@@ -244,31 +243,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language, user, enhancedUser, set
 
           </div>
 
-          {/* Environment Alert */}
-          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800 p-6 rounded-[2rem] flex flex-col md:flex-row items-center gap-6">
-             <div className="w-12 h-12 bg-amber-100 dark:bg-amber-800/30 text-amber-600 rounded-full flex items-center justify-center shrink-0">
-                <ShieldAlert size={24} />
-             </div>
-             <div className="flex-1 text-center md:text-left">
-                <h4 className="font-bold text-amber-900 dark:text-amber-200 text-sm mb-1">
-                  {isAr ? 'بيئة ما قبل الإنتاج' : 'Environnement de Pré-production'}
-                </h4>
-                <p className="text-amber-700 dark:text-amber-300 text-xs">
-                   {isAr 
-                     ? 'هذا الرابط مؤقت للتحقق المهني. للتثبيت الدائم في المكتب، يرجى الاتصال بالدعم التقني.'
-                     : 'Ce lien est un accès temporaire pour validation métier. Pour une installation permanente au cabinet, veuillez contacter le support technique.'
-                   }
-                </p>
-             </div>
-             <button className="px-6 py-2 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700 rounded-xl text-[10px] font-black uppercase text-amber-700 dark:text-amber-200 hover:bg-amber-100 transition-colors">
-                {isAr ? 'معرفة المزيد' : 'En savoir plus'}
-             </button>
-          </div>
 
-          {/* API Test Component */}
-          <div className="mt-8">
-            <ApiTestComponent language={language} />
-          </div>
 
        </div>
     </div>

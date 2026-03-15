@@ -228,7 +228,13 @@ export class RoutingService {
       [AppMode.ANALYTICS]: language === 'ar' ? 'الإحصائيات' : 'Statistiques',
       [AppMode.TOOLS]: language === 'ar' ? 'الأدوات' : 'Outils',
       [AppMode.ADMIN]: t.menu_admin,
-      [AppMode.DOCS]: t.menu_docs
+      [AppMode.DOCS]: t.menu_docs,
+      [AppMode.DEADLINES]: language === 'ar' ? 'المواعيد القانونية' : 'Délais Légaux',
+      [AppMode.TIME_TRACKING]: language === 'ar' ? 'تتبع الوقت' : 'Temps',
+      [AppMode.CLIENT_PORTAL]: language === 'ar' ? 'بوابة العملاء' : 'Portail Client',
+      [AppMode.PENDING_ACCOUNTS]: language === 'ar' ? 'الحسابات المعلقة' : 'Comptes en attente',
+      [AppMode.NOTARIAL_REGISTRY]: language === 'ar' ? 'سجل العقود' : 'Registre Notarial',
+      [AppMode.BAILIFF_REGISTRY]: language === 'ar' ? 'سجل المحاضر' : 'Registre Exploits',
     };
 
     return labels[mode] || mode;
@@ -248,7 +254,13 @@ export class RoutingService {
       [AppMode.ANALYTICS]: 'BarChart3',
       [AppMode.TOOLS]: 'Wrench',
       [AppMode.ADMIN]: 'Settings',
-      [AppMode.DOCS]: 'Book'
+      [AppMode.DOCS]: 'Book',
+      [AppMode.DEADLINES]: 'AlertTriangle',
+      [AppMode.TIME_TRACKING]: 'Timer',
+      [AppMode.CLIENT_PORTAL]: 'Globe',
+      [AppMode.PENDING_ACCOUNTS]: 'UserCheck',
+      [AppMode.NOTARIAL_REGISTRY]: 'FileSignature',
+      [AppMode.BAILIFF_REGISTRY]: 'Gavel',
     };
 
     return icons[mode] || 'Circle';

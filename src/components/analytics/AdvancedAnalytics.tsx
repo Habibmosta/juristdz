@@ -4,8 +4,9 @@ import { Language } from '../../../types';
 import { 
   TrendingUp, TrendingDown, DollarSign, Briefcase, 
   Users, Clock, Target, Calendar, Award, AlertCircle,
-  BarChart3, PieChart, LineChart, Activity
+  BarChart3, PieChart, Activity
 } from 'lucide-react';
+import { BarChart, LineChart, DonutChart } from '../charts/MiniChart';
 
 interface AnalyticsData {
   revenue: {
@@ -117,6 +118,7 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
     clients: { total: 0, active: 0, topClients: [] },
     performance: { billableHours: 0, avgCaseValue: 0, collectionRate: 0 }
   });
+  const [monthlyRevenue, setMonthlyRevenue] = useState<{ label: string; value: number }[]>([]);
 
   useEffect(() => {
     loadAnalytics();
@@ -221,7 +223,33 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
         : 0;
 
       const avgCaseValue = totalCases > 0 ? totalRevenue / totalCases : 0;
-      const billableHours = totalCases * 10; // Estimation: 10h par dossier
+
+      // Heures facturables depuis la vraie table time_entries
+      const { data: timeEntries } = await supabase
+        .from('time_entries')
+        .select('duration_minutes')
+        .eq('user_id', userId)
+        .eq('is_billable', true)
+        .not('duration_minutes', 'is', null);
+
+      const billableHours = timeEntries
+        ? Math.round(timeEntries.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) / 60)
+        : 0;
+
+      // Monthly revenue for last 6 months
+      const months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (5 - i));
+        return { month: d.getMonth(), year: d.getFullYear(), label: d.toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR', { month: 'short' }) };
+      });
+      const monthlyData = months.map(m => ({
+        label: m.label,
+        value: invoices?.filter(inv => {
+          const d = new Date(inv.invoice_date);
+          return d.getMonth() === m.month && d.getFullYear() === m.year;
+        }).reduce((s, inv) => s + inv.total_amount, 0) || 0,
+      }));
+      setMonthlyRevenue(monthlyData);
 
       setAnalytics({
         revenue: {
@@ -470,18 +498,36 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
         </div>
       </div>
 
-      {/* Visual Charts Placeholder */}
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <LineChart className="w-6 h-6 text-legal-gold" />
-          {t.trends}
-        </h2>
-        <div className="h-64 flex items-center justify-center border-2 border-dashed border-slate-700 rounded-xl">
-          <div className="text-center">
-            <PieChart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-500">Graphiques interactifs disponibles prochainement</p>
-            <p className="text-slate-600 text-sm mt-1">Chart.js / Recharts integration</p>
-          </div>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Revenue trend */}
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-legal-gold" />
+            {language === 'ar' ? 'تطور الإيرادات (6 أشهر)' : 'Évolution CA (6 mois)'}
+          </h2>
+          {monthlyRevenue.some(m => m.value > 0) ? (
+            <LineChart data={monthlyRevenue} height={140} color="#d4a017" />
+          ) : (
+            <div className="h-32 flex items-center justify-center text-slate-500 text-sm">{t.noData}</div>
+          )}
+        </div>
+
+        {/* Cases donut */}
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-legal-gold" />
+            {language === 'ar' ? 'توزيع الملفات' : 'Répartition des dossiers'}
+          </h2>
+          {analytics.cases.total > 0 ? (
+            <DonutChart data={[
+              { label: language === 'ar' ? 'نشط' : 'Actifs', value: analytics.cases.active, color: '#3b82f6' },
+              { label: language === 'ar' ? 'مكسوب' : 'Gagnés', value: analytics.cases.won, color: '#22c55e' },
+              { label: language === 'ar' ? 'مفقود' : 'Perdus', value: analytics.cases.lost, color: '#ef4444' },
+            ].filter(d => d.value > 0)} size={110} />
+          ) : (
+            <div className="h-24 flex items-center justify-center text-slate-500 text-sm">{t.noData}</div>
+          )}
         </div>
       </div>
     </div>

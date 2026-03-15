@@ -12,7 +12,17 @@ import {
   Building,
   Gavel,
   FileSignature,
-  Scale
+  Scale,
+  AlertTriangle,
+  Users,
+  Calendar,
+  Bell,
+  Receipt,
+  BarChart3,
+  Wrench,
+  Timer,
+  Globe,
+  UserCheck
 } from 'lucide-react';
 import { AppMode, UserRole, Language } from '../types';
 import { NavigationItem } from '../services/routingService';
@@ -54,7 +64,19 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
     ShieldCheck,
     Briefcase,
     Settings,
-    Book
+    Book,
+    AlertTriangle,
+    Users,
+    Calendar,
+    Bell,
+    Receipt,
+    BarChart3,
+    Wrench,
+    Timer,
+    Globe,
+    UserCheck,
+    FileSignature,
+    Gavel,
   };
 
   // Role-specific styling
@@ -230,15 +252,22 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
                   <div className="flex-1 text-left min-w-0">
                     <span className="font-medium text-sm truncate block">{item.label}</span>
                     {item.badge && (
-                      <span className={`inline-block mt-0.5 px-2 py-0.5 text-xs rounded-full ${
-                        isActive 
-                          ? 'bg-white/20 text-white' 
-                          : `${roleStyles.primary} text-white`
+                      <span className={`inline-block mt-0.5 px-2 py-0.5 text-xs rounded-full font-bold ${
+                        isActive
+                          ? 'bg-white/20 text-white'
+                          : 'bg-red-500 text-white'
                       }`}>
                         {item.badge}
                       </span>
                     )}
                   </div>
+                )}
+
+                {/* Badge visible aussi en mode collapsed */}
+                {isCollapsed && item.badge && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full px-1">
+                    {item.badge}
+                  </span>
                 )}
 
                 {/* Role-specific indicators */}

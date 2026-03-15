@@ -27,6 +27,9 @@ import TrialBanner from './src/components/trial/TrialBanner';
 import WelcomeModal from './src/components/trial/WelcomeModal';
 import { TrialExpiredModal } from './src/components/trial/TrialExpiredModal';
 import PendingAccountsManager from './src/components/admin/PendingAccountsManager';
+import LegalDeadlineTracker from './src/components/deadlines/LegalDeadlineTracker';
+import NotarialRegistry from './src/components/notarial/NotarialRegistry';
+import BailiffRegistry from './src/components/bailiff/BailiffRegistry';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
@@ -347,6 +350,24 @@ const App: React.FC = () => {
         <PendingAccountsManager 
           language={language} 
           adminId={profile.id}
+        />
+      )}
+      {currentMode === AppMode.DEADLINES && (
+        <LegalDeadlineTracker
+          language={language}
+          userId={profile.id}
+        />
+      )}
+      {currentMode === AppMode.NOTARIAL_REGISTRY && (
+        <NotarialRegistry
+          language={language}
+          userId={profile.id}
+        />
+      )}
+      {currentMode === AppMode.BAILIFF_REGISTRY && (
+        <BailiffRegistry
+          language={language}
+          userId={profile.id}
         />
       )}
       {currentMode === AppMode.DOCS && (

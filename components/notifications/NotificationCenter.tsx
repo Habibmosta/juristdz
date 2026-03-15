@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Calendar, FileText, Clock } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Calendar, FileText, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../src/lib/supabase';
-import { Language } from '../../types';
+import { Language, UserRole } from '../../types';
+import { useNotifications } from '../../src/hooks/useNotifications';
 
 interface Notification {
   id: string;
@@ -13,20 +14,44 @@ interface Notification {
   related_id?: string;
   is_read: boolean;
   created_at: string;
+  link_mode?: string;
 }
 
 interface NotificationCenterProps {
   userId: string;
   language: Language;
+  userRole?: UserRole;
   onNavigate?: (type: string, id: string) => void;
 }
 
-const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, language, onNavigate }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, language, userRole, onNavigate }) => {
+  const [dbNotifications, setDbNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const isAr = language === 'ar';
+
+  // Hook temps-réel: délais urgents + factures + rappels
+  const liveNotifs = useNotifications(userId, userRole ?? null);
+
+  // Fusionner les deux sources
+  const notifications: Notification[] = [
+    // Live notifs (délais, factures, rappels) converties au format Notification
+    ...liveNotifs.notifications.map(n => ({
+      id: n.id,
+      type: n.type,
+      priority: n.level === 'error' ? 'urgent' : n.level === 'warning' ? 'high' : 'normal',
+      title: isAr && n.title_ar ? n.title_ar : n.title,
+      message: isAr && n.message_ar ? n.message_ar : n.message,
+      is_read: n.read,
+      created_at: n.created_at,
+      link_mode: n.link_mode,
+    })),
+    // DB notifs
+    ...dbNotifications,
+  ];
+
+  const totalUnread = liveNotifs.unreadCount + dbNotifications.filter(n => !n.is_read).length;
 
   useEffect(() => {
     loadNotifications();
@@ -107,12 +132,20 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, languag
   };
 
   const handleNotificationClick = (notification: Notification) => {
-    markAsRead(notification.id);
-    
-    if (notification.related_type && notification.related_id && onNavigate) {
-      onNavigate(notification.related_type, notification.related_id);
-      setIsOpen(false);
+    // Mark as read
+    if (notification.id.startsWith('deadline_') || notification.id.startsWith('invoice_') || notification.id.startsWith('reminder_')) {
+      liveNotifs.markAsRead(notification.id);
+    } else {
+      markAsRead(notification.id);
     }
+
+    // Navigate
+    if (notification.link_mode && onNavigate) {
+      onNavigate(notification.link_mode, '');
+    } else if (notification.related_type && notification.related_id && onNavigate) {
+      onNavigate(notification.related_type, notification.related_id);
+    }
+    setIsOpen(false);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -171,9 +204,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, languag
         className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
       >
         <Bell size={20} />
-        {unreadCount > 0 && (
+        {totalUnread > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {totalUnread > 9 ? '9+' : totalUnread}
           </span>
         )}
       </button>
@@ -196,14 +229,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, languag
                 <h3 className="font-bold">
                   {isAr ? 'الإشعارات' : 'Notifications'}
                 </h3>
-                {unreadCount > 0 && (
+                {totalUnread > 0 && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">
-                    {unreadCount}
+                    {totalUnread}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
+                {totalUnread > 0 && (
                   <button
                     onClick={markAllAsRead}
                     disabled={loading}

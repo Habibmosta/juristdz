@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Language } from '../../../types';
 import { 
   Calculator, Calendar, DollarSign, Scale, 
-  Clock, FileText, TrendingUp, AlertCircle
+  Clock, FileText, TrendingUp, AlertCircle, FileSignature
 } from 'lucide-react';
 import {
   calculateProceduralDeadlines,
@@ -12,6 +12,7 @@ import {
   calculateLawyerFees,
   calculateVAT
 } from '../../services/algerianCalculations';
+import NotarialFeesCalculator from './NotarialFeesCalculator';
 
 interface AlgerianCalculatorProps {
   language: Language;
@@ -80,7 +81,7 @@ const translations = {
 
 const AlgerianCalculator: React.FC<AlgerianCalculatorProps> = ({ language }) => {
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'deadlines' | 'interest' | 'damages' | 'courtFees' | 'lawyerFees' | 'vat'>('deadlines');
+  const [activeTab, setActiveTab] = useState<'deadlines' | 'interest' | 'damages' | 'courtFees' | 'lawyerFees' | 'vat' | 'notarialFees'>('deadlines');
   const [result, setResult] = useState<any>(null);
 
   const formatCurrency = (amount: number) => {
@@ -176,7 +177,8 @@ const AlgerianCalculator: React.FC<AlgerianCalculatorProps> = ({ language }) => 
           { id: 'damages', label: t.damages, icon: Scale },
           { id: 'courtFees', label: t.courtFees, icon: FileText },
           { id: 'lawyerFees', label: t.lawyerFees, icon: DollarSign },
-          { id: 'vat', label: t.vat, icon: Calculator }
+          { id: 'vat', label: t.vat, icon: Calculator },
+          { id: 'notarialFees', label: language === 'ar' ? 'رسوم التوثيق' : 'Frais Notariaux', icon: FileSignature },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -419,7 +421,12 @@ const AlgerianCalculator: React.FC<AlgerianCalculatorProps> = ({ language }) => 
           )}
         </div>
 
-        {/* Result */}
+        {/* Result — or full-width notarial calculator */}
+        {activeTab === 'notarialFees' ? (
+          <div className="lg:col-span-1">
+            <NotarialFeesCalculator language={language} />
+          </div>
+        ) : (
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold text-white mb-4">{t.result}</h3>
           {result ? (
@@ -527,6 +534,7 @@ const AlgerianCalculator: React.FC<AlgerianCalculatorProps> = ({ language }) => 
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

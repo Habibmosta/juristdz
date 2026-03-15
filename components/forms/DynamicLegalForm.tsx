@@ -5,17 +5,19 @@ import { Language } from '../../types';
 interface DynamicLegalFormProps {
   language: Language;
   templateId: string;
+  initialData?: Record<string, string>;
   onSubmit: (data: any) => void;
   onClose: () => void;
 }
 
 const DynamicLegalForm: React.FC<DynamicLegalFormProps> = ({ 
   language, 
-  templateId, 
+  templateId,
+  initialData = {},
   onSubmit, 
   onClose 
 }) => {
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>(initialData);
   const isAr = language === 'ar';
 
   const handleChange = (field: string, value: string) => {
