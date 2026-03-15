@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useRoleTerminology } from '../../hooks/useRoleTerminology';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface CaseEvent {
   id: string;
@@ -27,6 +28,7 @@ interface CaseTimelineProps {
 
 const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId }) => {
   const { t } = useRoleTerminology(language);
+  const { toast } = useAppToast();
   const [events, setEvents] = useState<CaseEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<CaseEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +110,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
 
       if (error) {
         console.error('Error adding event:', error);
-        alert(`Erreur: ${error.message}`);
+        toast(`Erreur: ${error.message}`, 'error');
         return;
       }
 
@@ -120,10 +122,10 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseId, language, userId })
         event_type: 'note',
         event_date: new Date().toISOString().split('T')[0]
       });
-      alert(isAr ? `تمت إضافة ${t.event(false)} بنجاح` : `${t.event(false)} ajouté avec succès`);
+      toast(isAr ? `تمت إضافة ${t.event(false)} بنجاح` : `${t.event(false)} ajouté avec succès`, 'success');
     } catch (error) {
       console.error('Error adding event:', error);
-      alert(isAr ? `خطأ في إضافة ${t.event(false)}` : `Erreur lors de l'ajout du ${t.event(false).toLowerCase()}`);
+      toast(isAr ? `خطأ في إضافة ${t.event(false)}` : `Erreur lors de l'ajout du ${t.event(false).toLowerCase()}`, 'error');
     }
   };
 

@@ -11,6 +11,7 @@ import { DocumentService } from '../../services/documentService';
 import { ClientService } from '../../services/clientService';
 import CaseTimeline from './CaseTimeline';
 import { useRoleTerminology } from '../../hooks/useRoleTerminology';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface CaseDetailViewProps {
   caseId: string;
@@ -21,6 +22,7 @@ interface CaseDetailViewProps {
 
 const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBack, userId }) => {
   const { t } = useRoleTerminology(language);
+  const { toast } = useAppToast();
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'timeline' | 'billing'>('overview');
   const [loading, setLoading] = useState(true);
@@ -169,7 +171,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
         if (uploadError) {
           console.error('❌ Error uploading file:', uploadError);
-          alert(`Erreur upload: ${uploadError.message}`);
+          toast(`Erreur upload: ${uploadError.message}`, 'error');
           continue;
         }
 
@@ -262,7 +264,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
         if (dbError) {
           console.error('❌ Error saving document metadata:', dbError);
-          alert(`Erreur DB: ${dbError.message}`);
+          toast(`Erreur DB: ${dbError.message}`, 'error');
           continue;
         }
         
@@ -272,10 +274,10 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
       // Reload documents
       console.log('🔄 Reloading documents...');
       await loadDocuments();
-      alert(isAr ? `تم رفع ${t.document(true)} بنجاح` : `${t.document(true)} téléchargés avec succès`);
+      toast(isAr ? `تم رفع ${t.document(true)} بنجاح` : `${t.document(true)} téléchargés avec succès`, 'success');
     } catch (error) {
       console.error('❌ Error uploading documents:', error);
-      alert(isAr ? `خطأ في رفع ${t.document(true)}` : `Erreur lors du téléchargement des ${t.document(true).toLowerCase()}: ` + error);
+      toast(isAr ? `خطأ في رفع ${t.document(true)}` : `Erreur lors du téléchargement`, 'error');
     } finally {
       setUploading(false);
       // Reset input
@@ -340,7 +342,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
       // Reload documents
       await loadDocuments();
-      alert(isAr ? `تم حذف ${t.document(false)}` : `${t.document(false)} supprimé`);
+      toast(isAr ? `تم حذف ${t.document(false)}` : `${t.document(false)} supprimé`, 'success');
     } catch (error) {
       console.error('Error deleting document:', error);
     }
@@ -348,7 +350,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
   const handleAddNote = async () => {
     if (!noteText.trim()) {
-      alert(isAr ? 'الرجاء إدخال ملاحظة' : 'Veuillez entrer une note');
+      toast(isAr ? 'الرجاء إدخال ملاحظة' : 'Veuillez entrer une note', 'warning');
       return;
     }
 
@@ -371,15 +373,14 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
       if (error) {
         console.error('Error adding note:', error);
-        alert(isAr ? 'خطأ في إضافة الملاحظة' : 'Erreur lors de l\'ajout de la note');
+        toast(isAr ? 'خطأ في إضافة الملاحظة' : 'Erreur lors de l\'ajout de la note', 'error');
         return;
       }
 
-      // Reload case data
       await loadCaseData();
       setShowNoteModal(false);
       setNoteText('');
-      alert(isAr ? 'تمت إضافة الملاحظة' : 'Note ajoutée avec succès');
+      toast(isAr ? 'تمت إضافة الملاحظة' : 'Note ajoutée avec succès', 'success');
     } catch (error) {
       console.error('Error adding note:', error);
     }
@@ -436,17 +437,16 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
 
       if (error) {
         console.error('Error updating case:', error);
-        alert(isAr ? 'خطأ في تحديث الملف' : 'Erreur lors de la mise à jour');
+        toast(isAr ? 'خطأ في تحديث الملف' : 'Erreur lors de la mise à jour', 'error');
         return;
       }
 
-      // Reload case data
       await loadCaseData();
       setShowEditModal(false);
-      alert(isAr ? 'تم تحديث الملف بنجاح' : 'Dossier mis à jour avec succès');
+      toast(isAr ? 'تم تحديث الملف بنجاح' : 'Dossier mis à jour avec succès', 'success');
     } catch (error) {
       console.error('Error updating case:', error);
-      alert(isAr ? `خطأ في تحديث ${t.case(false)}` : `Erreur lors de la mise à jour du ${t.case(false).toLowerCase()}`);
+      toast(isAr ? `خطأ في تحديث ${t.case(false)}` : `Erreur lors de la mise à jour du ${t.case(false).toLowerCase()}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -933,7 +933,7 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                               window.open(url, '_blank');
                             } catch (error) {
                               console.error('Error opening document:', error);
-                              alert(isAr ? 'خطأ في فتح المستند' : 'Erreur lors de l\'ouverture du document');
+                              toast(isAr ? 'خطأ في فتح المستند' : 'Erreur lors de l\'ouverture du document', 'error');
                             }
                           }}
                           className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
