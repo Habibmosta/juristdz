@@ -3,9 +3,7 @@ import { Language, EnhancedUserProfile, UserRole } from '../../types';
 import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search';
 import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
-import SearchResults from '../search/SearchResults';
 import NewJugementModal from '../modals/NewJugementModal';
-import { searchService } from '../../services/searchService';
 import { professionalDataService } from '../../src/services/professionalDataService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { Sparkline } from '../../src/components/charts/MiniChart';
@@ -77,7 +75,6 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
   // Search state
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult<JurisprudenceResult | LegalText> | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
   
   // Modal state
   const [showNewJugementModal, setShowNewJugementModal] = useState(false);
@@ -153,21 +150,6 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
   };
 
   // Handle search functionality
-  const handleSearch = async (query: any) => {
-    setIsSearching(true);
-    try {
-      const results = await searchService.searchJurisprudence(query);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleResultClick = (result: JurisprudenceResult | LegalText) => {
-    void result;
-  };
 
   const getStatutColor = (statut: string) => {
     switch (statut) {
@@ -253,21 +235,8 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <AdvancedSearch
                 language={language}
                 theme={theme}
-                onSearch={handleSearch}
-                isLoading={isSearching}
+                onResultsChange={setSearchResults}
               />
-              
-              {searchResults && (
-                <div className="mt-8">
-                  <SearchResults
-                    results={searchResults}
-                    searchType="jurisprudence"
-                    language={language}
-                    theme={theme}
-                    onResultClick={handleResultClick}
-                  />
-                </div>
-              )}
             </div>
           </div>
         )}

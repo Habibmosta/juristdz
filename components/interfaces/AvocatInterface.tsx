@@ -3,14 +3,12 @@ import { Language, Case, EnhancedUserProfile, UserRole } from '../../types';
 import { SearchResult, JurisprudenceResult, LegalText } from '../../types/search';
 import { UI_TRANSLATIONS } from '../../constants';
 import AdvancedSearch from '../search/AdvancedSearch';
-import SearchResults from '../search/SearchResults';
 import NewCaseModal from '../modals/NewCaseModal';
 import EditCaseModal from '../modals/EditCaseModal';
 import { CaseDetailModal } from '../cases/CaseDetailModal';
 import LawyerCalendarModal from '../calendar/LawyerCalendarModal';
 import MemoireEditor from '../documents/MemoireEditor';
 import HonorairesCalculator from '../billing/HonorairesCalculator';
-import { searchService } from '../../services/searchService';
 import { caseService } from '../../services/caseService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { Sparkline } from '../../src/components/charts/MiniChart';
@@ -71,7 +69,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
   // Search state
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult<JurisprudenceResult | LegalText> | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
   
   // Case management state
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
@@ -351,24 +348,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
     billableHours: dashboardData.billableHours || 0
   };
 
-  // Handle search functionality
-  const handleSearch = async (query: any) => {
-    setIsSearching(true);
-    try {
-      const results = await searchService.searchJurisprudence(query);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleResultClick = (result: JurisprudenceResult | LegalText) => {
-    // Handle result click - could open in modal or navigate to detail view
-    void result;
-  };
-
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
@@ -432,21 +411,8 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <AdvancedSearch
                 language={language}
                 theme={theme}
-                onSearch={handleSearch}
-                isLoading={isSearching}
+                onResultsChange={setSearchResults}
               />
-              
-              {searchResults && (
-                <div className="mt-8">
-                  <SearchResults
-                    results={searchResults}
-                    searchType="jurisprudence"
-                    language={language}
-                    theme={theme}
-                    onResultClick={handleResultClick}
-                  />
-                </div>
-              )}
             </div>
           </div>
         )}
