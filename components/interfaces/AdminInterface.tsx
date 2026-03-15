@@ -30,10 +30,12 @@ import {
   Wifi,
   Lock,
   Building,
-  CreditCard
+  CreditCard,
+  Gavel
 } from 'lucide-react';
 import OrganizationManagement from './admin/OrganizationManagement';
 import SubscriptionManagement from './admin/SubscriptionManagement';
+import JurisprudenceValidationPanel from '../jurisprudence/JurisprudenceValidationPanel';
 
 interface AdminInterfaceProps {
   user: EnhancedUserProfile;
@@ -82,7 +84,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
 }) => {
   const t = UI_TRANSLATIONS[language];
   const isAr = language === 'ar';
-  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'subscriptions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'subscriptions' | 'jurisprudence'>('overview');
   const [loading, setLoading] = useState(true);
   
   // Real data from Supabase
@@ -259,6 +261,17 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
             >
               <CreditCard size={16} className="inline mr-2" />
               {isAr ? 'الاشتراكات' : 'Abonnements'}
+            </button>
+            <button
+              onClick={() => setActiveTab('jurisprudence')}
+              className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'jurisprudence'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Gavel size={16} className="inline mr-2" />
+              {isAr ? 'الاجتهاد القضائي' : 'Jurisprudence'}
             </button>
           </div>
         </div>
@@ -673,6 +686,14 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
 
         {activeTab === 'subscriptions' && (
           <SubscriptionManagement language={language} theme={theme} />
+        )}
+
+        {activeTab === 'jurisprudence' && (
+          <JurisprudenceValidationPanel
+            adminId={user.id}
+            language={language}
+            theme={theme}
+          />
         )}
       </div>
     </div>
