@@ -239,6 +239,8 @@ export class RoutingService {
       [AppMode.BAILIFF_REGISTRY]: language === 'ar' ? 'سجل المحاضر' : 'Registre Exploits',
       [AppMode.PROFILE]: language === 'ar' ? 'الملف الشخصي' : 'Mon Profil',
       [AppMode.DOCUMENTS]: language === 'ar' ? 'المستندات' : 'Documents',
+      [AppMode.SETTINGS]: language === 'ar' ? 'الإعدادات' : 'Paramètres',
+      [AppMode.TIME_MANAGEMENT]: language === 'ar' ? 'إدارة الوقت' : 'Gestion du temps',
     };
 
     return labels[mode] || mode;
@@ -267,6 +269,8 @@ export class RoutingService {
       [AppMode.BAILIFF_REGISTRY]: 'Gavel',
       [AppMode.PROFILE]: 'User',
       [AppMode.DOCUMENTS]: 'FolderOpen',
+      [AppMode.SETTINGS]: 'SlidersHorizontal',
+      [AppMode.TIME_MANAGEMENT]: 'Clock',
     };
 
     return icons[mode] || 'Circle';

@@ -4,7 +4,7 @@ import { Language } from '../../../types';
 import { 
   TrendingUp, TrendingDown, DollarSign, Briefcase, 
   Users, Clock, Target, Calendar, Award, AlertCircle,
-  BarChart3, PieChart, Activity
+  BarChart3, PieChart, Activity, Download, Filter
 } from 'lucide-react';
 import { BarChart, LineChart, DonutChart } from '../charts/MiniChart';
 
@@ -73,6 +73,12 @@ const translations = {
     thisYear: 'Cette année',
     comparison: 'Comparaison',
     vs: 'vs',
+    exportPdf: 'Exporter PDF',
+    period: 'Période',
+    period3m: '3 mois',
+    period6m: '6 mois',
+    period12m: '12 mois',
+    periodAll: 'Tout',
   },
   ar: {
     title: 'إحصائيات متقدمة',
@@ -106,12 +112,19 @@ const translations = {
     thisYear: 'هذه السنة',
     comparison: 'المقارنة',
     vs: 'مقابل',
+    exportPdf: 'تصدير PDF',
+    period: 'الفترة',
+    period3m: '3 أشهر',
+    period6m: '6 أشهر',
+    period12m: '12 شهر',
+    periodAll: 'الكل',
   }
 };
 
 const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId }) => {
   const t = translations[language];
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<3 | 6 | 12 | 0>(6); // months, 0 = all
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     revenue: { total: 0, monthly: 0, yearly: 0, growth: 0 },
     cases: { total: 0, active: 0, won: 0, lost: 0, successRate: 0, avgDuration: 0 },
@@ -122,25 +135,28 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
 
   useEffect(() => {
     loadAnalytics();
-  }, [userId]);
+  }, [userId, period]);
 
   const loadAnalytics = async () => {
     try {
       setLoading(true);
 
+      // Period filter
+      const periodStart = period > 0
+        ? new Date(new Date().setMonth(new Date().getMonth() - period)).toISOString()
+        : null;
+
       // Load revenue data
-      const { data: invoices } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('user_id', userId);
+      let invoiceQuery = supabase.from('invoices').select('*').eq('user_id', userId);
+      if (periodStart) invoiceQuery = invoiceQuery.gte('invoice_date', periodStart);
+      const { data: invoices } = await invoiceQuery;
 
       // Load cases data
-      const { data: cases } = await supabase
-        .from('cases')
-        .select('*')
-        .eq('user_id', userId);
+      let casesQuery = supabase.from('cases').select('*').eq('user_id', userId);
+      if (periodStart) casesQuery = casesQuery.gte('created_at', periodStart);
+      const { data: cases } = await casesQuery;
 
-      // Load clients data
+      // Load clients data (no period filter — total count)
       const { data: clients } = await supabase
         .from('clients')
         .select('*')
@@ -236,10 +252,11 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
         ? Math.round(timeEntries.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) / 60)
         : 0;
 
-      // Monthly revenue for last 6 months
-      const months = Array.from({ length: 6 }, (_, i) => {
+      // Monthly revenue for selected period (min 3, max 12 months)
+      const chartMonths = period > 0 ? period : 12;
+      const months = Array.from({ length: chartMonths }, (_, i) => {
         const d = new Date();
-        d.setMonth(d.getMonth() - (5 - i));
+        d.setMonth(d.getMonth() - (chartMonths - 1 - i));
         return { month: d.getMonth(), year: d.getFullYear(), label: d.toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR', { month: 'short' }) };
       });
       const monthlyData = months.map(m => ({
@@ -284,6 +301,10 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
     }
   };
 
+  const handleExportPdf = () => {
+    window.print();
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-DZ', {
       style: 'currency',
@@ -310,9 +331,36 @@ const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ language, userId 
   return (
     <div className={`p-6 ${language === 'ar' ? 'rtl' : 'ltr'}`}>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-        <p className="text-slate-400">{t.subtitle}</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
+          <p className="text-slate-400">{t.subtitle}</p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Period filter */}
+          <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
+            <Filter className="w-4 h-4 text-slate-400 ml-2" />
+            {([3, 6, 12, 0] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  period === p ? 'bg-legal-gold text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {p === 0 ? t.periodAll : p === 3 ? t.period3m : p === 6 ? t.period6m : t.period12m}
+              </button>
+            ))}
+          </div>
+          {/* Export PDF */}
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg hover:border-legal-gold hover:text-legal-gold transition-colors text-sm"
+          >
+            <Download className="w-4 h-4" />
+            {t.exportPdf}
+          </button>
+        </div>
       </div>
 
       {/* Revenue Section */}

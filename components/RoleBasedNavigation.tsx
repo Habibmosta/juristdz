@@ -24,7 +24,9 @@ import {
   Globe,
   UserCheck,
   User,
-  FolderOpen
+  FolderOpen,
+  SlidersHorizontal,
+  Clock
 } from 'lucide-react';
 import { AppMode, UserRole, Language } from '../types';
 import { NavigationItem } from '../services/routingService';
@@ -81,6 +83,8 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
     Gavel,
     User,
     FolderOpen,
+    SlidersHorizontal,
+    Clock,
   };
 
   // Role-specific styling

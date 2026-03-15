@@ -33,6 +33,8 @@ import NotarialRegistry from './src/components/notarial/NotarialRegistry';
 import BailiffRegistry from './src/components/bailiff/BailiffRegistry';
 import UserProfilePage from './src/components/profile/UserProfilePage';
 import DocumentManager from './src/components/documents/DocumentManager';
+import CabinetSettings from './src/components/settings/CabinetSettings';
+import TimeManagement from './src/components/time/TimeManagement';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
@@ -387,6 +389,19 @@ const App: React.FC = () => {
         <DocumentManager
           userId={profile.id}
           language={language}
+        />
+      )}
+      {currentMode === AppMode.TIME_MANAGEMENT && (
+        <TimeManagement
+          language={language}
+          userId={profile.id}
+        />
+      )}
+      {currentMode === AppMode.SETTINGS && (
+        <CabinetSettings
+          userId={profile.id}
+          language={language}
+          userRole={profile.activeRole}
         />
       )}
     </RoleBasedLayout>
