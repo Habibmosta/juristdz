@@ -375,12 +375,6 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
         throw error;
       }
 
-      // Success message
-      alert(isAr 
-        ? `✅ تم إنشاء الملف بنجاح!\nرقم الملف: ${caseNumber}`
-        : `✅ Dossier créé avec succès!\nNuméro: ${caseNumber}`
-      );
-
       // Reset form and close modal
       setFormData({
         clientId: '',
@@ -411,10 +405,9 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
       setShowAdvancedFields(false);
       setShowCreateModal(false);
       
-      // Reload cases
-      loadCases();
+      // Reload cases then notify
+      await loadCases();
       
-      // Success message
       alert(isAr 
         ? `✅ تم إنشاء الملف بنجاح!\nرقم الملف: ${caseNumber}`
         : `✅ Dossier créé avec succès!\nNuméro: ${caseNumber}`

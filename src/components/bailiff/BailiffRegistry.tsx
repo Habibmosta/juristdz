@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Gavel, Plus, Search, CheckCircle2, XCircle,
-  Trash2, X, Clock, DollarSign, Calculator
+  Trash2, X, Clock, DollarSign, Calculator, Download
 } from 'lucide-react';
+import { pdfExportService } from '../../services/pdfExportService';
 import {
   bailiffService, BailiffExploit, ExploitType, ExploitStatus,
   EXPLOIT_TYPE_LABELS, EXPLOIT_STATUS_CONFIG,
@@ -112,6 +113,40 @@ export default function BailiffRegistry({ language, userId }: Props) {
 
   const feeCalcResult = calculateBailiffFees(calcType, Number(calcDistance) || 0, Number(calcAmount) || 0);
   const formatDA = (n: number) => `${Math.round(n).toLocaleString('fr-DZ')} DA`;
+
+  const exportExploitPdf = (ex: BailiffExploit) => {
+    const typeLabel = isAr ? EXPLOIT_TYPE_LABELS[ex.exploit_type]?.ar : EXPLOIT_TYPE_LABELS[ex.exploit_type]?.fr;
+    const cfg = EXPLOIT_STATUS_CONFIG[ex.status];
+    const content = [
+      `${isAr ? 'رقم المحضر' : 'Numéro d\'exploit'}: ${ex.exploit_number}`,
+      `${isAr ? 'النوع' : 'Type'}: ${typeLabel}`,
+      `${isAr ? 'الحالة' : 'Statut'}: ${isAr ? cfg.ar : cfg.fr}`,
+      `${isAr ? 'التاريخ' : 'Date'}: ${new Date(ex.exploit_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-DZ')}`,
+      '',
+      `${isAr ? 'الطالب (المُوكِّل)' : 'Requérant'}: ${ex.requester_name}`,
+      ex.requester_address ? `${isAr ? 'عنوان الطالب' : 'Adresse requérant'}: ${ex.requester_address}` : '',
+      '',
+      `${isAr ? 'المُبلَّغ إليه' : 'Destinataire'}: ${ex.recipient_name}`,
+      `${isAr ? 'عنوان المُبلَّغ' : 'Adresse destinataire'}: ${ex.recipient_address}`,
+      ex.recipient_nin ? `NIN: ${ex.recipient_nin}` : '',
+      '',
+      ex.court_reference ? `${isAr ? 'مرجع الحكم' : 'Référence jugement'}: ${ex.court_reference}` : '',
+      ex.case_description ? `${isAr ? 'وصف القضية' : 'Description'}: ${ex.case_description}` : '',
+      '',
+      ex.amount_claimed ? `${isAr ? 'المبلغ المطالب به' : 'Montant réclamé'}: ${ex.amount_claimed.toLocaleString('fr-DZ')} DA` : '',
+      ex.bailiff_fees ? `${isAr ? 'أتعاب الحضور' : 'Émoluments'}: ${ex.bailiff_fees.toLocaleString('fr-DZ')} DA` : '',
+      ex.travel_fees ? `${isAr ? 'مصاريف التنقل' : 'Frais déplacement'}: ${ex.travel_fees.toLocaleString('fr-DZ')} DA` : '',
+      ex.notes ? `\n${isAr ? 'ملاحظات' : 'Notes'}: ${ex.notes}` : '',
+    ].filter(Boolean).join('\n');
+
+    pdfExportService.exportDocument({
+      title: `${typeLabel} — ${ex.exploit_number}`,
+      content,
+      language: isAr ? 'ar' : 'fr',
+      date: new Date(ex.exploit_date),
+      footer: `JuristDZ — ${isAr ? 'سجل المحاضر والإجراءات' : 'Registre des Exploits'}`,
+    });
+  };
 
   return (
     <div className={`min-h-screen bg-slate-950 text-white p-4 md:p-6 ${isAr ? 'rtl' : 'ltr'}`}>
@@ -300,6 +335,11 @@ export default function BailiffRegistry({ language, userId }: Props) {
                         </button>
                       </>
                     )}
+                    <button onClick={() => exportExploitPdf(ex)}
+                      title={isAr ? 'تصدير PDF' : 'Exporter PDF'}
+                      className="p-1.5 rounded-lg bg-blue-900/20 hover:bg-blue-800/40 text-blue-400 transition-colors">
+                      <Download className="w-4 h-4" />
+                    </button>
                     <button onClick={() => handleDelete(ex.id)}
                       className="p-1.5 rounded-lg bg-red-900/20 hover:bg-red-800/40 text-red-400 transition-colors">
                       <Trash2 className="w-4 h-4" />

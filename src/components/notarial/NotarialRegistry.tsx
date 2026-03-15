@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   FileSignature, Plus, Search, Filter, Eye, CheckCircle2,
-  Trash2, X, ChevronDown, BookOpen, TrendingUp, DollarSign
+  Trash2, X, ChevronDown, BookOpen, TrendingUp, DollarSign, Download
 } from 'lucide-react';
+import { pdfExportService } from '../../services/pdfExportService';
 import {
   notarialActService,
   NotarialAct, ActType, ActStatus,
@@ -126,6 +127,38 @@ export default function NotarialRegistry({ language, userId }: Props) {
     const matchStatus = filterStatus === 'all' || a.status === filterStatus;
     return matchSearch && matchType && matchStatus;
   });
+
+  const exportActPdf = (act: NotarialAct) => {
+    const typeLabel = isAr ? ACT_TYPE_LABELS[act.act_type]?.ar : ACT_TYPE_LABELS[act.act_type]?.fr;
+    const statusLabel = isAr ? ACT_STATUS_CONFIG[act.status].ar : ACT_STATUS_CONFIG[act.status].fr;
+    const content = [
+      `${isAr ? 'رقم العقد' : 'Numéro d\'acte'}: ${act.act_number}`,
+      `${isAr ? 'النوع' : 'Type'}: ${typeLabel}`,
+      `${isAr ? 'الحالة' : 'Statut'}: ${statusLabel}`,
+      `${isAr ? 'التاريخ' : 'Date'}: ${new Date(act.act_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-DZ')}`,
+      '',
+      `${isAr ? 'الطرف الأول' : 'Partie principale'}: ${act.party_last_name} ${act.party_first_name}`,
+      act.party_nin ? `NIN: ${act.party_nin}` : '',
+      act.party_address ? `${isAr ? 'العنوان' : 'Adresse'}: ${act.party_address}` : '',
+      act.counterparty_name ? `${isAr ? 'الطرف الثاني' : 'Contre-partie'}: ${act.counterparty_name}` : '',
+      '',
+      act.act_object ? `${isAr ? 'موضوع العقد' : 'Objet'}: ${act.act_object}` : '',
+      act.property_address ? `${isAr ? 'عنوان العقار' : 'Bien immobilier'}: ${act.property_address}` : '',
+      '',
+      act.act_value ? `${isAr ? 'قيمة العقد' : 'Valeur'}: ${act.act_value.toLocaleString('fr-DZ')} DA` : '',
+      act.registration_fees ? `${isAr ? 'حقوق التسجيل' : 'Droits d\'enregistrement'}: ${act.registration_fees.toLocaleString('fr-DZ')} DA` : '',
+      act.notary_fees ? `${isAr ? 'أتعاب الموثق' : 'Honoraires notaire'}: ${act.notary_fees.toLocaleString('fr-DZ')} DA` : '',
+      act.notes ? `\n${isAr ? 'ملاحظات' : 'Notes'}: ${act.notes}` : '',
+    ].filter(Boolean).join('\n');
+
+    pdfExportService.exportDocument({
+      title: `${typeLabel} — ${act.act_number}`,
+      content,
+      language: isAr ? 'ar' : 'fr',
+      date: new Date(act.act_date),
+      footer: `JuristDZ — ${isAr ? 'سجل العقود التوثيقية' : 'Registre des Actes Notariés'}`,
+    });
+  };
 
   const formatDA = (n?: number) => n ? `${n.toLocaleString('fr-DZ')} DA` : '—';
 
@@ -267,6 +300,13 @@ export default function NotarialRegistry({ language, userId }: Props) {
                       <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
                     </button>
                   )}
+                  <button
+                    onClick={() => exportActPdf(act)}
+                    title={isAr ? 'تصدير PDF' : 'Exporter PDF'}
+                    className="p-1.5 rounded-lg bg-blue-900/20 hover:bg-blue-800/40 text-blue-400 transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => handleDelete(act.id)}
                     className="p-1.5 rounded-lg bg-red-900/20 hover:bg-red-800/40 text-red-400 transition-colors"

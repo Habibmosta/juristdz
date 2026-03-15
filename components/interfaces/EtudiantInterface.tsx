@@ -72,6 +72,14 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
   // Real data from Supabase
   const [cours, setCours] = useState<Cours[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statistiques, setStatistiques] = useState({
+    progressionGlobale: 0,
+    coursTermines: 0,
+    exercicesReussis: 0,
+    tempsEtude: 0,
+    niveau: 'Débutant',
+    prochainObjectif: 'Maîtriser les contrats'
+  });
 
   // Load data on mount
   useEffect(() => {
@@ -98,6 +106,38 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
       }));
       
       setCours(transformedData);
+
+      // Calculer les statistiques réelles
+      const termines = transformedData.filter((c: Cours) => c.statut === 'termine').length;
+      const progressionMoy = transformedData.length > 0
+        ? Math.round(transformedData.reduce((sum: number, c: Cours) => sum + c.progression, 0) / transformedData.length)
+        : 0;
+
+      // Charger les stats depuis Supabase (documents générés = exercices)
+      const { supabase } = await import('../../src/lib/supabase');
+      const { count: docsCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      const { data: timeData } = await supabase
+        .from('time_entries')
+        .select('duration_minutes')
+        .eq('user_id', user.id);
+
+      const totalMinutes = (timeData || []).reduce((sum: number, e: any) => sum + (e.duration_minutes || 0), 0);
+      const totalHeures = Math.round(totalMinutes / 60);
+
+      const niveau = progressionMoy >= 70 ? 'Avancé' : progressionMoy >= 40 ? 'Intermédiaire' : 'Débutant';
+
+      setStatistiques({
+        progressionGlobale: progressionMoy,
+        coursTermines: termines,
+        exercicesReussis: docsCount || 0,
+        tempsEtude: totalHeures,
+        niveau,
+        prochainObjectif: termines < 3 ? 'Maîtriser les sources du droit' : 'Maîtriser les contrats'
+      });
     } catch (error) {
       console.error('Erreur chargement données étudiant:', error);
     } finally {
@@ -138,15 +178,6 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
       statut: 'en_cours'
     }
   ]);
-
-  const [statistiques] = useState({
-    progressionGlobale: 68,
-    coursTermines: 4,
-    exercicesReussis: 12,
-    tempsEtude: 45,
-    niveau: 'Intermédiaire',
-    prochainObjectif: 'Maîtriser les contrats'
-  });
 
   const getNiveauColor = (niveau: string) => {
     switch (niveau) {
