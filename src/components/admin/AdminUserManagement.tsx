@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Users, Plus, Edit2, CheckCircle, XCircle, Search, Trash2, Filter, AlertTriangle } from 'lucide-react';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface User {
   id: string;
@@ -157,6 +158,7 @@ const UserRow: React.FC<{
 
 // Composant principal
 export const AdminUserManagement: React.FC = () => {
+  const { toast } = useAppToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -244,11 +246,11 @@ export const AdminUserManagement: React.FC = () => {
       // 5. Supprimer l'utilisateur auth (optionnel, nécessite service_role)
       // Note: Cela nécessiterait la clé service_role, on laisse l'utilisateur dans auth.users
 
-      alert('Utilisateur supprimé avec succès!');
+      toast('Utilisateur supprimé avec succès!', 'success');
       loadUsers();
     } catch (error: any) {
       console.error('Erreur suppression utilisateur:', error);
-      alert('Erreur lors de la suppression: ' + error.message);
+      toast('Erreur lors de la suppression: ' + error.message, 'error');
     }
   };
 
@@ -459,10 +461,10 @@ export const AdminUserManagement: React.FC = () => {
 
                                       if (subError) console.error('Subscription update error:', subError);
 
-                                      alert('Compte activé avec succès!');
+                                      toast('Compte activé avec succès!', 'success');
                                       loadUsers();
                                     } catch (error: any) {
-                                      alert('Erreur: ' + error.message);
+                                      toast('Erreur: ' + error.message, 'error');
                                     }
                                   }
                                 }}

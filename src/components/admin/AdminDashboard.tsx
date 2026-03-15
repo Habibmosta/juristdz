@@ -5,6 +5,7 @@ import {
   CheckCircle, XCircle, Timer, Award, Filter, Mail, 
   UserCheck, UserX, Shield 
 } from 'lucide-react';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface UserWithSubscription {
   id: string;
@@ -40,6 +41,7 @@ interface Stats {
 }
 
 export const AdminDashboard: React.FC = () => {
+  const { toast } = useAppToast();
   const [users, setUsers] = useState<UserWithSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -212,15 +214,14 @@ export const AdminDashboard: React.FC = () => {
       if (error) throw error;
 
       if (data.success) {
-        alert(`✅ ${data.message}\n\nEmail: ${data.user_email}`);
-        // Recharger les données
+        toast(`${data.message} — Email: ${data.user_email}`, 'success');
         await loadData();
       } else {
-        alert(`❌ Erreur: ${data.message}`);
+        toast(`Erreur: ${data.message}`, 'error');
       }
     } catch (error: any) {
       console.error('Erreur activation email:', error);
-      alert(`❌ Erreur lors de l'activation: ${error.message}`);
+      toast(`Erreur lors de l'activation: ${error.message}`, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -242,14 +243,14 @@ export const AdminDashboard: React.FC = () => {
       if (error) throw error;
 
       if (data.success) {
-        alert(`✅ ${data.message}`);
+        toast(data.message, 'success');
         await loadData();
       } else {
-        alert(`❌ Erreur: ${data.message}`);
+        toast(`Erreur: ${data.message}`, 'error');
       }
     } catch (error: any) {
       console.error('Erreur désactivation:', error);
-      alert(`❌ Erreur lors de la désactivation: ${error.message}`);
+      toast(`Erreur lors de la désactivation: ${error.message}`, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -271,14 +272,14 @@ export const AdminDashboard: React.FC = () => {
       if (error) throw error;
 
       if (data.success) {
-        alert(`✅ ${data.message}`);
+        toast(data.message, 'success');
         await loadData();
       } else {
-        alert(`❌ Erreur: ${data.message}`);
+        toast(`Erreur: ${data.message}`, 'error');
       }
     } catch (error: any) {
       console.error('Erreur réactivation:', error);
-      alert(`❌ Erreur lors de la réactivation: ${error.message}`);
+      toast(`Erreur lors de la réactivation: ${error.message}`, 'error');
     } finally {
       setActionLoading(null);
     }

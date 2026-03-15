@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Save, Download, X, Plus } from 'lucide-react';
 import { Language } from '../../types';
+import { useAppToast } from '../../src/contexts/ToastContext';
 
 interface MemoireEditorProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ const MemoireEditor: React.FC<MemoireEditorProps> = ({
   language
 }) => {
   const isAr = language === 'ar';
+  const { toast } = useAppToast();
   const [memoire, setMemoire] = useState({
     title: '',
     caseNumber: '',
@@ -28,7 +30,7 @@ const MemoireEditor: React.FC<MemoireEditorProps> = ({
   const handleSave = () => {
     // TODO: Save to database
     console.log('Saving memoire:', memoire);
-    alert(isAr ? 'تم الحفظ بنجاح' : 'Sauvegardé avec succès');
+    toast(isAr ? 'تم الحفظ بنجاح' : 'Sauvegardé avec succès', 'success');
   };
 
   const handleDownload = () => {

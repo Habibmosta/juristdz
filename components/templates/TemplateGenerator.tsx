@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../src/lib/supabase';
 import { Language } from '../../types';
 import { X, Download, Save, Loader2, FileText } from 'lucide-react';
+import { useAppToast } from '../../src/contexts/ToastContext';
 
 interface Variable {
   name: string;
@@ -40,6 +41,7 @@ const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
   const [saving, setSaving] = useState(false);
   const [caseData, setCaseData] = useState<any>(null);
   const isAr = language === 'ar';
+  const { toast } = useAppToast();
 
   useEffect(() => {
     if (caseId) {
@@ -100,7 +102,7 @@ const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
       setGeneratedContent(data);
     } catch (error) {
       console.error('Error generating document:', error);
-      alert(isAr ? 'حدث خطأ في إنشاء الوثيقة' : 'Erreur lors de la génération du document');
+      toast(isAr ? 'حدث خطأ في إنشاء الوثيقة' : 'Erreur lors de la génération du document', 'error');
     } finally {
       setLoading(false);
     }
@@ -143,11 +145,11 @@ const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
 
       if (dbError) throw dbError;
 
-      alert(isAr ? 'تم حفظ الوثيقة بنجاح' : 'Document sauvegardé avec succès');
+      toast(isAr ? 'تم حفظ الوثيقة بنجاح' : 'Document sauvegardé avec succès', 'success');
       onGenerated();
     } catch (error) {
       console.error('Error saving document:', error);
-      alert(isAr ? 'حدث خطأ في حفظ الوثيقة' : 'Erreur lors de la sauvegarde du document');
+      toast(isAr ? 'حدث خطأ في حفظ الوثيقة' : 'Erreur lors de la sauvegarde du document', 'error');
     } finally {
       setSaving(false);
     }

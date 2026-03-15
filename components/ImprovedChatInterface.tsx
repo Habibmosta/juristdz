@@ -5,6 +5,7 @@ import { databaseService } from '../services/databaseService';
 import { Send, Bot, User, Languages, Share2, Check, History, ChevronUp, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { UI_TRANSLATIONS } from '../constants';
+import { useAppToast } from '../src/contexts/ToastContext';
 
 interface ChatInterfaceProps {
   language: Language;
@@ -28,6 +29,7 @@ interface ConversationThread {
 
 const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId }) => {
   const t = UI_TRANSLATIONS[language];
+  const { toast } = useAppToast();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<AutoTranslatableMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -930,12 +932,12 @@ ${cleanedText}`;
                     if (analysis.contaminatedMessages > 0) {
                       const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
                       await loadMessages();
-                      alert(`${result.contaminatedMessages} messages supprimés`);
+                      toast(`${result.contaminatedMessages} messages supprimés`, 'success');
                     } else {
-                      alert('Aucun message contaminé');
+                      toast('Aucun message contaminé', 'info');
                     }
                   } catch (error) {
-                    alert('Erreur nettoyage');
+                    toast('Erreur nettoyage', 'error');
                   }
                 }}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
@@ -1039,14 +1041,14 @@ ${cleanedText}`;
                       const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
                       console.log(`🚨 Nettoyage terminé: ${result.contaminatedMessages} supprimés, ${result.cleanedMessages} conservés`);
                       await loadMessages();
-                      alert(`Nettoyage terminé!\n${result.contaminatedMessages} messages contaminés supprimés\n${result.cleanedMessages} messages propres conservés`);
+                      toast(`Nettoyage: ${result.contaminatedMessages} supprimés, ${result.cleanedMessages} conservés`, 'success');
                     } else {
                       console.log('🚨 Aucune contamination détectée');
-                      alert('Aucun message contaminé trouvé dans votre historique.');
+                      toast('Aucun message contaminé trouvé.', 'info');
                     }
                   } catch (error) {
                     console.error('🚨 Erreur nettoyage DB:', error);
-                    alert('Erreur lors du nettoyage de la base de données.');
+                    toast('Erreur lors du nettoyage de la base de données.', 'error');
                   }
                 }}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
