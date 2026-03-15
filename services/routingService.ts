@@ -241,6 +241,7 @@ export class RoutingService {
       [AppMode.DOCUMENTS]: language === 'ar' ? 'المستندات' : 'Documents',
       [AppMode.SETTINGS]: language === 'ar' ? 'الإعدادات' : 'Paramètres',
       [AppMode.TIME_MANAGEMENT]: language === 'ar' ? 'إدارة الوقت' : 'Gestion du temps',
+      [AppMode.JURISPRUDENCE]: language === 'ar' ? 'الاجتهاد القضائي' : 'Jurisprudence',
     };
 
     return labels[mode] || mode;
@@ -271,6 +272,7 @@ export class RoutingService {
       [AppMode.DOCUMENTS]: 'FolderOpen',
       [AppMode.SETTINGS]: 'SlidersHorizontal',
       [AppMode.TIME_MANAGEMENT]: 'Clock',
+      [AppMode.JURISPRUDENCE]: 'BookMarked',
     };
 
     return icons[mode] || 'Circle';
