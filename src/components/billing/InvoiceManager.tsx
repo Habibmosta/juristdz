@@ -4,6 +4,7 @@ import type { Language } from '../../types';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { LimitChecker } from '../trial/LimitChecker';
 import { Sparkline } from '../charts/MiniChart';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface InvoiceManagerProps {
   userId: string;
@@ -37,6 +38,7 @@ interface InvoiceItem {
 }
 
 export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language }) => {
+  const { toast } = useAppToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -131,7 +133,7 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
       downloadInvoicePDF(invoice, lawyerInfo);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert(isAr ? 'خطأ في إنشاء PDF' : 'Erreur lors de la génération du PDF');
+      toast(isAr ? 'خطأ في إنشاء PDF' : 'Erreur lors de la génération du PDF', 'error');
     }
   };
 
@@ -167,7 +169,7 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
         .single();
       
       if (!client?.email) {
-        alert(isAr ? 'العميل ليس لديه بريد إلكتروني' : 'Le client n\'a pas d\'email');
+        toast(isAr ? 'العميل ليس لديه بريد إلكتروني' : 'Le client n\'a pas d\'email', 'warning');
         return;
       }
       
@@ -192,15 +194,15 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
       if (error) throw error;
 
       if (sent) {
-        alert(isAr ? '✅ تم إرسال الفاتورة بنجاح!' : '✅ Facture envoyée avec succès!');
+        toast(isAr ? 'تم إرسال الفاتورة بنجاح' : 'Facture envoyée avec succès', 'success');
       } else {
-        alert(isAr ? '⚠️ تم فتح البريد الإلكتروني' : '⚠️ Client email ouvert');
+        toast(isAr ? 'تم فتح البريد الإلكتروني' : 'Client email ouvert', 'info');
       }
       
       loadInvoices();
     } catch (error) {
       console.error('Error sending invoice:', error);
-      alert(isAr ? 'خطأ في الإرسال' : 'Erreur lors de l\'envoi');
+      toast(isAr ? 'خطأ في الإرسال' : 'Erreur lors de l\'envoi', 'error');
     }
   };
 

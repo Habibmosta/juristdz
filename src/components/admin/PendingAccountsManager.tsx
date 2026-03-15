@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, CheckCircle, XCircle, Clock, DollarSign, Briefcase, Mail, Phone } from 'lucide-react';
 import type { Language } from '../../types';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface PendingAccountsManagerProps {
   language: Language;
@@ -25,6 +26,7 @@ interface PendingAccount {
 }
 
 export const PendingAccountsManager: React.FC<PendingAccountsManagerProps> = ({ language, adminId }) => {
+  const { toast } = useAppToast();
   const [accounts, setAccounts] = useState<PendingAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAccount, setSelectedAccount] = useState<PendingAccount | null>(null);
@@ -74,10 +76,9 @@ export const PendingAccountsManager: React.FC<PendingAccountsManagerProps> = ({ 
 
       if (error) throw error;
 
-      alert(isAr 
-        ? `✅ تم تفعيل حساب ${selectedAccount.first_name} ${selectedAccount.last_name}`
-        : `✅ Compte de ${selectedAccount.first_name} ${selectedAccount.last_name} activé`
-      );
+      toast(isAr 
+        ? `تم تفعيل حساب ${selectedAccount.first_name} ${selectedAccount.last_name}`
+        : `Compte de ${selectedAccount.first_name} ${selectedAccount.last_name} activé`, 'success');
 
       setShowActivateModal(false);
       setSelectedAccount(null);
@@ -86,13 +87,13 @@ export const PendingAccountsManager: React.FC<PendingAccountsManagerProps> = ({ 
       loadPendingAccounts();
     } catch (error) {
       console.error('Error activating account:', error);
-      alert(isAr ? 'خطأ في التفعيل' : 'Erreur lors de l\'activation');
+      toast(isAr ? 'خطأ في التفعيل' : 'Erreur lors de l\'activation', 'error');
     }
   };
 
   const blockAccount = async () => {
     if (!selectedAccount || !blockReason) {
-      alert(isAr ? 'يرجى إدخال سبب الحظر' : 'Veuillez entrer une raison');
+      toast(isAr ? 'يرجى إدخال سبب الحظر' : 'Veuillez entrer une raison', 'warning');
       return;
     }
 
@@ -107,10 +108,9 @@ export const PendingAccountsManager: React.FC<PendingAccountsManagerProps> = ({ 
 
       if (error) throw error;
 
-      alert(isAr 
-        ? `⛔ تم حظر حساب ${selectedAccount.first_name} ${selectedAccount.last_name}`
-        : `⛔ Compte de ${selectedAccount.first_name} ${selectedAccount.last_name} bloqué`
-      );
+      toast(isAr 
+        ? `تم حظر حساب ${selectedAccount.first_name} ${selectedAccount.last_name}`
+        : `Compte de ${selectedAccount.first_name} ${selectedAccount.last_name} bloqué`, 'warning');
 
       setShowBlockModal(false);
       setSelectedAccount(null);
@@ -118,7 +118,7 @@ export const PendingAccountsManager: React.FC<PendingAccountsManagerProps> = ({ 
       loadPendingAccounts();
     } catch (error) {
       console.error('Error blocking account:', error);
-      alert(isAr ? 'خطأ في الحظر' : 'Erreur lors du blocage');
+      toast(isAr ? 'خطأ في الحظر' : 'Erreur lors du blocage', 'error');
     }
   };
 
