@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Clock, Calendar, DollarSign, FileText } from 'lucide-react';
 import type { Language } from '../../types';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface TimeTrackerProps {
   userId: string;
@@ -25,6 +26,7 @@ interface TimeEntry {
 }
 
 export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, caseId }) => {
+  const { toast } = useAppToast();
   const [isRunning, setIsRunning] = useState(false);
   const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -139,7 +141,7 @@ export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, case
 
   const startTimer = async () => {
     if (!description.trim()) {
-      alert(isAr ? 'يرجى إدخال وصف للنشاط' : 'Veuillez entrer une description');
+      toast(isAr ? 'يرجى إدخال وصف للنشاط' : 'Veuillez entrer une description', 'warning');
       return;
     }
 
@@ -166,7 +168,7 @@ export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, case
       setElapsedTime(0);
     } catch (error) {
       console.error('Error starting timer:', error);
-      alert(isAr ? 'خطأ في بدء المؤقت' : 'Erreur lors du démarrage');
+      toast(isAr ? 'خطأ في بدء المؤقت' : 'Erreur lors du démarrage', 'error');
     }
   };
 
@@ -199,7 +201,7 @@ export const TimeTracker: React.FC<TimeTrackerProps> = ({ userId, language, case
       loadRecentEntries();
     } catch (error) {
       console.error('Error stopping timer:', error);
-      alert(isAr ? 'خطأ في إيقاف المؤقت' : 'Erreur lors de l\'arrêt');
+      toast(isAr ? 'خطأ في إيقاف المؤقت' : 'Erreur lors de l\'arrêt', 'error');
     }
   };
 

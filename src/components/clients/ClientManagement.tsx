@@ -6,6 +6,7 @@ import {
   Trash2, Eye, FileText, TrendingUp
 } from 'lucide-react';
 import { LimitChecker } from '../trial/LimitChecker';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface Client {
   id: string;
@@ -29,6 +30,7 @@ interface ClientManagementProps {
 }
 
 const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId }) => {
+  const { toast } = useAppToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,7 +165,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
       loadClients();
     } catch (error) {
       console.error('Error creating client:', error);
-      alert(isAr ? 'خطأ في إنشاء العميل' : 'Erreur lors de la création du client');
+      toast(isAr ? 'خطأ في إنشاء العميل' : 'Erreur lors de la création du client', 'error');
     }
   };
 
@@ -213,7 +215,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
       loadClients();
     } catch (error) {
       console.error('Error updating client:', error);
-      alert(isAr ? 'خطأ في تحديث العميل' : 'Erreur lors de la mise à jour du client');
+      toast(isAr ? 'خطأ في تحديث العميل' : 'Erreur lors de la mise à jour du client', 'error');
     }
   };
 
@@ -253,7 +255,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
       loadClients();
     } catch (error) {
       console.error('Error deleting client:', error);
-      alert(isAr ? 'خطأ في حذف العميل' : 'Erreur lors de la suppression du client');
+      toast(isAr ? 'خطأ في حذف العميل' : 'Erreur lors de la suppression du client', 'error');
     }
   };
 

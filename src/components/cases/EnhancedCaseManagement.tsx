@@ -9,6 +9,7 @@ import { CaseService } from '../../services/caseService';
 import CaseDetailView from './CaseDetailView';
 import { useRoleTerminology } from '../../hooks/useRoleTerminology';
 import { LimitChecker } from '../trial/LimitChecker';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface EnhancedCaseManagementProps {
   language: Language;
@@ -26,6 +27,7 @@ interface Client {
 
 const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ language, userId }) => {
   const { t } = useRoleTerminology(language);
+  const { toast } = useAppToast();
   const [cases, setCases] = useState<Case[]>([]);
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
@@ -242,7 +244,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
     e.preventDefault();
     
     if (!formData.clientId) {
-      alert(isAr ? 'يرجى اختيار عميل' : 'Veuillez sélectionner un client');
+      toast(isAr ? 'يرجى اختيار عميل' : 'Veuillez sélectionner un client', 'warning');
       return;
     }
     
@@ -252,7 +254,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
       // Get client info
       const selectedClient = clients.find(c => c.id === formData.clientId);
       if (!selectedClient) {
-        alert(isAr ? 'العميل غير موجود' : 'Client introuvable');
+        toast(isAr ? 'العميل غير موجود' : 'Client introuvable', 'error');
         return;
       }
       
@@ -408,13 +410,12 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
       // Reload cases then notify
       await loadCases();
       
-      alert(isAr 
-        ? `✅ تم إنشاء الملف بنجاح!\nرقم الملف: ${caseNumber}`
-        : `✅ Dossier créé avec succès!\nNuméro: ${caseNumber}`
-      );
+      toast(isAr 
+        ? `تم إنشاء الملف بنجاح! رقم الملف: ${caseNumber}`
+        : `Dossier créé avec succès! Numéro: ${caseNumber}`, 'success');
     } catch (error) {
       console.error('Error creating case:', error);
-      alert(isAr ? 'خطأ في إنشاء الملف' : 'Erreur lors de la création du dossier');
+      toast(isAr ? 'خطأ في إنشاء الملف' : 'Erreur lors de la création du dossier', 'error');
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, DollarSign, X, FileText, Clock, TrendingUp } from 'lucide-react';
+import { Calculator, DollarSign, X, FileText, Clock, TrendingUp, Download } from 'lucide-react';
 import { Language } from '../../types';
 
 interface HonorairesCalculatorProps {
@@ -322,13 +322,54 @@ const HonorairesCalculator: React.FC<HonorairesCalculatorProps> = ({
           {/* Actions */}
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                alert(isAr ? 'سيتم إضافة ميزة إنشاء الفاتورة قريباً' : 'Génération de facture à venir');
+              onClick={async () => {
+                try {
+                  const { jsPDF } = await import('jspdf');
+                  const doc = new jsPDF();
+                  const date = new Date().toLocaleDateString('fr-DZ');
+                  
+                  doc.setFontSize(18);
+                  doc.setFont('helvetica', 'bold');
+                  doc.text('JuristDZ - Note d\'Honoraires', 20, 20);
+                  
+                  doc.setFontSize(11);
+                  doc.setFont('helvetica', 'normal');
+                  doc.text(`Date: ${date}`, 20, 32);
+                  doc.text(`Type: ${calculationType === 'hourly' ? 'Horaire' : calculationType === 'fixed' ? 'Forfait' : 'Pourcentage'}`, 20, 40);
+                  
+                  doc.setLineWidth(0.5);
+                  doc.line(20, 46, 190, 46);
+                  
+                  doc.setFontSize(12);
+                  let y = 56;
+                  const rows = [
+                    ['Honoraires', `${Math.round(totals.subtotal).toLocaleString('fr-DZ')} DZD`],
+                    ['Frais et débours', `${Math.round(totals.expenses).toLocaleString('fr-DZ')} DZD`],
+                    ['Sous-total HT', `${Math.round(totals.totalBeforeTax).toLocaleString('fr-DZ')} DZD`],
+                    [`TVA (${tva}%)`, `${Math.round(totals.tvaAmount).toLocaleString('fr-DZ')} DZD`],
+                  ];
+                  rows.forEach(([label, value]) => {
+                    doc.text(label, 20, y);
+                    doc.text(value, 150, y, { align: 'right' });
+                    y += 10;
+                  });
+                  
+                  doc.line(20, y, 190, y);
+                  y += 8;
+                  doc.setFont('helvetica', 'bold');
+                  doc.setFontSize(14);
+                  doc.text('TOTAL TTC', 20, y);
+                  doc.text(`${Math.round(totals.total).toLocaleString('fr-DZ')} DZD`, 150, y, { align: 'right' });
+                  
+                  doc.save(`honoraires_${date.replace(/\//g, '-')}.pdf`);
+                } catch (e) {
+                  console.error('PDF export error:', e);
+                }
               }}
               className="flex-1 px-6 py-3 bg-legal-gold text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-legal-gold/90"
             >
-              <FileText size={20} />
-              {isAr ? 'إنشاء فاتورة' : 'Générer facture'}
+              <Download size={20} />
+              {isAr ? 'تصدير PDF' : 'Exporter PDF'}
             </button>
           </div>
         </div>

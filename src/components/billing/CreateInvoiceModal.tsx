@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save } from 'lucide-react';
 import type { Language } from '../../types';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface CreateInvoiceModalProps {
   userId: string;
@@ -37,6 +38,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   onSuccess
 }) => {
   const isAr = language === 'ar';
+  const { toast } = useAppToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(false);
@@ -134,12 +136,12 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     e.preventDefault();
     
     if (!formData.clientId) {
-      alert(isAr ? 'يرجى اختيار عميل' : 'Veuillez sélectionner un client');
+      toast(isAr ? 'يرجى اختيار عميل' : 'Veuillez sélectionner un client', 'warning');
       return;
     }
 
     if (items.some(item => !item.description || item.quantity <= 0 || item.unit_price <= 0)) {
-      alert(isAr ? 'يرجى ملء جميع عناصر الفاتورة' : 'Veuillez remplir tous les éléments');
+      toast(isAr ? 'يرجى ملء جميع عناصر الفاتورة' : 'Veuillez remplir tous les éléments', 'warning');
       return;
     }
 
@@ -178,15 +180,14 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
       if (error) throw error;
 
-      alert(isAr 
-        ? `✅ تم إنشاء الفاتورة بنجاح!\nرقم الفاتورة: ${invoiceNumber}`
-        : `✅ Facture créée avec succès!\nNuméro: ${invoiceNumber}`
-      );
+      toast(isAr 
+        ? `تم إنشاء الفاتورة بنجاح! رقم: ${invoiceNumber}`
+        : `Facture créée avec succès! Numéro: ${invoiceNumber}`, 'success');
       
       onSuccess();
     } catch (error) {
       console.error('Error creating invoice:', error);
-      alert(isAr ? 'خطأ في إنشاء الفاتورة' : 'Erreur lors de la création');
+      toast(isAr ? 'خطأ في إنشاء الفاتورة' : 'Erreur lors de la création', 'error');
     } finally {
       setLoading(false);
     }

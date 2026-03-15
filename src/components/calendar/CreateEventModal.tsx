@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Calendar, Clock, MapPin, Bell, FileText } from 'lucide-react';
 import type { Language } from '../../types';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface CreateEventModalProps {
   userId: string;
@@ -24,6 +25,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
   initialDate
 }) => {
   const isAr = language === 'ar';
+  const { toast } = useAppToast();
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -70,7 +72,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
     e.preventDefault();
     
     if (!formData.title.trim()) {
-      alert(isAr ? 'يرجى إدخال عنوان' : 'Veuillez entrer un titre');
+      toast(isAr ? 'يرجى إدخال عنوان' : 'Veuillez entrer un titre', 'warning');
       return;
     }
 
@@ -127,11 +129,11 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
 
       if (error) throw error;
 
-      alert(isAr ? '✅ تم إنشاء الحدث بنجاح!' : '✅ Événement créé avec succès!');
+      toast(isAr ? 'تم إنشاء الحدث بنجاح' : 'Événement créé avec succès', 'success');
       onSuccess();
     } catch (error) {
       console.error('Error creating event:', error);
-      alert(isAr ? 'خطأ في إنشاء الحدث' : 'Erreur lors de la création');
+      toast(isAr ? 'خطأ في إنشاء الحدث' : 'Erreur lors de la création', 'error');
     } finally {
       setLoading(false);
     }
