@@ -31,6 +31,7 @@ import UserProfilePage from './src/components/profile/UserProfilePage';
 import DocumentManager from './src/components/documents/DocumentManager';
 import CabinetSettings from './src/components/settings/CabinetSettings';
 import TimeManagement from './src/components/time/TimeManagement';
+import JurisprudencePage from './components/jurisprudence/JurisprudencePage';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, UserRole, EnhancedUserProfile } from './types';
 import { routingService } from './services/routingService';
@@ -372,6 +373,14 @@ const App: React.FC = () => {
           userId={profile.id}
           language={language}
           userRole={profile.activeRole}
+        />
+      )}
+      {currentMode === AppMode.JURISPRUDENCE && (
+        <JurisprudencePage
+          language={language}
+          theme={theme}
+          userId={profile.id}
+          userRole={profile.profession}
         />
       )}
     </RoleBasedLayout>
