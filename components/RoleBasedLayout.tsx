@@ -61,7 +61,9 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [accessDeniedMessage, setAccessDeniedMessage] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -467,6 +469,26 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Collapse toggle button */}
+            <button
+              onClick={() => setIsDesktopSidebarCollapsed(prev => {
+                const next = !prev;
+                localStorage.setItem('sidebar_collapsed', String(next));
+                return next;
+              })}
+              className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
+                theme === 'light'
+                  ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'
+                  : 'hover:bg-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title={isDesktopSidebarCollapsed ? (isAr ? 'توسيع' : 'Développer') : (isAr ? 'طي' : 'Réduire')}
+            >
+              {isDesktopSidebarCollapsed
+                ? <ChevronRight size={16} />
+                : <ChevronLeft size={16} />
+              }
+            </button>
 
             {/* User Profile - Compact on same line */}
             {!isDesktopSidebarCollapsed && (
