@@ -235,6 +235,8 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <AdvancedSearch
                 language={language}
                 theme={theme}
+                userId={user.id}
+                userRole={user.profession}
                 onResultsChange={setSearchResults}
               />
             </div>

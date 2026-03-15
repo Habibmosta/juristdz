@@ -24,13 +24,16 @@ import type {
   SortOption
 } from '../../types/search';
 import { Language } from '../../types';
-import { searchService } from '../../services/searchService';
+import { jurisprudenceService } from '../../services/jurisprudenceService';
 import { UI_TRANSLATIONS } from '../../constants';
 import SearchResults from './SearchResults';
+import ContributeJurisprudenceModal from '../jurisprudence/ContributeJurisprudenceModal';
 
 interface AdvancedSearchProps {
   language: Language;
   theme?: 'light' | 'dark';
+  userId?: string;
+  userRole?: string;
   onResultsChange?: (results: SearchResult<JurisprudenceResult | LegalText>) => void;
 }
 
@@ -41,6 +44,8 @@ interface AdvancedSearchProps {
 const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   language,
   theme = 'light',
+  userId,
+  userRole,
   onResultsChange
 }) => {
   const t = UI_TRANSLATIONS[language];
@@ -67,6 +72,9 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
   // Available filter options
   const [filterOptions, setFilterOptions] = useState<any>(null);
+
+  // Contribute modal
+  const [showContribute, setShowContribute] = useState(false);
 
   // Load filter options on mount
   useEffect(() => {
@@ -134,9 +142,9 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       // Execute search based on type
       let searchResults;
       if (searchType === 'jurisprudence') {
-        searchResults = await searchService.searchJurisprudence(query);
+        searchResults = await jurisprudenceService.search(query);
       } else {
-        searchResults = await searchService.searchLegalTexts(query);
+        searchResults = await jurisprudenceService.search(query);
       }
 
       setResults(searchResults);
@@ -196,13 +204,26 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       
       {/* Search Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
-          <Search className="text-legal-blue" size={28} />
-          {isAr ? 'البحث المتقدم في القانون الجزائري' : 'Recherche Avancée - Droit Algérien'}
-        </h2>
-        <p className="text-slate-500 text-sm">
-          {isAr ? 'ابحث في الاجتهاد القضائي والنصوص القانونية الجزائرية' : 'Recherchez dans la jurisprudence et les textes légaux algériens'}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+              <Search className="text-legal-blue" size={28} />
+              {isAr ? 'البحث المتقدم في القانون الجزائري' : 'Recherche Avancée - Droit Algérien'}
+            </h2>
+            <p className="text-slate-500 text-sm">
+              {isAr ? 'ابحث في الاجتهاد القضائي والنصوص القانونية الجزائرية' : 'Recherchez dans la jurisprudence et les textes légaux algériens'}
+            </p>
+          </div>
+          {userId && (
+            <button
+              onClick={() => setShowContribute(true)}
+              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-legal-gold text-white rounded-xl text-sm font-bold hover:bg-legal-gold/90 transition-colors"
+            >
+              <Gavel size={16} />
+              {isAr ? 'أضف قراراً' : 'Contribuer'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search Type Selector */}
@@ -474,6 +495,17 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           searchType={searchType}
           language={language}
           theme={theme}
+        />
+      )}
+
+      {/* Contribute Modal */}
+      {showContribute && userId && (
+        <ContributeJurisprudenceModal
+          userId={userId}
+          userRole={userRole}
+          language={language}
+          theme={theme}
+          onClose={() => setShowContribute(false)}
         />
       )}
     </div>

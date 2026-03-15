@@ -411,6 +411,8 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <AdvancedSearch
                 language={language}
                 theme={theme}
+                userId={user.id}
+                userRole={user.profession}
                 onResultsChange={setSearchResults}
               />
             </div>
