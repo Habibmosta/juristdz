@@ -78,8 +78,8 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
 
   // Get file icon based on type
   const getFileIcon = () => {
-    const type = document.fileType.toLowerCase();
-    const mimeType = document.mimeType.toLowerCase();
+    const type = (document.fileType ?? '').toLowerCase();
+    const mimeType = (document.mimeType ?? '').toLowerCase();
 
     if (type === 'pdf' || mimeType === 'application/pdf') {
       return <FileText size={40} className="text-red-500" />;
@@ -110,7 +110,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
   };
 
   // Get category info
-  const categoryInfo = CATEGORY_LABELS[document.category];
+  const categoryInfo = CATEGORY_LABELS[document.category] ?? CATEGORY_LABELS['autre'];
 
   return (
     <div

@@ -72,7 +72,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, languag
         .limit(20);
 
       if (!error && data) {
-        setNotifications(data);
+        setDbNotifications(data);
         setUnreadCount(data.filter(n => !n.is_read).length);
       }
     } catch (error) {
