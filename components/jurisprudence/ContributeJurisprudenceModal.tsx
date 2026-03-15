@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, Gavel, Plus, Trash2, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Gavel, Plus, Trash2, Send, AlertCircle, CheckCircle, Upload, Scan, Loader2, FileText, Eye } from 'lucide-react';
 import { Language } from '../../types';
 import { jurisprudenceService, ContributionPayload, PrecedentValue } from '../../services/jurisprudenceService';
+import { performOcr, extractFieldsFromText } from '../../services/ocrService';
 
 interface Props {
   userId: string;
@@ -49,6 +50,12 @@ const ContributeJurisprudenceModal: React.FC<Props> = ({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // OCR state
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<{ text: string; language: string; confidence: number } | null>(null);
+  const [showOcrText, setShowOcrText] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Form state
   const [form, setForm] = useState<Partial<ContributionPayload>>({
     jurisdiction: '',
@@ -77,6 +84,52 @@ const ContributeJurisprudenceModal: React.FC<Props> = ({
 
   const isStep1Valid = form.case_number && form.decision_date && form.jurisdiction && form.court_name && form.legal_domain;
   const isStep2Valid = form.summary_fr && form.summary_fr.length >= 50;
+
+  const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowed = ['image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      setError(isAr ? 'صيغة الملف غير مدعومة. استخدم JPG، PNG، TIFF أو PDF.' : 'Format non supporté. Utilisez JPG, PNG, TIFF ou PDF.');
+      return;
+    }
+
+    setOcrLoading(true);
+    setError(null);
+    try {
+      const result = await performOcr(file);
+      setOcrResult(result);
+
+      // Auto-fill form fields from extracted text
+      const extracted = extractFieldsFromText(result.text);
+
+      setForm(prev => ({
+        ...prev,
+        case_number:       extracted.case_number      || prev.case_number,
+        decision_date:     extracted.decision_date    || prev.decision_date,
+        court_name:        extracted.court_name       || prev.court_name,
+        summary_fr:        extracted.summary_fr       || prev.summary_fr,
+        summary_ar:        extracted.summary_ar       || prev.summary_ar,
+        legal_references:  extracted.legal_references?.length
+                             ? [...new Set([...(prev.legal_references || []), ...extracted.legal_references])]
+                             : prev.legal_references,
+        keywords:          extracted.keywords?.length
+                             ? [...new Set([...(prev.keywords || []), ...extracted.keywords])]
+                             : prev.keywords,
+      }));
+
+    } catch (err: any) {
+      setError(isAr
+        ? `فشل التعرف الضوئي على النص: ${err.message}`
+        : `Échec de l'OCR : ${err.message}`);
+    } finally {
+      setOcrLoading(false);
+      // Reset input so same file can be re-uploaded
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -140,9 +193,76 @@ const ContributeJurisprudenceModal: React.FC<Props> = ({
           </button>
         </div>
 
+        {/* OCR Upload Zone */}
+        <div className={`mx-6 mt-4 rounded-2xl border-2 border-dashed transition-colors ${
+          ocrLoading
+            ? 'border-legal-blue bg-blue-50 dark:bg-blue-900/10'
+            : 'border-slate-200 dark:border-slate-700 hover:border-legal-blue'
+        }`}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/tiff,image/bmp,application/pdf"
+            onChange={handleOcrUpload}
+            className="hidden"
+            id="ocr-upload"
+          />
+          <label htmlFor="ocr-upload" className={`flex items-center gap-3 p-4 cursor-pointer ${ocrLoading ? 'cursor-wait' : ''}`}>
+            <div className={`p-2 rounded-xl flex-shrink-0 ${ocrLoading ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
+              {ocrLoading
+                ? <Loader2 size={20} className="text-legal-blue animate-spin" />
+                : <Scan size={20} className="text-slate-500" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                {ocrLoading
+                  ? (isAr ? 'جاري التعرف الضوئي على النص...' : 'Reconnaissance de texte en cours...')
+                  : (isAr ? 'مسح ضوئي لوثيقة (OCR)' : 'Scanner un document (OCR)')}
+              </p>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {isAr
+                  ? 'ارفع صورة أو PDF — سيتم استخراج البيانات تلقائياً (عربي + فرنسي)'
+                  : 'Importez une image ou PDF — les champs seront remplis automatiquement (AR + FR)'}
+              </p>
+            </div>
+            {!ocrLoading && (
+              <Upload size={16} className="text-slate-400 flex-shrink-0" />
+            )}
+          </label>
+
+          {/* OCR result banner */}
+          {ocrResult && !ocrLoading && (
+            <div className="px-4 pb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400">
+                <CheckCircle size={14} />
+                <span>
+                  {isAr ? 'تم الاستخراج' : 'Extraction réussie'} —{' '}
+                  {ocrResult.pages} {isAr ? 'صفحة' : 'page(s)'},{' '}
+                  {isAr ? 'لغة' : 'langue'}: {ocrResult.language === 'mixed' ? 'AR+FR' : ocrResult.language.toUpperCase()}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowOcrText(!showOcrText)}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              >
+                <Eye size={12} />
+                {showOcrText ? (isAr ? 'إخفاء النص' : 'Masquer') : (isAr ? 'عرض النص' : 'Voir texte brut')}
+              </button>
+            </div>
+          )}
+
+          {/* Raw OCR text preview */}
+          {showOcrText && ocrResult && (
+            <div className={`mx-4 mb-3 p-3 rounded-xl text-xs font-mono max-h-32 overflow-y-auto ${
+              isDark ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-600'
+            } border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+              {ocrResult.text.substring(0, 1000)}{ocrResult.text.length > 1000 ? '...' : ''}
+            </div>
+          )}
+        </div>
+
         {/* Steps indicator */}
-        <div className="flex items-center gap-2 px-6 pt-4">
-          {[1, 2, 3].map(s => (
+        <div className="flex items-center gap-2 px-6 pt-4">          {[1, 2, 3].map(s => (
             <React.Fragment key={s}>
               <div className={`flex items-center gap-2 text-sm font-medium ${step >= s ? 'text-legal-blue' : 'text-slate-400'}`}>
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
