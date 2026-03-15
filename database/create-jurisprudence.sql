@@ -20,7 +20,7 @@ CREATE TABLE jurisprudence (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
 
   -- Identification de la décision
-  case_number TEXT NOT NULL,                    -- Ex: CS/Civ/2022/1234
+  case_number TEXT NOT NULL UNIQUE,                -- Ex: CS/Civ/2022/1234
   decision_date DATE NOT NULL,
   jurisdiction TEXT NOT NULL
     CHECK (jurisdiction IN (
