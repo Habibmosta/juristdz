@@ -30,6 +30,7 @@ import PendingAccountsManager from './src/components/admin/PendingAccountsManage
 import LegalDeadlineTracker from './src/components/deadlines/LegalDeadlineTracker';
 import NotarialRegistry from './src/components/notarial/NotarialRegistry';
 import BailiffRegistry from './src/components/bailiff/BailiffRegistry';
+import UserProfilePage from './src/components/profile/UserProfilePage';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
@@ -368,6 +369,16 @@ const App: React.FC = () => {
         <BailiffRegistry
           language={language}
           userId={profile.id}
+        />
+      )}
+      {currentMode === AppMode.PROFILE && (
+        <UserProfilePage
+          user={profile as EnhancedUserProfile}
+          language={language}
+          onUpdate={(updated) => {
+            // Refresh profile in parent if needed
+            console.log('Profile updated:', updated);
+          }}
         />
       )}
       {currentMode === AppMode.DOCS && (

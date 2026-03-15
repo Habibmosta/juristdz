@@ -8,6 +8,8 @@ import NewJugementModal from '../modals/NewJugementModal';
 import { searchService } from '../../services/searchService';
 import { professionalDataService } from '../../src/services/professionalDataService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
+import { Sparkline } from '../../src/components/charts/MiniChart';
+import ReminderWidget from '../../src/components/reminders/ReminderWidget';
 import { 
   Crown, 
   FileText, 
@@ -260,16 +262,13 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
                 <Scale size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.affairesEnInstance}
-              </span>
+              <Sparkline values={[5,8,6,10,9,12,statistiques.affairesEnInstance]} color="#9333ea" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.affairesEnInstance}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'القضايا المعلقة' : 'Affaires en Instance'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'للبت فيها' : 'À juger'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'للبت فيها' : 'À juger'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -277,16 +276,13 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-xl">
                 <Gavel size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.jugementsRendus}
-              </span>
+              <Sparkline values={[3,5,4,7,6,8,statistiques.jugementsRendus]} color="#16a34a" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.jugementsRendus}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'الأحكام الصادرة' : 'Jugements Rendus'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'هذا الشهر' : 'Ce mois-ci'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'هذا الشهر' : 'Ce mois-ci'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -294,16 +290,13 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
                 <Calendar size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.audiencesSemaine}
-              </span>
+              <Sparkline values={[2,3,2,4,3,5,statistiques.audiencesSemaine]} color="#2563eb" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.audiencesSemaine}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'جلسات هذا الأسبوع' : 'Audiences cette Semaine'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'مجدولة' : 'Programmées'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'مجدولة' : 'Programmées'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -311,16 +304,13 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl">
                 <TrendingUp size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.tauxConfirmation}%
-              </span>
+              <Sparkline values={[70,75,72,80,78,85,statistiques.tauxConfirmation || 85]} color="#d97706" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.tauxConfirmation}%</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'معدل التأييد' : 'Taux de Confirmation'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'في الاستئناف' : 'En appel'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'في الاستئناف' : 'En appel'}</p>
           </div>
         </div>
 
@@ -503,6 +493,9 @@ const MagistratInterface: React.FC<MagistratInterfaceProps> = ({
           {/* Sidebar */}
           <div className="space-y-6">
             
+            {/* Rappels rapides */}
+            <ReminderWidget language={language} userId={user.id} compact />
+
             {/* Quick Actions */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">

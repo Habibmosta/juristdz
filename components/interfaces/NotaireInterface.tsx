@@ -6,6 +6,7 @@ import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { UserRole } from '../../types';
 import { ACT_TYPE_LABELS, ACT_STATUS_CONFIG } from '../../src/services/notarialActService';
 import { Sparkline } from '../../src/components/charts/MiniChart';
+import ReminderWidget from '../../src/components/reminders/ReminderWidget';
 import { 
   FileSignature, 
   BookOpen, 
@@ -336,6 +337,9 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
           {/* Sidebar */}
           <div className="space-y-6">
             
+            {/* Rappels rapides */}
+            <ReminderWidget language={language} userId={user.id} compact />
+
             {/* Quick Actions */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">

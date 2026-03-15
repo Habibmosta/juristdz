@@ -362,6 +362,20 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                   </div>
                   <div className="p-2">
                     <button
+                      onClick={() => {
+                        onModeChange(AppMode.PROFILE);
+                        setShowUserMenu(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        theme === 'light'
+                          ? 'hover:bg-slate-50 text-slate-700'
+                          : 'hover:bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <UserIcon size={18} />
+                      <span className="font-medium">{isAr ? 'الملف الشخصي' : 'Mon Profil'}</span>
+                    </button>
+                    <button
                       onClick={async () => {
                         await signOut();
                         setShowUserMenu(false);
@@ -500,6 +514,20 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                       
                       {/* Logout Button */}
                       <div className="p-2">
+                        <button
+                          onClick={() => {
+                            onModeChange(AppMode.PROFILE);
+                            setShowUserMenu(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                            theme === 'light'
+                              ? 'hover:bg-slate-50 text-slate-700'
+                              : 'hover:bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <UserIcon size={18} />
+                          <span className="font-medium">{isAr ? 'الملف الشخصي' : 'Mon Profil'}</span>
+                        </button>
                         <button
                           onClick={async () => {
                             await signOut();

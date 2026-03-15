@@ -3,6 +3,8 @@ import { Language, EnhancedUserProfile, UserRole } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import { professionalDataService } from '../../src/services/professionalDataService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
+import { Sparkline } from '../../src/components/charts/MiniChart';
+import ReminderWidget from '../../src/components/reminders/ReminderWidget';
 import { 
   Building, 
   FileText, 
@@ -260,16 +262,13 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
               <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl">
                 <AlertTriangle size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.alertesActives}
-              </span>
+              <Sparkline values={[1,3,2,4,3,5,statistiques.alertesActives]} color={statistiques.alertesActives > 0 ? '#ef4444' : '#22c55e'} />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.alertesActives}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'تنبيهات الامتثال' : 'Alertes Conformité'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'تتطلب اهتماماً' : 'Nécessitent attention'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'تتطلب اهتماماً' : 'Nécessitent attention'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -277,16 +276,13 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
                 <FileText size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.contratsGeres}
-              </span>
+              <Sparkline values={[5,8,7,10,9,12,statistiques.contratsGeres]} color="#2563eb" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.contratsGeres}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'العقود المُدارة' : 'Contrats Gérés'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'نشطة ومعلقة' : 'Actifs et en cours'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'نشطة ومعلقة' : 'Actifs et en cours'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -294,16 +290,13 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
               <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-xl">
                 <Shield size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.conformiteScore}%
-              </span>
+              <Sparkline values={[80,82,85,88,90,91,statistiques.conformiteScore]} color="#16a34a" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.conformiteScore}%</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'نقاط الامتثال' : 'Score Conformité'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'ممتاز' : 'Excellent'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'ممتاز' : 'Excellent'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -311,16 +304,13 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
                 <TrendingUp size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {statistiques.veilleNouveautes}
-              </span>
+              <Sparkline values={[8,10,9,12,11,14,statistiques.veilleNouveautes]} color="#9333ea" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.veilleNouveautes}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'تحديثات قانونية' : 'Veille Juridique'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'هذا الأسبوع' : 'Cette semaine'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'هذا الأسبوع' : 'Cette semaine'}</p>
           </div>
         </div>
 
@@ -500,6 +490,9 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
           {/* Sidebar */}
           <div className="space-y-6">
             
+            {/* Rappels rapides */}
+            <ReminderWidget language={language} userId={user.id} compact />
+
             {/* Quick Actions */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">

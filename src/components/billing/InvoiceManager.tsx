@@ -3,6 +3,7 @@ import { FileText, Plus, Download, Send, Eye, DollarSign, Calendar, User } from 
 import type { Language } from '../../types';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { LimitChecker } from '../trial/LimitChecker';
+import { Sparkline } from '../charts/MiniChart';
 
 interface InvoiceManagerProps {
   userId: string;
@@ -242,35 +243,47 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-500">{isAr ? 'المجموع' : 'Total'}</span>
-            <FileText size={20} className="text-blue-600" />
+            <Sparkline values={[2,4,3,5,4,6,stats.total]} color="#2563eb" />
           </div>
-          <p className="text-3xl font-bold">{stats.total}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <FileText size={18} className="text-blue-600" />
+            <p className="text-3xl font-bold">{stats.total}</p>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-500">{isAr ? 'مدفوعة' : 'Payées'}</span>
-            <DollarSign size={20} className="text-green-600" />
+            <Sparkline values={[1,2,2,3,3,4,stats.paid]} color="#16a34a" />
           </div>
-          <p className="text-3xl font-bold text-green-600">{stats.paid}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <DollarSign size={18} className="text-green-600" />
+            <p className="text-3xl font-bold text-green-600">{stats.paid}</p>
+          </div>
           <p className="text-xs text-slate-500 mt-1">{formatAmount(stats.paidAmount)}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-500">{isAr ? 'قيد الانتظار' : 'En attente'}</span>
-            <Calendar size={20} className="text-orange-600" />
+            <Sparkline values={[1,2,1,3,2,3,stats.sent]} color="#ea580c" />
           </div>
-          <p className="text-3xl font-bold text-orange-600">{stats.sent}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <Calendar size={18} className="text-orange-600" />
+            <p className="text-3xl font-bold text-orange-600">{stats.sent}</p>
+          </div>
           <p className="text-xs text-slate-500 mt-1">{formatAmount(stats.unpaidAmount)}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-500">{isAr ? 'متأخرة' : 'En retard'}</span>
-            <FileText size={20} className="text-red-600" />
+            <Sparkline values={[0,1,0,1,1,0,stats.overdue]} color="#ef4444" />
           </div>
-          <p className="text-3xl font-bold text-red-600">{stats.overdue}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <FileText size={18} className="text-red-600" />
+            <p className="text-3xl font-bold text-red-600">{stats.overdue}</p>
+          </div>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import { searchService } from '../../services/searchService';
 import { caseService } from '../../services/caseService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { Sparkline } from '../../src/components/charts/MiniChart';
+import ReminderWidget from '../../src/components/reminders/ReminderWidget';
 import { 
   Scale, 
   Search, 
@@ -782,22 +783,8 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               </div>
             </div>
 
-            {/* Recent Searches - Hidden for now, will be implemented with search tracking */}
-            {/* 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <BookOpen size={18} className="text-legal-blue" />
-                {isAr ? 'البحوث الأخيرة' : 'Recherches Récentes'}
-              </h3>
-              
-              <div className="text-center py-4">
-                <BookOpen size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-2" />
-                <p className="text-sm text-slate-500">
-                  {isAr ? 'لا توجد بحوث حديثة' : 'Aucune recherche récente'}
-                </p>
-              </div>
-            </div>
-            */}
+            {/* Rappels rapides */}
+            <ReminderWidget language={language} userId={user.id} compact />
 
             {/* Urgent Legal Deadlines from legalDeadlineService */}
             {(dashboardData.urgentDeadlines > 0 || dashboardData.overdueDeadlines > 0) && (
