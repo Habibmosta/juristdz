@@ -26,7 +26,8 @@ import {
   User,
   FolderOpen,
   SlidersHorizontal,
-  Clock
+  Clock,
+  BookMarked
 } from 'lucide-react';
 import { AppMode, UserRole, Language } from '../types';
 import { NavigationItem } from '../services/routingService';
@@ -85,6 +86,7 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
     FolderOpen,
     SlidersHorizontal,
     Clock,
+    BookMarked,
   };
 
   // Role-specific styling
