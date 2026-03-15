@@ -122,6 +122,8 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['famille', 'civil', 'penal', 'notarial', 'huissier', 'commercial', 'administratif', 'travail', 'etudiant']));
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [currentDocumentId, setCurrentDocumentId] = useState<string>('');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Group templates by category
   const getTemplateCategory = (id: string): { key: string; label_fr: string; label_ar: string } => {
@@ -211,6 +213,31 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
     translateDocument();
   }, [language, originalDoc, originalDocLang]);
+
+  // Autosave when generatedDoc changes in edit mode
+  useEffect(() => {
+    if (!generatedDoc || !currentDocumentId || !isEditing) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    setAutoSaveStatus('saving');
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        await documentVersionService.saveVersion({
+          userId,
+          documentId: currentDocumentId,
+          documentTitle: language === 'ar' ? (selectedTemplate?.name_ar || selectedTemplate?.name || 'Document') : (selectedTemplate?.name || 'Document'),
+          templateId: selectedTemplateId,
+          content: generatedDoc,
+          language,
+          changeSummary: language === 'ar' ? 'حفظ تلقائي' : 'Sauvegarde automatique',
+        });
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } catch {
+        setAutoSaveStatus('idle');
+      }
+    }, 2000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [generatedDoc, isEditing]);
 
   // Helper function to replace placeholders with form data
   const replacePlaceholdersWithFormData = (document: string, formData: any): string => {
@@ -1300,6 +1327,19 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
                   {language === 'ar' ? 'تحرير' : 'Éditer'}
                 </button>
               </div>
+              {isEditing && autoSaveStatus !== 'idle' && (
+                <span className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg ${
+                  autoSaveStatus === 'saving'
+                    ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
+                    : 'text-green-600 bg-green-50 dark:bg-green-900/20'
+                }`}>
+                  {autoSaveStatus === 'saving' ? (
+                    <><div className="w-2.5 h-2.5 border border-amber-500 border-t-transparent rounded-full animate-spin" />{language === 'ar' ? 'جاري الحفظ...' : 'Sauvegarde...'}</>
+                  ) : (
+                    <><CheckCircle size={11} />{language === 'ar' ? 'محفوظ' : 'Sauvegardé'}</>
+                  )}
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 {isDocTranslated && (
                   <span className="flex items-center gap-1 text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg text-xs font-bold">

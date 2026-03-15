@@ -38,6 +38,10 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientDetailTab, setClientDetailTab] = useState<'info' | 'cases' | 'invoices'>('info');
+  const [clientCases, setClientCases] = useState<any[]>([]);
+  const [clientInvoices, setClientInvoices] = useState<any[]>([]);
+  const [clientDetailLoading, setClientDetailLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -238,6 +242,25 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
       notes: client.notes || ''
     });
     setShowEditModal(true);
+  };
+
+  const openClientDetail = async (client: Client) => {
+    setSelectedClient(client);
+    setClientDetailTab('info');
+    setClientDetailLoading(true);
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const [casesRes, invoicesRes] = await Promise.all([
+        supabase.from('cases').select('id, case_number, title, status, created_at').eq('client_id', client.id).eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('invoices').select('id, invoice_number, total_amount, status, due_date, created_at').eq('client_id', client.id).eq('user_id', userId).order('created_at', { ascending: false })
+      ]);
+      setClientCases(casesRes.data || []);
+      setClientInvoices(invoicesRes.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setClientDetailLoading(false);
+    }
   };
 
   const handleDeleteClient = async (clientId: string) => {
@@ -451,7 +474,7 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button 
-                            onClick={() => setSelectedClient(client)}
+                            onClick={() => openClientDetail(client)}
                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                             title={isAr ? 'عرض' : 'Voir'}
                           >
@@ -493,49 +516,136 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">{selectedClient.firstName} {selectedClient.lastName}</h2>
-                <button onClick={() => setSelectedClient(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                  ✕
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-legal-gold/10 text-legal-gold rounded-full flex items-center justify-center font-bold text-lg">
+                    {selectedClient.firstName?.[0]}{selectedClient.lastName?.[0]}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">{selectedClient.firstName} {selectedClient.lastName}</h2>
+                    <p className="text-sm text-slate-500">{isAr ? 'منذ' : 'Client depuis'} {selectedClient.createdAt.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR')}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedClient(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">✕</button>
+              </div>
+              {/* Tabs */}
+              <div className="flex gap-1 mt-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                {(['info', 'cases', 'invoices'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setClientDetailTab(tab)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${clientDetailTab === tab ? 'bg-white dark:bg-slate-700 shadow text-legal-gold' : 'text-slate-500'}`}
+                  >
+                    {tab === 'info' ? (isAr ? 'المعلومات' : 'Infos') : tab === 'cases' ? (isAr ? 'الملفات' : 'Dossiers') : (isAr ? 'الفواتير' : 'Factures')}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</p>
-                  <p className="font-medium">{selectedClient.email || '-'}</p>
+            <div className="p-6">
+              {clientDetailLoading ? (
+                <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-legal-gold" /></div>
+              ) : clientDetailTab === 'info' ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</p>
+                      <p className="font-medium">{selectedClient.email || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'الهاتف' : 'Téléphone'}</p>
+                      <p className="font-medium">{selectedClient.phone || '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'العنوان' : 'Adresse'}</p>
+                      <p className="font-medium">{selectedClient.address || '-'}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'الملفات النشطة' : 'Dossiers Actifs'}</p>
+                      <p className="text-2xl font-bold text-green-600">{selectedClient.activeCases}</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'إجمالي الملفات' : 'Total Dossiers'}</p>
+                      <p className="text-2xl font-bold">{selectedClient.totalCases}</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                      <p className="text-sm text-slate-500 mb-1">{isAr ? 'الإيرادات' : 'Revenus'}</p>
+                      <p className="text-xl font-bold text-blue-600">{selectedClient.totalRevenue.toLocaleString()} DA</p>
+                    </div>
+                  </div>
+                  {selectedClient.notes && (
+                    <div>
+                      <p className="text-sm text-slate-500 mb-2">{isAr ? 'ملاحظات' : 'Notes'}</p>
+                      <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">{selectedClient.notes}</p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'الهاتف' : 'Téléphone'}</p>
-                  <p className="font-medium">{selectedClient.phone || '-'}</p>
+              ) : clientDetailTab === 'cases' ? (
+                <div className="space-y-3">
+                  {clientCases.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400">
+                      <Briefcase size={40} className="mx-auto mb-3 opacity-20" />
+                      <p>{isAr ? 'لا توجد ملفات' : 'Aucun dossier'}</p>
+                    </div>
+                  ) : clientCases.map(c => (
+                    <div key={c.id} className="flex items-center justify-between p-4 border dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                      <div>
+                        <p className="font-bold text-sm">{c.case_number} — {c.title}</p>
+                        <p className="text-xs text-slate-500">{new Date(c.created_at).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR')}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        c.status === 'active' ? 'bg-green-100 text-green-700' :
+                        c.status === 'closed' ? 'bg-slate-100 text-slate-600' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {c.status === 'active' ? (isAr ? 'نشط' : 'Actif') : c.status === 'closed' ? (isAr ? 'مغلق' : 'Clôturé') : c.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'العنوان' : 'Adresse'}</p>
-                  <p className="font-medium">{selectedClient.address || '-'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'الملفات النشطة' : 'Dossiers Actifs'}</p>
-                  <p className="text-2xl font-bold text-green-600">{selectedClient.activeCases}</p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'إجمالي الملفات' : 'Total Dossiers'}</p>
-                  <p className="text-2xl font-bold">{selectedClient.totalCases}</p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                  <p className="text-sm text-slate-500 mb-1">{isAr ? 'الإيرادات' : 'Revenus'}</p>
-                  <p className="text-xl font-bold text-blue-600">{selectedClient.totalRevenue.toLocaleString()} DA</p>
-                </div>
-              </div>
-
-              {selectedClient.notes && (
-                <div>
-                  <p className="text-sm text-slate-500 mb-2">{isAr ? 'ملاحظات' : 'Notes'}</p>
-                  <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                    {selectedClient.notes}
-                  </p>
+              ) : (
+                <div className="space-y-3">
+                  {clientInvoices.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400">
+                      <FileText size={40} className="mx-auto mb-3 opacity-20" />
+                      <p>{isAr ? 'لا توجد فواتير' : 'Aucune facture'}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl text-center">
+                          <p className="text-xs text-slate-500">{isAr ? 'الإجمالي' : 'Total'}</p>
+                          <p className="font-bold text-sm">{clientInvoices.reduce((s, i) => s + (i.total_amount || 0), 0).toLocaleString()} DA</p>
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-xl text-center">
+                          <p className="text-xs text-slate-500">{isAr ? 'مدفوع' : 'Payé'}</p>
+                          <p className="font-bold text-sm text-green-600">{clientInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + (i.total_amount || 0), 0).toLocaleString()} DA</p>
+                        </div>
+                        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-xl text-center">
+                          <p className="text-xs text-slate-500">{isAr ? 'مستحق' : 'Dû'}</p>
+                          <p className="font-bold text-sm text-red-600">{clientInvoices.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.total_amount || 0), 0).toLocaleString()} DA</p>
+                        </div>
+                      </div>
+                      {clientInvoices.map(inv => (
+                        <div key={inv.id} className="flex items-center justify-between p-4 border dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                          <div>
+                            <p className="font-bold text-sm">{inv.invoice_number}</p>
+                            <p className="text-xs text-slate-500">{isAr ? 'استحقاق:' : 'Échéance:'} {inv.due_date ? new Date(inv.due_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR') : '-'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold">{(inv.total_amount || 0).toLocaleString()} DA</p>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              inv.status === 'paid' ? 'bg-green-100 text-green-700' :
+                              inv.status === 'overdue' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {inv.status === 'paid' ? (isAr ? 'مدفوع' : 'Payé') : inv.status === 'overdue' ? (isAr ? 'متأخر' : 'En retard') : (isAr ? 'معلق' : 'En attente')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>

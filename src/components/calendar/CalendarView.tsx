@@ -142,6 +142,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
     return colors[type] || colors.other;
   };
 
+  const getEventDotColor = (type: string) => {
+    const colors: Record<string, string> = {
+      hearing: 'bg-red-500',
+      meeting: 'bg-blue-500',
+      deadline: 'bg-orange-500',
+      consultation: 'bg-green-500',
+      other: 'bg-slate-400'
+    };
+    return colors[type] || colors.other;
+  };
+
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'hearing': return '⚖️';
@@ -298,6 +309,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
         </div>
       </div>
 
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 text-xs">
+        {[
+          { type: 'hearing', label_fr: 'Audience', label_ar: 'جلسة', dot: 'bg-red-500' },
+          { type: 'meeting', label_fr: 'Réunion', label_ar: 'اجتماع', dot: 'bg-blue-500' },
+          { type: 'deadline', label_fr: 'Délai', label_ar: 'أجل', dot: 'bg-orange-500' },
+          { type: 'consultation', label_fr: 'Consultation', label_ar: 'استشارة', dot: 'bg-green-500' },
+        ].map(item => (
+          <div key={item.type} className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-lg border dark:border-slate-800">
+            <span className={`w-2.5 h-2.5 rounded-full ${item.dot}`} />
+            <span className="text-slate-600 dark:text-slate-400 font-medium">{isAr ? item.label_ar : item.label_fr}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Calendar Grid - Month View */}
       {view === 'month' && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 overflow-hidden">
@@ -341,7 +367,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                   } ${isSelected && !isDayWeekend ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                 >
-                  <div className={`text-sm font-bold mb-2 ${
+                  <div className={`text-sm font-bold mb-1 ${
                     isToday
                       ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center'
                       : isDayWeekend
@@ -352,17 +378,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
                   </div>
                   
                   <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map(event => (
+                    {dayEvents.slice(0, 2).map(event => (
                       <div
                         key={event.id}
-                        className={`text-xs px-2 py-1 rounded border ${getEventColor(event.event_type)} truncate`}
+                        className={`text-xs px-1.5 py-0.5 rounded border ${getEventColor(event.event_type)} truncate flex items-center gap-1`}
                       >
-                        {getEventIcon(event.event_type)} {event.title}
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getEventDotColor(event.event_type)}`} />
+                        <span className="truncate">{event.title}</span>
                       </div>
                     ))}
-                    {dayEvents.length > 3 && (
-                      <div className="text-xs text-slate-500 px-2">
-                        +{dayEvents.length - 3} {isAr ? 'المزيد' : 'plus'}
+                    {dayEvents.length > 2 && (
+                      <div className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full inline-block">
+                        +{dayEvents.length - 2}
                       </div>
                     )}
                   </div>
