@@ -15,6 +15,7 @@ import { caseService } from '../../services/caseService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { Sparkline } from '../../src/components/charts/MiniChart';
 import ReminderWidget from '../../src/components/reminders/ReminderWidget';
+import RecentActivityWidget from '../../src/components/widgets/RecentActivityWidget';
 import { 
   Scale, 
   Search, 
@@ -785,6 +786,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
 
             {/* Rappels rapides */}
             <ReminderWidget language={language} userId={user.id} compact />
+
+            {/* Activité récente */}
+            <RecentActivityWidget language={language} userId={user.id} />
 
             {/* Urgent Legal Deadlines from legalDeadlineService */}
             {(dashboardData.urgentDeadlines > 0 || dashboardData.overdueDeadlines > 0) && (

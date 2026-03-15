@@ -7,6 +7,7 @@ import { UserRole } from '../../types';
 import { EXPLOIT_TYPE_LABELS, EXPLOIT_STATUS_CONFIG } from '../../src/services/bailiffService';
 import { Sparkline } from '../../src/components/charts/MiniChart';
 import ReminderWidget from '../../src/components/reminders/ReminderWidget';
+import RecentActivityWidget from '../../src/components/widgets/RecentActivityWidget';
 import { 
   Gavel, 
   FileText, 
@@ -326,6 +327,9 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
             
             {/* Rappels rapides */}
             <ReminderWidget language={language} userId={user.id} compact />
+
+            {/* Activité récente */}
+            <RecentActivityWidget language={language} userId={user.id} />
 
             {/* Quick Actions */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">

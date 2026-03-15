@@ -7,6 +7,7 @@ import NotificationCenter from './notifications/NotificationCenter';
 import GlobalSearch from './search/GlobalSearch';
 import { useAuth } from '../src/hooks/useAuth';
 import { useDeadlineAlerts } from '../src/hooks/useDeadlineAlerts';
+import { useSidebarStats } from '../src/hooks/useSidebarStats';
 import { 
   Scale, 
   Wifi, 
@@ -74,6 +75,8 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
 
   // Alertes délais légaux
   const { counts: deadlineAlerts } = useDeadlineAlerts(user?.id ?? null, user?.activeRole ?? null);
+  // Mini stats sidebar
+  const sidebarStats = useSidebarStats(user?.id ?? null);
 
   // Initialize routing service with current user
   useEffect(() => {
@@ -654,7 +657,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
               {/* Search Button */}
               <button 
                 onClick={() => setIsSearchOpen(true)}
-                className={`flex items-center justify-center p-2 rounded-lg transition-all ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg transition-all ${
                   theme === 'light' 
                     ? 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' 
                     : 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600'
@@ -662,6 +665,7 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
                 title={isAr ? 'بحث (Ctrl+K)' : 'Rechercher (Ctrl+K)'}
               >
                 <Search size={16} />
+                <kbd className="text-[9px] font-bold opacity-50">⌘K</kbd>
               </button>
             </div>
           )}
@@ -680,16 +684,55 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
           />
         </div>
 
-        {/* Desktop Footer - Security Notice Only */}
+        {/* Desktop Footer - Stats + Security Notice */}
         {!isDesktopSidebarCollapsed && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
+            {/* Mini Stats */}
+            {!sidebarStats.loading && (
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleNavigation(AppMode.CASES)}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-colors cursor-pointer ${
+                    theme === 'light' ? 'bg-blue-50 hover:bg-blue-100' : 'bg-blue-900/20 hover:bg-blue-900/30'
+                  }`}
+                  title={isAr ? 'الملفات النشطة' : 'Dossiers actifs'}
+                >
+                  <span className="text-lg font-bold text-blue-600">{sidebarStats.activeCases}</span>
+                  <span className="text-[9px] text-blue-500 font-medium leading-tight text-center">{isAr ? 'ملفات' : 'Dossiers'}</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation(AppMode.BILLING)}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-colors cursor-pointer ${
+                    sidebarStats.pendingInvoices > 0
+                      ? (theme === 'light' ? 'bg-amber-50 hover:bg-amber-100' : 'bg-amber-900/20 hover:bg-amber-900/30')
+                      : (theme === 'light' ? 'bg-slate-50 hover:bg-slate-100' : 'bg-slate-800/50 hover:bg-slate-800')
+                  }`}
+                  title={isAr ? 'فواتير معلقة' : 'Factures en attente'}
+                >
+                  <span className={`text-lg font-bold ${sidebarStats.pendingInvoices > 0 ? 'text-amber-600' : 'text-slate-400'}`}>{sidebarStats.pendingInvoices}</span>
+                  <span className={`text-[9px] font-medium leading-tight text-center ${sidebarStats.pendingInvoices > 0 ? 'text-amber-500' : 'text-slate-400'}`}>{isAr ? 'فواتير' : 'Factures'}</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation(AppMode.CALENDAR)}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-colors cursor-pointer ${
+                    sidebarStats.todayEvents > 0
+                      ? (theme === 'light' ? 'bg-green-50 hover:bg-green-100' : 'bg-green-900/20 hover:bg-green-900/30')
+                      : (theme === 'light' ? 'bg-slate-50 hover:bg-slate-100' : 'bg-slate-800/50 hover:bg-slate-800')
+                  }`}
+                  title={isAr ? 'أحداث اليوم' : "Événements aujourd'hui"}
+                >
+                  <span className={`text-lg font-bold ${sidebarStats.todayEvents > 0 ? 'text-green-600' : 'text-slate-400'}`}>{sidebarStats.todayEvents}</span>
+                  <span className={`text-[9px] font-medium leading-tight text-center ${sidebarStats.todayEvents > 0 ? 'text-green-500' : 'text-slate-400'}`}>{isAr ? 'اليوم' : "Auj."}</span>
+                </button>
+              </div>
+            )}
             {/* Security Notice */}
             <div className={`p-3 rounded-xl border ${
               theme === 'light' 
                 ? 'bg-slate-50 border-slate-100' 
                 : 'bg-slate-800 border-slate-700'
             }`}>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <Shield size={12} className="text-legal-gold" />
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
                   {isAr ? 'وضع آمن' : 'Mode Sécurisé'}
