@@ -166,10 +166,8 @@ class DocumentService {
         throw new Error(`Failed to save document metadata: ${error.message}`);
       }
 
-      console.log('✅ Document uploaded successfully:', data.file_name);
       return this.mapToDocument(data);
     } catch (error) {
-      console.error('Error uploading document:', error);
       throw error;
     }
   }
@@ -290,7 +288,6 @@ class DocumentService {
       // 3. Supprimer du storage
       await this.deleteFromStorage(document.storagePath);
 
-      console.log('✅ Document deleted successfully:', document.fileName);
       return true;
     } catch (error) {
       console.error('Error deleting document:', error);

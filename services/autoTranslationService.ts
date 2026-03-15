@@ -26,17 +26,12 @@ export class AutoTranslationService {
    * Set the current language and trigger automatic translation
    */
   setLanguage(newLanguage: Language): void {
-    console.log(`🌐 AutoTranslationService: Language change ${this.currentLanguage} -> ${newLanguage}`);
-    console.log(`🌐 AutoTranslationService: Registered components: ${this.translationCallbacks.size}`);
-    console.log(`🌐 AutoTranslationService: Component IDs:`, Array.from(this.translationCallbacks.keys()));
     
     if (this.currentLanguage === newLanguage) {
-      console.log(`🌐 AutoTranslationService: Same language, no translation needed`);
       return;
     }
 
     if (this.isTranslating) {
-      console.log(`🌐 AutoTranslationService: Translation in progress, ignoring request`);
       return;
     }
 
@@ -44,13 +39,11 @@ export class AutoTranslationService {
     this.currentLanguage = newLanguage;
     this.isTranslating = true;
 
-    console.log(`🌐 AutoTranslationService: Notifying ${this.translationCallbacks.size} components`);
 
     // Notify all registered components about the language change
     setTimeout(() => {
       this.translationCallbacks.forEach((callback, componentId) => {
         try {
-          console.log(`🌐 AutoTranslationService: Triggering translation for ${componentId}`);
           callback(newLanguage);
         } catch (error) {
           console.error(`🌐 AutoTranslationService: Error in callback for ${componentId}:`, error);
@@ -60,7 +53,6 @@ export class AutoTranslationService {
       // Release translation lock after all callbacks are processed
       setTimeout(() => {
         this.isTranslating = false;
-        console.log(`🌐 AutoTranslationService: Translation cycle completed`);
       }, 1000);
     }, 100);
   }
@@ -69,7 +61,6 @@ export class AutoTranslationService {
    * Register a component for automatic translation
    */
   registerComponent(componentId: string, callback: (newLanguage: Language) => void): void {
-    console.log(`🌐 AutoTranslationService: Registering component ${componentId}`);
     this.translationCallbacks.set(componentId, callback);
   }
 
@@ -77,7 +68,6 @@ export class AutoTranslationService {
    * Unregister a component
    */
   unregisterComponent(componentId: string): void {
-    console.log(`🌐 AutoTranslationService: Unregistering component ${componentId}`);
     this.translationCallbacks.delete(componentId);
   }
 
@@ -249,7 +239,6 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
       const before = cleaned;
       cleaned = cleaned.replace(pattern.from, pattern.to);
       if (before !== cleaned) {
-        console.log(`🧹 Applied cleaning: ${pattern.from} -> ${pattern.to}`);
       }
     });
     
@@ -262,7 +251,6 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
    */
   private verifyTranslationQuality(text: string, targetLang: Language): boolean {
     if (!text || text.trim().length < 50) {
-      console.log(`🌐 Quality check: FAILED — response too short`);
       return false;
     }
 
@@ -275,17 +263,14 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
     const arabicRatio = arabicChars / totalChars;
     const latinRatio = latinChars / totalChars;
 
-    console.log(`🌐 Quality check: Arabic ${Math.round(arabicRatio * 100)}%, Latin ${Math.round(latinRatio * 100)}%`);
 
     if (targetLang === 'ar') {
       // Documents juridiques algériens contiennent des noms propres, adresses, numéros en latin
       // Seuil abaissé à 30% — on vérifie juste qu'il y a du contenu arabe
       const isGoodQuality = arabicRatio > 0.30;
-      console.log(`🌐 Quality check: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Arabic: ${Math.round(arabicRatio * 100)}%)`);
       return isGoodQuality;
     } else {
       const isGoodQuality = latinRatio > 0.30;
-      console.log(`🌐 Quality check: ${isGoodQuality ? '✅ PASSED' : '❌ FAILED'} (Latin: ${Math.round(latinRatio * 100)}%)`);
       return isGoodQuality;
     }
   }
@@ -310,7 +295,6 @@ TRADUCTION EN ${targetLangName.toUpperCase()}:`;
    * Clear all registered components
    */
   clearAll(): void {
-    console.log(`🌐 AutoTranslationService: Clearing all ${this.translationCallbacks.size} components`);
     this.translationCallbacks.clear();
     this.isTranslating = false;
   }

@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Tag
 } from 'lucide-react';
-import { 
+import type {
   SearchResult, 
   JurisprudenceResult, 
   LegalText,

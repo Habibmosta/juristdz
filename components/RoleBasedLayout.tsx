@@ -824,7 +824,8 @@ const RoleBasedLayout: React.FC<RoleBasedLayoutProps> = ({
         userId={user.id}
         onNavigate={(mode, id) => {
           onModeChange(mode);
-          // TODO: Navigate to specific item with ID
+          // Store the target item ID so the destination view can deep-link to it
+          if (id) sessionStorage.setItem('search_navigate_id', id);
         }}
       />
     </div>

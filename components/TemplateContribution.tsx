@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, FileText, Save, X, AlertCircle, CheckCircle, Plus } from 'lucide-react';
 import { Language, UserRole } from '../types';
 import { UI_TRANSLATIONS } from '../constants';
+import { templateContributionService } from '../services/templateContributionService';
 
 interface TemplateContributionProps {
   language: Language;
@@ -193,18 +194,26 @@ const TemplateContribution: React.FC<TemplateContributionProps> = ({
     }
 
     try {
-      // Sauvegarder dans Supabase
-      const contribution = {
+      // Sauvegarder via le service dédié
+      const result = await templateContributionService.submitContribution({
         user_id: userId,
         user_role: userRole,
-        template_data: templateData,
+        name_fr: templateData.name_fr,
+        name_ar: templateData.name_ar,
+        description_fr: templateData.description_fr,
+        description_ar: templateData.description_ar,
+        category: templateData.category,
+        wilaya: templateData.wilaya,
+        tribunal: templateData.tribunal,
+        source: templateData.source as any,
+        is_public: templateData.isPublic,
         template_content: fileContent,
-        status: 'pending_review',
-        created_at: new Date().toISOString()
-      };
+        template_format: 'text',
+        fields: templateData.fields,
+        status: 'pending_review'
+      });
 
-      // TODO: Implémenter l'appel API Supabase
-      console.log('Template contribution:', contribution);
+      if (!result.success) throw new Error(result.error);
 
       setStep('success');
     } catch (err) {

@@ -20,14 +20,9 @@ export const sendMessageToGemini = async (
     const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
     const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
     
-    console.log('🔍 DEBUG: Checking API keys...');
-    console.log('Groq key exists:', !!groqApiKey);
-    console.log('Groq key valid:', groqApiKey !== 'PLACEHOLDER_API_KEY');
-    console.log('Groq key preview:', groqApiKey ? groqApiKey.substring(0, 10) + '...' : 'undefined');
     
     // Priorité : Groq (gratuit) > OpenAI > Gemini
     if (groqApiKey && groqApiKey !== 'PLACEHOLDER_API_KEY') {
-      console.log('🚀 DEBUG: Attempting Groq API call...');
       try {
         return await sendMessageToGroq(message, history, mode, language);
       } catch (groqError) {
@@ -37,7 +32,6 @@ export const sendMessageToGemini = async (
     }
     
     if (openaiApiKey && openaiApiKey !== 'PLACEHOLDER_API_KEY') {
-      console.log('🚀 DEBUG: Attempting OpenAI API call...');
       try {
         return await sendMessageToOpenAI(message, history, mode, language);
       } catch (openaiError) {
@@ -47,7 +41,6 @@ export const sendMessageToGemini = async (
     }
     
     if (geminiApiKey && geminiApiKey !== 'PLACEHOLDER_API_KEY') {
-      console.log('🚀 DEBUG: Attempting Gemini API call...');
       try {
         return await sendMessageToGeminiAPI(message, history, mode, language, imageAttachment);
       } catch (geminiError) {
@@ -56,7 +49,6 @@ export const sendMessageToGemini = async (
       }
     }
     
-    console.log('⚠️ DEBUG: All APIs failed or unavailable, using demo mode');
     return getDemoResponse(message, language);
     
   } catch (error) {
@@ -101,8 +93,6 @@ const sendMessageToGroq = async (
 ): Promise<ChatResponse> => {
   const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
   
-  console.log('🔥 DEBUG Groq: Starting API call...');
-  console.log('🔥 DEBUG Groq: API key preview:', groqApiKey ? groqApiKey.substring(0, 15) + '...' : 'undefined');
   
   let baseInstruction = SYSTEM_INSTRUCTION_RESEARCH;
   switch (mode) {
@@ -121,7 +111,6 @@ const sendMessageToGroq = async (
 
   const systemInstruction = baseInstruction + langInstruction;
 
-  console.log('🔥 DEBUG Groq: Making fetch request...');
   
   try {
     const controller = new AbortController();
@@ -148,8 +137,6 @@ const sendMessageToGroq = async (
 
     clearTimeout(timeoutId);
     
-    console.log('🔥 DEBUG Groq: Response status:', response.status);
-    console.log('🔥 DEBUG Groq: Response ok:', response.ok);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -168,7 +155,6 @@ const sendMessageToGroq = async (
     }
 
     const data = await response.json();
-    console.log('🔥 DEBUG Groq: Success! Response received');
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new Error('Invalid response format from Groq API');
@@ -282,7 +268,6 @@ Selon le droit algérien, je peux vous assister dans :
       };
     }
     
-    console.log('🔑 Clé API détectée, utilisation de Gemini API réelle');
     
     const ai = new GoogleGenAI({ apiKey });
 

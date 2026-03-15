@@ -256,7 +256,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button 
               onClick={() => {
                 const newLanguage = language === 'fr' ? 'ar' : 'fr';
-                console.log(`🔧 Sidebar language switch: ${language} -> ${newLanguage}`);
                 setLanguage(newLanguage);
               }} 
               className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${

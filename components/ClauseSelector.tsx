@@ -30,6 +30,7 @@ const ClauseSelector: React.FC<ClauseSelectorProps> = ({
   const [previewClause, setPreviewClause] = useState<Clause | null>(null);
   const [customClause, setCustomClause] = useState<string>('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customClauses, setCustomClauses] = useState<Record<string, string>>({});
 
   const availableClauses = getClausesForDocument(documentType);
   const mandatoryClauses = getMandatoryClauses(documentType);
@@ -109,7 +110,13 @@ const ClauseSelector: React.FC<ClauseSelectorProps> = ({
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => {
-                // TODO: Ajouter la clause personnalisée
+                if (customClause.trim()) {
+                  // Créer un ID unique pour la clause personnalisée
+                  const customId = `custom_${Date.now()}`;
+                  // Notifier le parent avec l'ID (on stocke le texte dans un Map local)
+                  setCustomClauses(prev => ({ ...prev, [customId]: customClause.trim() }));
+                  onClausesChange([...selectedClauses, customId]);
+                }
                 setCustomClause('');
                 setShowCustomInput(false);
               }}
@@ -294,6 +301,50 @@ const ClauseSelector: React.FC<ClauseSelectorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Clauses personnalisées */}
+      {Object.entries(customClauses).map(([id, text]) => {
+        const isSelected = selectedClauses.includes(id);
+        return (
+          <div key={id} className={`border rounded-lg p-4 transition ${isSelected ? 'border-legal-blue bg-blue-50 dark:bg-blue-900/20' : 'border-slate-200 bg-white dark:bg-slate-800'}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {
+                      if (isSelected) {
+                        onClausesChange(selectedClauses.filter(c => c !== id));
+                      } else {
+                        onClausesChange([...selectedClauses, id]);
+                      }
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <h4 className="font-bold text-sm text-purple-700 dark:text-purple-400">
+                    {language === 'ar' ? 'بند مخصص' : 'Clause personnalisée'}
+                  </h4>
+                </div>
+                {isSelected && (
+                  <div className="mt-2 p-3 bg-white dark:bg-slate-900 rounded border">
+                    <p className="text-sm whitespace-pre-wrap" dir={language === 'ar' ? 'rtl' : 'ltr'}>{text}</p>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setCustomClauses(prev => { const n = { ...prev }; delete n[id]; return n; });
+                  onClausesChange(selectedClauses.filter(c => c !== id));
+                }}
+                className="p-2 hover:bg-red-50 text-red-400 hover:text-red-600 rounded transition"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Avertissement variables manquantes */}
       {selectedClauses.length > 0 && (

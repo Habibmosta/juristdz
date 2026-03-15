@@ -5,17 +5,13 @@ import RoleBasedLayout from './components/RoleBasedLayout';
 import ChatInterface from './components/ImprovedChatInterface';
 import EnhancedDraftingInterface from './components/EnhancedDraftingInterface';
 import AnalysisInterface from './components/AnalysisInterface';
-import AdminDashboard from './src/components/admin/AdminDashboard';
+import { AdminDashboard } from './src/components/admin/AdminDashboard';
 import Documentation from './components/Documentation';
-import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
-import AvocatInterface from './components/interfaces/AvocatInterface';
 import AuthForm from './src/components/auth/AuthForm';
 import ClientManagement from './src/components/clients/ClientManagement';
 import EnhancedCaseManagement from './src/components/cases/EnhancedCaseManagement';
-import LawyerCalendar from './src/components/calendar/LawyerCalendar';
 import ReminderSystem from './src/components/reminders/ReminderSystem';
-import InvoiceManagement from './src/components/billing/InvoiceManagement';
 import AdvancedAnalytics from './src/components/analytics/AdvancedAnalytics';
 import AlgerianCalculator from './src/components/tools/AlgerianCalculator';
 // Nouveaux composants professionnels
@@ -36,11 +32,9 @@ import DocumentManager from './src/components/documents/DocumentManager';
 import CabinetSettings from './src/components/settings/CabinetSettings';
 import TimeManagement from './src/components/time/TimeManagement';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
-import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
-import { databaseService } from './services/databaseService';
+import { AppMode, Language, UserStats, UserRole, EnhancedUserProfile } from './types';
 import { routingService } from './services/routingService';
 import { autoTranslationService } from './services/autoTranslationService';
-import { demoSetup } from './services/demoSetup';
 import { getDefaultMode } from './config/roleRouting';
 import { useAuth } from './src/hooks/useAuth';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -65,20 +59,12 @@ const App: React.FC = () => {
   
   // Account status
   const { accountStatus, loading: accountLoading } = useAccountStatus();
-  
-  // Legacy state for backward compatibility
-  // Note: Setters prefixed with _ are kept for potential future use but not currently used
-  const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([]);
-  const [transactions, _setTransactions] = useState<Transaction[]>([]);
-  const [cases, _setCases] = useState<Case[]>([]); // Empty - real cases loaded from database
-  const [activeCaseId, setActiveCaseId] = useState<string>('');
 
   useEffect(() => {
     const initApp = async () => {
       try {
         // Initialize translation system
         setTranslationSystemReady(true);
-        console.log('✅ Simple translation system ready');
 
         // If user is authenticated, initialize routing (only once)
         if (profile && !isInitialized) {
@@ -118,7 +104,6 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('juristdz_theme', theme);
-    console.log('🎨 Theme changed to:', theme, '- Dark class:', document.documentElement.classList.contains('dark'));
   }, [theme]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -139,26 +124,12 @@ const App: React.FC = () => {
   };
 
   const handleLanguageChange = (newLanguage: Language) => {
-    console.log(`🌐 App: Language change requested: ${language} -> ${newLanguage}`);
     setLanguage(newLanguage);
-    
-    // Simple notification to translation service
     autoTranslationService.setLanguage(newLanguage);
   };
 
-  const generateLicenseKey = () => {
-    const newKey: LicenseKey = {
-      key: 'JDZ-' + Math.random().toString(36).substring(2, 15).toUpperCase(),
-      plan: 'pro',
-      isUsed: false,
-      createdAt: new Date(),
-    };
-    setLicenseKeys(prev => [...prev, newKey]);
-  };
-
-  const setUserPlan = (userId: string, isPro: boolean) => {
-    // Legacy function for backward compatibility
-    console.log('Legacy setUserPlan called:', userId, isPro);
+  const setUserPlan = (_userId: string, _isPro: boolean) => {
+    // Legacy stub for backward compatibility
   };
 
   // Loading state
@@ -373,9 +344,8 @@ const App: React.FC = () => {
         <UserProfilePage
           user={profile as EnhancedUserProfile}
           language={language}
-          onUpdate={(updated) => {
-            // Refresh profile in parent if needed
-            console.log('Profile updated:', updated);
+          onUpdate={(_updated) => {
+            // Profile updated - could trigger a re-fetch if needed
           }}
         />
       )}

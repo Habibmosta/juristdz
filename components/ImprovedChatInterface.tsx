@@ -47,7 +47,6 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
     // Nettoyer le message
     const cleaned = userMessage.trim().toLowerCase();
     
-    console.log(`🔍 Extraction sujet pour: "${cleaned.substring(0, 100)}..."`);
     
     // Mots-clés juridiques algériens pour identifier le sujet (français + arabe)
     const legalTopics = {
@@ -180,7 +179,6 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
     // Chercher le sujet le plus pertinent
     for (const [keyword, topic] of Object.entries(legalTopics)) {
       if (cleaned.includes(keyword)) {
-        console.log(`🔍 Sujet trouvé: "${topic}" (mot-clé: "${keyword}")`);
         return topic;
       }
     }
@@ -195,11 +193,9 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
       const extractedTopic = words.slice(0, 3).map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join(' ');
-      console.log(`🔍 Sujet extrait des mots: "${extractedTopic}"`);
       return extractedTopic;
     }
     
-    console.log(`🔍 Sujet par défaut: "Question Juridique"`);
     return 'Question Juridique';
   };
 
@@ -244,7 +240,6 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
   const cleanUIContent = (text: string): string => {
     if (!text || typeof text !== 'string') return text;
     
-    console.log(`🧹 NETTOYAGE RADICAL - Début: "${text.substring(0, 100)}..."`);
     
     // ÉTAPE 0: Si le texte contient trop d'éléments UI, le rejeter complètement
     const uiIndicators = [
@@ -265,7 +260,6 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
     
     // Si plus de 3 indicateurs UI, rejeter complètement le texte
     if (uiCount > 3) {
-      console.log(`🧹 REJET COMPLET - Trop d'éléments UI détectés: ${uiCount}`);
       return '';
     }
     
@@ -350,7 +344,6 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
     cleaned = cleaned.trim();
     
     if (cleaned.length === 0) {
-      console.log(`🧹 REJET - Texte complètement nettoyé`);
       return '';
     }
     
@@ -362,22 +355,18 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
       const arabicRatio = arabicChars / totalChars;
       const latinRatio = latinChars / totalChars;
       
-      console.log(`🧹 Analyse linguistique: Arabic ${Math.round(arabicRatio * 100)}%, Latin ${Math.round(latinRatio * 100)}%`);
       
       // ULTRA STRICT: Si plus de 5% de mélange, rejeter
       if (arabicRatio > 0.05 && latinRatio > 0.05) {
-        console.log(`🧹 REJET - Mélange linguistique détecté`);
         return '';
       }
       
       // Si moins de 20 caractères utiles, rejeter
       if (totalChars < 20) {
-        console.log(`🧹 REJET - Texte trop court: ${totalChars} caractères`);
         return '';
       }
     }
     
-    console.log(`🧹 SUCCÈS - Nettoyage terminé: "${cleaned.substring(0, 50)}..."`);
     return cleaned;
   };
 
@@ -385,14 +374,11 @@ const ImprovedChatInterface: React.FC<ChatInterfaceProps> = ({ language, userId 
     if (!text || typeof text !== 'string') return text;
     if (fromLang === toLang) return text;
     
-    console.log(`🔧 TRADUCTION GRATUITE VIA GEMINI: ${fromLang} -> ${toLang}`);
-    console.log(`🔧 Texte à traduire: "${text.substring(0, 100)}..."`);
     
     try {
       // Nettoyer le texte avant traduction
       const cleanedText = cleanUIContent(text);
       if (!cleanedText || cleanedText.length < 10) {
-        console.log(`🔧 Texte trop court après nettoyage`);
         return text;
       }
       
@@ -459,11 +445,9 @@ ${cleanedText}`;
       
       // Vérifier que la traduction n'est pas vide
       if (!translatedText || translatedText.length < 10) {
-        console.log(`🔧 Traduction vide, retour au texte original`);
         return cleanedText;
       }
       
-      console.log(`🔧 Traduction réussie: "${translatedText.substring(0, 100)}..."`);
       return translatedText;
       
     } catch (error) {
@@ -532,13 +516,10 @@ ${cleanedText}`;
 
   const loadConversationThreads = useCallback(async () => {
     try {
-      console.log(`📚 CHARGEMENT DES THREADS - Début pour utilisateur: ${userId}`);
       const history = await databaseService.getMessages(userId);
       
-      console.log(`📚 Messages trouvés dans l'historique: ${history.length}`);
       
       if (history.length === 0) {
-        console.log(`📚 Aucun message dans l'historique`);
         setConversationThreads([]);
         return;
       }
@@ -552,14 +533,11 @@ ${cleanedText}`;
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
       
-      console.log(`📚 Messages triés: ${sortedHistory.length}`);
       
       sortedHistory.forEach((msg, index) => {
-        console.log(`📚 Traitement message ${index + 1}/${sortedHistory.length}: ${msg.sender} - "${msg.text.substring(0, 50)}..."`);
         
         const cleanedText = cleanUIContent(msg.text);
         if (!cleanedText || cleanedText.length < 10) {
-          console.log(`📚 Message ignoré (trop court ou contaminé): "${msg.text.substring(0, 30)}..."`);
           return;
         }
         
@@ -574,7 +552,6 @@ ${cleanedText}`;
         // Si c'est un message utilisateur, créer un nouveau thread
         if (msg.sender === Sender.USER) {
           const topic = extractSearchTopic(cleanedText);
-          console.log(`📚 Nouveau thread détecté: "${topic}" pour message: "${cleanedText.substring(0, 50)}..."`);
           
           currentThread = {
             id: `thread-${msg.timestamp}-${Date.now()}`,
@@ -585,12 +562,10 @@ ${cleanedText}`;
           threads.push(currentThread);
         } else if (currentThread) {
           // Si c'est une réponse bot, l'ajouter au thread actuel
-          console.log(`📚 Ajout réponse bot au thread: "${currentThread.topic}"`);
           currentThread.messages.push(autoTranslatableMsg);
         } else {
           // Si pas de thread actuel et que c'est une réponse bot, essayer d'extraire un sujet quand même
           const topic = extractSearchTopic(cleanedText);
-          console.log(`📚 Création thread pour réponse bot orpheline avec sujet: "${topic}"`);
           currentThread = {
             id: `thread-bot-${msg.timestamp}-${Date.now()}`,
             topic: topic !== 'Question Juridique' ? topic : 'Réponse Système',
@@ -604,9 +579,7 @@ ${cleanedText}`;
       // Trier les threads par timestamp (plus récent en premier)
       threads.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       
-      console.log(`📚 ✅ Threads créés: ${threads.length}`);
       threads.forEach((thread, index) => {
-        console.log(`📚 Thread ${index + 1}: "${thread.topic}" (${thread.messages.length} messages)`);
       });
       
       setConversationThreads(threads);
@@ -685,7 +658,6 @@ ${cleanedText}`;
   };
 
   const selectThread = (thread: ConversationThread) => {
-    console.log(`📖 Selecting thread: ${thread.topic}`);
     setMessages(thread.messages);
     setCurrentThreadId(thread.id);
     setShowHistory(false); // Fermer le panneau des sujets
@@ -708,7 +680,6 @@ ${cleanedText}`;
           
           // Si le message est complètement nettoyé (contenu UI), l'ignorer
           if (!cleanedText || cleanedText.length < 10) {
-            console.log(`🧹 Message ignoré (contenu UI): "${message.text.substring(0, 50)}..."`);
             return;
           }
           
@@ -728,7 +699,6 @@ ${cleanedText}`;
               text: cleanedText
             });
           } else {
-            console.log(`🧹 Message dupliqué ignoré: "${cleanedText.substring(0, 50)}..."`);
           }
         });
         
@@ -742,13 +712,9 @@ ${cleanedText}`;
             exactContent.add(exactKey);
             finalMessages.push(message);
           } else {
-            console.log(`🧹 Doublon exact supprimé: "${message.text.substring(0, 30)}..."`);
           }
         });
         
-        console.log(`🧹 Messages avant dédoublonnage: ${history.length}`);
-        console.log(`🧹 Messages après premier nettoyage: ${uniqueMessages.length}`);
-        console.log(`🧹 Messages après nettoyage final: ${finalMessages.length}`);
         
         const autoTranslatableMessages: AutoTranslatableMessage[] = finalMessages.map(msg => ({
           ...msg,
@@ -793,7 +759,6 @@ ${cleanedText}`;
 
   useEffect(() => {
     if (currentLanguage !== language) {
-      console.log(`🔄 Language changed from ${currentLanguage} to ${language} - PRESERVING CURRENT CONVERSATION`);
       
       // NOUVEAU: Préserver la conversation actuelle lors du changement de langue
       // Ne pas recharger les messages, juste mettre à jour la langue courante
@@ -926,36 +891,6 @@ ${cleanedText}`;
               
               <button 
                 onClick={async () => {
-                  try {
-                    const { emergencyDatabaseCleaner } = await import('../services/emergencyDatabaseCleaner');
-                    const analysis = await emergencyDatabaseCleaner.analyzeContamination(userId);
-                    if (analysis.contaminatedMessages > 0) {
-                      const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
-                      await loadMessages();
-                      toast(`${result.contaminatedMessages} messages supprimés`, 'success');
-                    } else {
-                      toast('Aucun message contaminé', 'info');
-                    }
-                  } catch (error) {
-                    toast('Erreur nettoyage', 'error');
-                  }
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
-                title={language === 'ar' ? 'تنظيف' : 'Nettoyer'}
-              >
-                🗄️
-              </button>
-              
-              <button 
-                onClick={async () => await loadConversationThreads()}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-all"
-                title={language === 'ar' ? 'إعادة تحميل' : 'Recharger'}
-              >
-                📚
-              </button>
-              
-              <button 
-                onClick={async () => {
                   if (messages.length === 0) return;
                   setIsTranslating(true);
                   try {
@@ -1012,16 +947,13 @@ ${cleanedText}`;
             <div className="hidden sm:flex items-center gap-2">
               <button 
                 onClick={async () => {
-                  console.log('🔄 RÉINITIALISATION COMPLÈTE');
                   try {
                     await databaseService.clearMessages(userId);
-                    console.log('🔄 Messages supprimés de la base de données');
                   } catch (error) {
-                    console.error('🔄 Erreur suppression DB:', error);
+                    console.error('Erreur suppression DB:', error);
                   }
                   setMessages([]);
                   await loadMessages();
-                  console.log('🔄 ✅ Réinitialisation complète terminée');
                 }}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition-all"
               >
@@ -1031,35 +963,6 @@ ${cleanedText}`;
               
               <button 
                 onClick={async () => {
-                  console.log('🚨 NETTOYAGE DE BASE DE DONNÉES - Début');
-                  try {
-                    const { emergencyDatabaseCleaner } = await import('../services/emergencyDatabaseCleaner');
-                    const analysis = await emergencyDatabaseCleaner.analyzeContamination(userId);
-                    console.log(`🚨 Analyse: ${analysis.contaminatedMessages}/${analysis.totalMessages} messages contaminés`);
-                    
-                    if (analysis.contaminatedMessages > 0) {
-                      const result = await emergencyDatabaseCleaner.cleanUserDatabase(userId);
-                      console.log(`🚨 Nettoyage terminé: ${result.contaminatedMessages} supprimés, ${result.cleanedMessages} conservés`);
-                      await loadMessages();
-                      toast(`Nettoyage: ${result.contaminatedMessages} supprimés, ${result.cleanedMessages} conservés`, 'success');
-                    } else {
-                      console.log('🚨 Aucune contamination détectée');
-                      toast('Aucun message contaminé trouvé.', 'info');
-                    }
-                  } catch (error) {
-                    console.error('🚨 Erreur nettoyage DB:', error);
-                    toast('Erreur lors du nettoyage de la base de données.', 'error');
-                  }
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white hover:bg-purple-700 transition-all"
-              >
-                🗄️
-                {language === 'ar' ? 'تنظيف قاعدة البيانات' : 'Nettoyer DB'}
-              </button>
-              
-              <button 
-                onClick={async () => {
-                  console.log('🔍 RECHARGEMENT FORCÉ DES THREADS');
                   await loadConversationThreads();
                 }}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-green-500 text-white hover:bg-green-600 transition-all"
@@ -1070,12 +973,8 @@ ${cleanedText}`;
               
               <button 
                 onClick={async () => {
-                  console.log('🔧 TRADUCTION GRATUITE VIA GEMINI - Début');
-                  console.log(`🔧 Langue cible: ${language}`);
-                  console.log(`🔧 Nombre de messages: ${messages.length}`);
                   
                   if (messages.length === 0) {
-                    console.log('🔧 Aucun message à traduire');
                     return;
                   }
                   
@@ -1095,7 +994,6 @@ ${cleanedText}`;
 
                         try {
                           const translatedText = await getDirectTranslation(message.originalText, message.originalLang, language);
-                          console.log(`🔧 Message traduit: "${message.originalText.substring(0, 30)}..." → "${translatedText.substring(0, 30)}..."`);
 
                           return {
                             ...message,
@@ -1118,7 +1016,6 @@ ${cleanedText}`;
                     );
                     
                     setMessages(translatedMessages);
-                    console.log('🔧 ✅ Traduction via Gemini terminée');
                     
                   } catch (error) {
                     console.error('🔧 ❌ Erreur traduction globale:', error);
@@ -1139,8 +1036,6 @@ ${cleanedText}`;
               
               <button 
                 onClick={() => {
-                  console.log(`🔍 Topics toggle clicked: ${showHistory} -> ${!showHistory}`);
-                  console.log(`🔍 Conversation threads: ${conversationThreads.length}`);
                   setShowHistory(!showHistory);
                 }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -1226,7 +1121,6 @@ ${cleanedText}`;
                     <div className="space-y-2 mt-4">
                       <button
                         onClick={async () => {
-                          console.log('🔄 Création thread à partir conversation actuelle');
                           await loadConversationThreads();
                         }}
                         className="px-3 sm:px-4 py-2 bg-legal-blue text-white rounded-lg text-xs sm:text-sm hover:opacity-90 transition-all"
@@ -1239,7 +1133,6 @@ ${cleanedText}`;
                       
                       <button
                         onClick={async () => {
-                          console.log('🔄 Régénération intelligente des sujets');
                           const userMessages = messages.filter(m => m.sender === Sender.USER);
                           if (userMessages.length > 0) {
                             const firstUserMsg = userMessages[0];
@@ -1253,7 +1146,6 @@ ${cleanedText}`;
                             };
                             
                             setConversationThreads([newThread]);
-                            console.log(`🔄 Thread manuel créé: "${topic}"`);
                           }
                         }}
                         className="px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg text-xs sm:text-sm hover:opacity-90 transition-all"

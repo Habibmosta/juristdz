@@ -162,8 +162,6 @@ class SupabaseCaseService {
    */
   async createCase(caseData: Partial<Case>, userId?: string): Promise<Case> {
     try {
-      console.log('🔍 Début création cas Supabase:', caseData);
-      
       // Get user_id from parameter or from auth
       let user_id = userId;
       if (!user_id) {
@@ -195,9 +193,6 @@ class SupabaseCaseService {
         status: caseData.status || 'active'
       };
       
-      console.log('🔄 Données mappées pour Supabase:', supabaseData);
-      console.log('📤 Envoi vers Supabase...');
-      
       const { data, error } = await supabase
         ?.from(this.tableName)
         .insert([supabaseData])
@@ -214,7 +209,6 @@ class SupabaseCaseService {
         throw new Error(`Failed to create case: ${error.message}`);
       }
 
-      console.log('✅ Cas créé avec succès dans Supabase:', data);
       return this.mapSupabaseToCase(data);
     } catch (error) {
       console.error('❌ Erreur générale dans createCase:', error);

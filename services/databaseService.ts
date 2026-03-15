@@ -127,12 +127,10 @@ export const databaseService = {
   },
 
   async clearMessages(userId: string): Promise<{ error: any }> {
-    console.log(`🔄 Clearing all messages for user: ${userId}`);
     
     if (!supabase) {
       // Clear from localStorage
       storage.set(`msgs_${userId}`, []);
-      console.log(`🔄 Messages cleared from localStorage`);
       return { error: null };
     }
     
@@ -141,7 +139,6 @@ export const databaseService = {
     if (error) {
       console.error(`🔄 Error clearing messages from Supabase:`, error);
     } else {
-      console.log(`🔄 Messages cleared from Supabase`);
     }
     
     return { error };

@@ -60,15 +60,12 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
     if (!legalText.trim() && !selectedImage) return;
     
     // ✅ VÉRIFIER LES LIMITES AVANT L'ACTION
-    console.log('🔍 Vérification des limites pour analyse...');
     const allowed = await checkLimits('analysis');
     
     if (!allowed) {
-      console.log('❌ Action bloquée par les limites');
       return; // Le modal s'affiche automatiquement
     }
     
-    console.log('✅ Limites OK, analyse en cours...');
     
     setMobileTab('result');
     setIsAnalyzing(true);
@@ -84,9 +81,7 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
       setCitations(response.citations || []);
       
       // ✅ DÉDUIRE 3 CRÉDITS APRÈS SUCCÈS (analyse coûte le plus cher)
-      console.log('💰 Déduction de 3 crédits pour analyse...');
       await deductCredits(3);
-      console.log('✅ Crédits déduits avec succès');
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'analyse:', error);

@@ -55,7 +55,6 @@ export const useAuth = () => {
       if (error) {
         // Si le profil n'existe pas encore (trigger en cours), réessayer
         if (error.code === 'PGRST116' && retryCount < 3) {
-          console.log(`⏳ Profile not ready yet, retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
           await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
           return loadProfile(userId, retryCount + 1);
         }
@@ -63,7 +62,6 @@ export const useAuth = () => {
       }
 
       if (data) {
-        console.log('✅ Profile loaded successfully:', data.id);
         // Convert database profile to EnhancedUserProfile
         const enhancedProfile: EnhancedUserProfile = {
           id: data.id,

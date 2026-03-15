@@ -66,6 +66,18 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
     applyFilters();
   }, [clients, searchTerm]);
 
+  // Deep-link: open client from global search navigation
+  useEffect(() => {
+    const navigateId = sessionStorage.getItem('search_navigate_id');
+    if (navigateId && clients.length > 0) {
+      const found = clients.find(c => c.id === navigateId);
+      if (found) {
+        openClientDetail(found);
+        sessionStorage.removeItem('search_navigate_id');
+      }
+    }
+  }, [clients]);
+
   const loadClients = async () => {
     setLoading(true);
     try {

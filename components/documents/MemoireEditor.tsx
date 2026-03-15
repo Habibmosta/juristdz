@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { FileText, Save, Download, X, Plus } from 'lucide-react';
 import { Language } from '../../types';
 import { useAppToast } from '../../src/contexts/ToastContext';
+import { professionalDataService } from '../../src/services/professionalDataService';
+import { useAuth } from '../../src/hooks/useAuth';
 
 interface MemoireEditorProps {
   isOpen: boolean;
@@ -16,6 +18,8 @@ const MemoireEditor: React.FC<MemoireEditorProps> = ({
 }) => {
   const isAr = language === 'ar';
   const { toast } = useAppToast();
+  const { user } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
   const [memoire, setMemoire] = useState({
     title: '',
     caseNumber: '',
@@ -27,10 +31,31 @@ const MemoireEditor: React.FC<MemoireEditorProps> = ({
     conclusion: ''
   });
 
-  const handleSave = () => {
-    // TODO: Save to database
-    console.log('Saving memoire:', memoire);
-    toast(isAr ? 'تم الحفظ بنجاح' : 'Sauvegardé avec succès', 'success');
+  const handleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await professionalDataService.create(user.id, 'avocat', {
+        title: memoire.title || (isAr ? 'مذكرة جديدة' : 'Nouveau mémoire'),
+        description: memoire.faits,
+        status: 'draft',
+        metadata: {
+          type: 'memoire',
+          caseNumber: memoire.caseNumber,
+          court: memoire.court,
+          parties: memoire.parties,
+          droit: memoire.droit,
+          pretentions: memoire.pretentions,
+          conclusion: memoire.conclusion
+        }
+      });
+      toast(isAr ? 'تم الحفظ بنجاح' : 'Sauvegardé avec succès', 'success');
+    } catch (err) {
+      console.error('Error saving memoire:', err);
+      toast(isAr ? 'خطأ في الحفظ' : 'Erreur lors de la sauvegarde', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDownload = () => {
@@ -80,10 +105,11 @@ ${memoire.conclusion}
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-legal-blue text-white rounded-lg font-bold flex items-center gap-2 hover:bg-legal-blue/90"
+              disabled={isSaving}
+              className="px-4 py-2 bg-legal-blue text-white rounded-lg font-bold flex items-center gap-2 hover:bg-legal-blue/90 disabled:opacity-60"
             >
               <Save size={18} />
-              {isAr ? 'حفظ' : 'Sauvegarder'}
+              {isSaving ? (isAr ? 'جاري الحفظ...' : 'Sauvegarde...') : (isAr ? 'حفظ' : 'Sauvegarder')}
             </button>
             <button
               onClick={handleDownload}

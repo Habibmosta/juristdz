@@ -106,7 +106,6 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
     try {
       const { supabase } = await import('../../lib/supabase');
       
-      console.log('📂 Loading documents for case:', caseId);
       
       const { data, error } = await supabase
         .from('case_documents')
@@ -117,8 +116,6 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
       if (error) {
         console.error('❌ Error loading documents:', error);
       } else {
-        console.log('✅ Documents loaded:', data?.length || 0, 'documents');
-        console.log('📄 Documents:', data);
         setDocuments(data || []);
       }
     } catch (error) {
@@ -157,13 +154,11 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
       const { supabase } = await import('../../lib/supabase');
       
       for (const file of Array.from(files)) {
-        console.log('📤 Uploading file:', file.name);
         
         // 1. Upload file to Supabase Storage
         const fileExt = file.name.split('.').pop()?.toLowerCase();
         const fileName = `${userId}/${caseId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
-        console.log('📁 File path:', fileName);
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('case-documents')
@@ -175,14 +170,12 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
           continue;
         }
 
-        console.log('✅ File uploaded:', uploadData);
 
         // 2. Get public URL
         const { data: urlData } = supabase.storage
           .from('case-documents')
           .getPublicUrl(fileName);
 
-        console.log('🔗 Public URL:', urlData.publicUrl);
 
         // 3. Détecter le type de document basé sur l'extension et le nom
         const detectDocumentType = (filename: string, ext: string | undefined): string => {
@@ -255,7 +248,6 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
           created_at: new Date().toISOString()
         };
         
-        console.log('💾 Saving to database:', docData);
 
         const { data: insertData, error: dbError } = await supabase
           .from('case_documents')
@@ -268,11 +260,9 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
           continue;
         }
         
-        console.log('✅ Document saved to DB:', insertData);
       }
 
       // Reload documents
-      console.log('🔄 Reloading documents...');
       await loadDocuments();
       toast(isAr ? `تم رفع ${t.document(true)} بنجاح` : `${t.document(true)} téléchargés avec succès`, 'success');
     } catch (error) {

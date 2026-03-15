@@ -14,7 +14,7 @@ import {
   BookOpen,
   Gavel
 } from 'lucide-react';
-import { 
+import type { 
   SearchQuery, 
   SearchResult, 
   JurisprudenceResult, 

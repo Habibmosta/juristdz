@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Language, EnhancedUserProfile, AppMode } from '../../types';
+import React, { useState } from 'react';
+import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import NewActeNotarialModal from '../modals/NewActeNotarialModal';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { UserRole } from '../../types';
 import { ACT_TYPE_LABELS, ACT_STATUS_CONFIG } from '../../src/services/notarialActService';
+import { notarialActService } from '../../src/services/notarialActService';
 import { Sparkline } from '../../src/components/charts/MiniChart';
 import ReminderWidget from '../../src/components/reminders/ReminderWidget';
 import RecentActivityWidget from '../../src/components/widgets/RecentActivityWidget';
@@ -36,17 +37,6 @@ interface NotaireInterfaceProps {
   theme?: 'light' | 'dark';
 }
 
-interface Acte {
-  id: string;
-  numero: string;
-  type: string;
-  parties: string[];
-  objet: string;
-  dateCreation: Date;
-  montant?: number;
-  statut: 'brouillon' | 'signe' | 'archive';
-}
-
 /**
  * Specialized interface for Notaire role
  * Features: Authentic acts drafting, electronic minutier, registration calculations
@@ -63,7 +53,10 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
   // Modal state
   const [showNewActeModal, setShowNewActeModal] = useState(false);
   
-  // Real data from new hook
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Real data from hook
   const dash = useDashboardData(user.id, UserRole.NOTAIRE);
 
   const formatDA = (n: number) => `${Math.round(n).toLocaleString('fr-DZ')} DA`;
@@ -85,6 +78,18 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
       default: return <FileText size={14} />;
     }
   };
+
+  // Filter acts by search term
+  const filteredActs = dash.recentNotarialActs.filter(acte => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      acte.act_number?.toLowerCase().includes(q) ||
+      acte.party_last_name?.toLowerCase().includes(q) ||
+      acte.party_first_name?.toLowerCase().includes(q) ||
+      acte.act_type?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
@@ -186,8 +191,7 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                 : <span className="text-green-500">0</span>
               }
             </span>
-            </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'مواعيد عاجلة' : 'Délais urgents'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -230,108 +234,81 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
                   <p className="mt-4 text-slate-400">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
                 </div>
-              ) : dash.recentNotarialActs.length === 0 ? (
+              ) : filteredActs.length === 0 ? (
                 <div className="text-center py-12">
                   <FileSignature size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
                   <p className="text-slate-400 mb-4">
-                    {isAr ? 'لا توجد عقود بعد' : 'Aucun acte pour le moment'}
+                    {searchTerm
+                      ? (isAr ? 'لا توجد نتائج' : 'Aucun résultat')
+                      : (isAr ? 'لا توجد عقود بعد' : 'Aucun acte pour le moment')}
                   </p>
-                  <button
-                    onClick={() => setShowNewActeModal(true)}
-                    className="px-6 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-colors"
-                  >
-                    {isAr ? 'إنشاء أول عقد' : 'Créer votre premier acte'}
-                  </button>
+                  {!searchTerm && (
+                    <button
+                      onClick={() => setShowNewActeModal(true)}
+                      className="px-6 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-colors"
+                    >
+                      {isAr ? 'إنشاء أول عقد' : 'Créer votre premier acte'}
+                    </button>
+                  )}
                 </div>
               ) : (
-                dash.recentNotarialActs.map(acte => (
-                <div key={acte.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors cursor-pointer">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-sm font-bold text-amber-600">
-                          {acte.act_number}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.color || 'text-slate-400'}`}>
+                filteredActs.map(acte => (
+                  <div key={acte.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors cursor-pointer">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-mono text-sm font-bold text-amber-600">
+                            {acte.act_number}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.color || 'text-slate-400'}`}>
+                            {isAr
+                              ? ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.ar
+                              : ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.fr}
+                          </span>
+                        </div>
+                        
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
                           {isAr
-                            ? ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.ar
-                            : ACT_STATUS_CONFIG[acte.status as keyof typeof ACT_STATUS_CONFIG]?.fr}
-                        </span>
+                            ? ACT_TYPE_LABELS[acte.act_type as keyof typeof ACT_TYPE_LABELS]?.ar
+                            : ACT_TYPE_LABELS[acte.act_type as keyof typeof ACT_TYPE_LABELS]?.fr}
+                        </h3>
+                        
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                          <strong>{isAr ? 'الطرف:' : 'Partie:'}</strong> {acte.party_last_name} {acte.party_first_name}
+                        </div>
+                        
+                        {acte.act_value && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                            <strong>{isAr ? 'القيمة:' : 'Valeur:'}</strong> {Number(acte.act_value).toLocaleString('fr-DZ')} DA
+                          </p>
+                        )}
                       </div>
                       
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
-                        {isAr
-                          ? ACT_TYPE_LABELS[acte.act_type as keyof typeof ACT_TYPE_LABELS]?.ar
-                          : ACT_TYPE_LABELS[acte.act_type as keyof typeof ACT_TYPE_LABELS]?.fr}
-                      </h3>
-                      
-                      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                        <strong>{isAr ? 'الطرف:' : 'Partie:'}</strong> {acte.party_last_name} {acte.party_first_name}
+                      <div className="flex items-center gap-2">
+                        <button className="p-2 text-slate-400 hover:text-amber-600 transition-colors">
+                          <Eye size={16} />
+                        </button>
+                        <button className="p-2 text-slate-400 hover:text-amber-600 transition-colors">
+                          <Download size={16} />
+                        </button>
                       </div>
-                      
-                      {acte.act_value && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                          <strong>{isAr ? 'القيمة:' : 'Valeur:'}</strong> {Number(acte.act_value).toLocaleString('fr-DZ')} DA
-                        </p>
-                      )}
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 text-slate-400 hover:text-amber-600 transition-colors">
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-500 flex items-center gap-1">
-                      <Clock size={12} />
-                      {new Date(acte.act_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-DZ')}
-                    </span>
-                    {acte.status === 'signed' && (
-                      <div className="flex items-center gap-1 text-xs text-green-600">
-                        <Shield size={12} />
-                        {isAr ? 'موقع' : 'Signé'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )))}
-            </div>
-          </div>
-                      </p>
-                      
-                      {acte.montant && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                          <strong>{isAr ? 'المبلغ:' : 'Montant:'}</strong> {acte.montant.toLocaleString()} DA
-                        </p>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <Clock size={12} />
+                        {new Date(acte.act_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-DZ')}
+                      </span>
+                      {acte.status === 'signed' && (
+                        <div className="flex items-center gap-1 text-xs text-green-600">
+                          <Shield size={12} />
+                          {isAr ? 'موقع' : 'Signé'}
+                        </div>
                       )}
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 text-slate-400 hover:text-amber-600 transition-colors">
-                        <Eye size={16} />
-                      </button>
-                      <button className="p-2 text-slate-400 hover:text-amber-600 transition-colors">
-                        <Download size={16} />
-                      </button>
-                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-500 flex items-center gap-1">
-                      <Clock size={12} />
-                      {acte.dateCreation.toLocaleDateString()}
-                    </span>
-                    {acte.statut === 'signe' && (
-                      <div className="flex items-center gap-1 text-xs text-green-600">
-                        <Shield size={12} />
-                        {isAr ? 'مصدق رقمياً' : 'Certifié numérique'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )))}
+                ))
+              )}
             </div>
           </div>
 
@@ -352,7 +329,10 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
               </h3>
               
               <div className="space-y-3">
-                <button className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors">
+                <button
+                  onClick={() => setShowNewActeModal(true)}
+                  className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <FileSignature size={16} className="text-slate-500" />
                     <span className="text-sm font-medium">
@@ -361,7 +341,10 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                   </div>
                 </button>
                 
-                <button className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors">
+                <button
+                  onClick={() => setShowNewActeModal(true)}
+                  className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <Users size={16} className="text-slate-500" />
                     <span className="text-sm font-medium">
@@ -370,7 +353,10 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
                   </div>
                 </button>
                 
-                <button className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors">
+                <button
+                  onClick={() => setShowNewActeModal(true)}
+                  className="w-full p-3 text-left border border-slate-200 dark:border-slate-800 rounded-xl hover:border-amber-600 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <FileText size={16} className="text-slate-500" />
                     <span className="text-sm font-medium">
@@ -486,23 +472,25 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
         isOpen={showNewActeModal}
         onClose={() => setShowNewActeModal(false)}
         onSave={async (newActe) => {
+          // Map modal type values to ActType enum
+          const typeMap: Record<string, string> = {
+            vente: 'vente_immobiliere', donation: 'donation', mariage: 'mariage',
+            testament: 'testament', succession: 'succession', hypotheque: 'hypotheque',
+            bail: 'bail_commercial', societe: 'constitution_societe', autre: 'autre'
+          };
           try {
-            // Créer l'acte dans Supabase
-            await professionalDataService.create(user.id, 'notaire', {
-              title: newActe.type,
-              description: newActe.objet,
+            const firstParty = newActe.parties?.[0] || '';
+            const parts = firstParty.trim().split(' ');
+            await notarialActService.create(user.id, {
+              act_type: (typeMap[newActe.type] || 'autre') as any,
+              party_last_name: parts[0] || firstParty,
+              party_first_name: parts.slice(1).join(' '),
+              act_date: new Date().toISOString().split('T')[0],
+              act_value: newActe.montant,
               status: 'draft',
-              metadata: {
-                numero: newActe.numero,
-                type_acte: newActe.type,
-                parties: newActe.parties,
-                montant: newActe.montant
-              }
+              notes: newActe.objet,
+              act_object: newActe.objet
             });
-            
-            // Recharger les données
-            loadData();
-            console.log('✅ Nouvel acte créé');
           } catch (error) {
             console.error('Erreur création acte:', error);
           }

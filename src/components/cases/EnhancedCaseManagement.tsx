@@ -38,6 +38,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('all');
   const [filterPriority, setFilterPriority] = useState<'all' | 'urgent' | 'high' | 'medium' | 'low'>('all');
+  const [filterPeriod, setFilterPeriod] = useState<'all' | 'month' | '3months' | '6months'>('all');
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -89,9 +90,21 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
     loadLawyerInfo(); // Charger les infos de l'avocat connecté
   }, [userId]);
 
+  // Deep-link: open case from global search navigation
+  useEffect(() => {
+    const navigateId = sessionStorage.getItem('search_navigate_id');
+    if (navigateId && cases.length > 0) {
+      const found = cases.find(c => c.id === navigateId);
+      if (found) {
+        setSelectedCaseId(navigateId);
+        sessionStorage.removeItem('search_navigate_id');
+      }
+    }
+  }, [cases]);
+
   useEffect(() => {
     applyFilters();
-  }, [cases, searchTerm, filterStatus, filterPriority]);
+  }, [cases, searchTerm, filterStatus, filterPriority, filterPeriod]);
 
   const loadCases = async () => {
     setLoading(true);
@@ -179,6 +192,17 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
     // Priority filter
     if (filterPriority !== 'all') {
       filtered = filtered.filter(c => c.priority === filterPriority);
+    }
+
+    // Period filter
+    if (filterPeriod !== 'all') {
+      const now = new Date();
+      const months = filterPeriod === 'month' ? 1 : filterPeriod === '3months' ? 3 : 6;
+      const cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+      filtered = filtered.filter(c => {
+        const d = c.created_at || c.createdAt || c.opened_date;
+        return d ? new Date(d) >= cutoff : true;
+      });
     }
 
     setFilteredCases(filtered);
@@ -636,7 +660,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
 
           {/* Filter Options */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t dark:border-slate-800 flex flex-wrap gap-4">
+            <div className="mt-4 pt-4 border-t dark:border-slate-800 flex flex-wrap gap-4 items-end">
               <div>
                 <label className="text-xs text-slate-500 mb-2 block">{isAr ? 'الحالة' : 'Statut'}</label>
                 <select
@@ -663,6 +687,27 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
                   <option value="low">{isAr ? 'منخفض' : 'Basse'}</option>
                 </select>
               </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-2 block">{isAr ? 'الفترة' : 'Période'}</label>
+                <select
+                  value={filterPeriod}
+                  onChange={(e) => setFilterPeriod(e.target.value as any)}
+                  className="px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 text-sm"
+                >
+                  <option value="all">{isAr ? 'كل الفترات' : 'Toutes'}</option>
+                  <option value="month">{isAr ? 'هذا الشهر' : 'Ce mois'}</option>
+                  <option value="3months">{isAr ? '3 أشهر' : '3 mois'}</option>
+                  <option value="6months">{isAr ? '6 أشهر' : '6 mois'}</option>
+                </select>
+              </div>
+              {(filterStatus !== 'all' || filterPriority !== 'all' || filterPeriod !== 'all') && (
+                <button
+                  onClick={() => { setFilterStatus('all'); setFilterPriority('all'); setFilterPeriod('all'); }}
+                  className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 transition"
+                >
+                  {isAr ? 'إعادة تعيين' : 'Réinitialiser'}
+                </button>
+              )}
             </div>
           )}
         </div>

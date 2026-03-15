@@ -134,7 +134,6 @@ class AuthService {
         .single();
 
       if (orgError || !org) {
-        console.log('Demo organization not found, using fallback');
         // Create a fallback organization object
         org = {
           id: 'demo-org-id',

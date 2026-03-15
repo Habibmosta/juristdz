@@ -175,13 +175,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       return;
     }
     
-    console.log('🎯 Affichage du modal de sélection de plan...');
     // Afficher le modal de sélection de plan
     setShowPlanSelection(true);
   };
 
   const handlePlanSelected = async (plan: 'free' | 'pro' | 'cabinet') => {
-    console.log('✅ Plan sélectionné:', plan);
     setSelectedPlan(plan);
     setShowPlanSelection(false);
     setLoading(true);
@@ -208,9 +206,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        console.log('✅ User created in auth.users:', authData.user.id);
-        console.log('✅ Profile will be created automatically by trigger');
-        console.log('✅ Plan selected:', plan);
         
         // Afficher le modal de vérification d'email
         setRegisteredEmail(email);

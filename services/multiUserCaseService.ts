@@ -32,20 +32,16 @@ class MultiUserCaseService {
     try {
       const { user } = await this.getCurrentUserContext();
 
-      console.log('🔍 Fetching cases for user:', user.id);
-
       const { data, error } = await supabase
         ?.from(this.tableName)
         .select('*')
-        .eq('user_id', user.id) // Filtrer par user_id
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Error fetching cases:', error);
         throw new Error(`Failed to fetch cases: ${error.message}`);
       }
-
-      console.log('✅ Cases fetched:', data?.length || 0);
 
       return this.mapSupabaseToCases(data || []);
     } catch (error) {
@@ -121,9 +117,7 @@ class MultiUserCaseService {
     try {
       const { user, profile } = await this.getCurrentUserContext();
 
-      console.log('🔍 Creating case with user:', user.id);
-
-      // Prepare case data - structure complète avec toutes les colonnes
+      // Prepare case data
       const supabaseData = {
         user_id: user.id, // IMPORTANT: user_id de l'utilisateur connecté
         title: caseData.title || 'Nouveau dossier',
@@ -143,8 +137,6 @@ class MultiUserCaseService {
         status: caseData.status || 'active'
       };
 
-      console.log('📝 Inserting case data:', supabaseData);
-
       const { data, error } = await supabase
         ?.from(this.tableName)
         .insert([supabaseData])
@@ -155,8 +147,6 @@ class MultiUserCaseService {
         console.error('❌ Error creating case:', error);
         throw new Error(`Failed to create case: ${error.message}`);
       }
-
-      console.log('✅ Case created successfully:', data);
 
       // Log activity (optionnel, peut échouer si la table n'existe pas)
       try {

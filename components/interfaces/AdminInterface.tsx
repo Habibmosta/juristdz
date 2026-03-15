@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import { 
@@ -442,8 +442,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({
                     <Users size={40} className="mx-auto mb-2 opacity-30" />
                     <p>{isAr ? 'لا يوجد مستخدمون' : 'Aucun utilisateur'}</p>
                   </div>
-                ) : (
-                utilisateurs.map(utilisateur => (
+                ) : utilisateurs.map(utilisateur => (
                   <div key={utilisateur.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-blue-500 transition-colors cursor-pointer">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">

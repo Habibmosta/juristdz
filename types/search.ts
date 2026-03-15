@@ -1,182 +1,115 @@
-export interface SearchQuery {
-  text: string;
-  filters: SearchFilter[];
-  jurisdiction?: Jurisdiction;
-  dateRange?: DateRange;
-  domain?: LegalDomain;
-  maxResults: number;
-  sortBy?: SortOption;
-  language?: 'fr' | 'ar';
-}
+/**
+ * Search types for jurisprudence and legal text search
+ */
+
+export type LegalDomain =
+  | 'civil'
+  | 'penal'
+  | 'commercial'
+  | 'administratif'
+  | 'travail'
+  | 'famille'
+  | 'immobilier'
+  | 'fiscal'
+  | 'constitutionnel'
+  | 'international';
+
+export type Jurisdiction =
+  | 'cour_supreme'
+  | 'conseil_etat'
+  | 'tribunal_administratif'
+  | 'cour_appel'
+  | 'tribunal'
+  | 'tribunal_commerce';
+
+export type SortOption = 'relevance' | 'date_desc' | 'date_asc' | 'court';
+
+export type PrecedentValue = 'binding' | 'persuasive' | 'informative';
 
 export interface SearchFilter {
-  field: string;
-  operator: 'equals' | 'contains' | 'in' | 'range';
-  value: any;
+  dateFrom?: string;
+  dateTo?: string;
+  domain?: LegalDomain;
+  jurisdiction?: Jurisdiction;
+  wilaya?: string;
+  keywords?: string[];
 }
 
-export interface DateRange {
-  from?: Date;
-  to?: Date;
+export interface SearchQuery {
+  text: string;
+  type?: 'jurisprudence' | 'legal_texts' | 'all';
+  filters?: SearchFilter;
+  sort?: SortOption;
+  page?: number;
+  pageSize?: number;
 }
 
-export enum Jurisdiction {
-  SUPREME_COURT = 'supreme_court',
-  COUNCIL_OF_STATE = 'council_of_state',
-  COURT_OF_CASSATION = 'court_of_cassation',
-  APPEAL_COURT = 'appeal_court',
-  FIRST_INSTANCE = 'first_instance',
-  COMMERCIAL_COURT = 'commercial_court',
-  ADMINISTRATIVE_COURT = 'administrative_court',
-  CRIMINAL_COURT = 'criminal_court'
-}
-
-export enum LegalDomain {
-  CIVIL = 'civil',
-  CRIMINAL = 'criminal',
-  COMMERCIAL = 'commercial',
-  ADMINISTRATIVE = 'administrative',
-  FAMILY = 'family',
-  LABOR = 'labor',
-  TAX = 'tax',
-  CONSTITUTIONAL = 'constitutional',
-  INTERNATIONAL = 'international'
-}
-
-export enum SortOption {
-  RELEVANCE = 'relevance',
-  DATE_DESC = 'date_desc',
-  DATE_ASC = 'date_asc',
-  JURISDICTION = 'jurisdiction'
-}
-
-export interface JurisprudenceResult {
-  id: string;
-  caseNumber: string;
-  title: string;
-  summary: string;
-  fullText: string;
-  court: Court;
-  date: Date;
-  parties: Party[];
-  legalDomain: LegalDomain;
-  keywords: string[];
-  citations: LegalReference[];
-  precedentValue: PrecedentValue;
-  relevanceScore: number;
-  isPublic: boolean;
-  documentUrl?: string;
+export interface SearchResult<T> {
+  query: SearchQuery;
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  took?: number;
 }
 
 export interface Court {
   id: string;
   name: string;
-  type: CourtType;
   jurisdiction: Jurisdiction;
-  level: CourtLevel;
-  location: string;
-  region?: string;
-}
-
-export enum CourtType {
-  CIVIL = 'civil',
-  CRIMINAL = 'criminal',
-  COMMERCIAL = 'commercial',
-  ADMINISTRATIVE = 'administrative',
-  SUPREME = 'supreme',
-  CONSTITUTIONAL = 'constitutional'
-}
-
-export enum CourtLevel {
-  FIRST_INSTANCE = 'first_instance',
-  APPEAL = 'appeal',
-  SUPREME = 'supreme'
+  wilaya?: string;
 }
 
 export interface Party {
   name: string;
-  type: 'plaintiff' | 'defendant' | 'appellant' | 'respondent' | 'third_party';
-  role?: string;
+  role: 'plaintiff' | 'defendant' | 'appellant' | 'respondent';
 }
 
-export interface LegalReference {
-  type: 'law' | 'decree' | 'regulation' | 'jurisprudence' | 'doctrine';
+export interface Citation {
   reference: string;
-  title?: string;
-  article?: string;
+  text?: string;
   url?: string;
 }
 
-export enum PrecedentValue {
-  BINDING = 'binding',
-  PERSUASIVE = 'persuasive',
-  INFORMATIVE = 'informative'
+export interface JurisprudenceResult {
+  id: string;
+  caseNumber: string;
+  date: string;
+  court: Court;
+  legalDomain: LegalDomain;
+  parties?: Party[];
+  summary?: string;
+  fullText?: string;
+  keywords?: string[];
+  citations?: Citation[];
+  precedentValue?: PrecedentValue;
+  relevanceScore?: number;
+  documentUrl?: string;
 }
 
 export interface LegalText {
   id: string;
-  type: 'code' | 'law' | 'decree' | 'regulation' | 'ordinance';
   reference: string;
   title: string;
-  content: string;
   domain: LegalDomain;
-  publicationDate: Date;
-  effectiveDate?: Date;
-  status: 'active' | 'repealed' | 'amended';
-  amendments?: Amendment[];
-  relatedTexts: string[];
+  publicationDate: string;
+  content: string;
   joraReference?: string;
-}
-
-export interface Amendment {
-  date: Date;
-  reference: string;
-  description: string;
-  type: 'modification' | 'addition' | 'repeal';
-}
-
-export interface SearchResult<T> {
-  results: T[];
-  totalCount: number;
-  searchTime: number;
-  suggestions?: SearchSuggestion[];
-  facets?: SearchFacet[];
-  query: SearchQuery;
-}
-
-export interface SearchSuggestion {
-  term: string;
-  type: 'keyword' | 'legal_reference' | 'case_name' | 'court';
-  frequency: number;
-  context?: string;
-}
-
-export interface SearchFacet {
-  field: string;
-  values: FacetValue[];
-}
-
-export interface FacetValue {
-  value: string;
-  count: number;
-  selected: boolean;
-}
-
-export interface LegalAnalysis {
-  mainIssues: string[];
-  legalPrinciples: string[];
-  precedents: RelatedCase[];
-  suggestedCitations: LegalReference[];
-  keyTerms: string[];
-  confidence: number;
+  url?: string;
 }
 
 export interface RelatedCase {
   id: string;
   caseNumber: string;
-  title: string;
-  court: string;
-  date: Date;
-  relationshipType: 'cited_by' | 'cites' | 'overruled_by' | 'overrules' | 'distinguished' | 'followed';
-  relevanceScore: number;
+  date: string;
+  summary: string;
+  relevance: number;
+}
+
+export interface LegalAnalysis {
+  caseId: string;
+  summary: string;
+  keyPoints: string[];
+  relatedCases: RelatedCase[];
+  applicableLaw: string[];
 }

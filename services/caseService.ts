@@ -18,9 +18,7 @@ class CaseService {
     this.useSupabase = supabaseCaseService.isAvailable();
     
     if (this.useMultiUser) {
-      console.log('✅ Using Multi-User SAAS service for data persistence');
     } else if (this.useSupabase) {
-      console.log('⚠️ Multi-User service not available, using single-user Supabase');
     } else {
       console.warn('⚠️ No database services available, falling back to in-memory storage');
       this.initializeMockData();
@@ -140,7 +138,6 @@ class CaseService {
     if (this.useMultiUser) {
       try {
         const newCase = await multiUserCaseService.createCase(caseData);
-        console.log('✅ Case saved to Multi-User SAAS:', newCase.title);
         return newCase;
       } catch (error) {
         console.error('Multi-User service error, falling back to single-user Supabase:', error);
@@ -155,7 +152,6 @@ class CaseService {
     if (this.useSupabase) {
       try {
         const newCase = await supabaseCaseService.createCase(caseData);
-        console.log('✅ Case saved to Supabase:', newCase.title);
         return newCase;
       } catch (error) {
         console.error('Supabase error, falling back to local storage:', error);
@@ -174,7 +170,6 @@ class CaseService {
       try {
         const updatedCase = await multiUserCaseService.updateCase(id, updates);
         if (updatedCase) {
-          console.log('✅ Case updated in Multi-User SAAS:', updatedCase.title);
         }
         return updatedCase;
       } catch (error) {
@@ -191,7 +186,6 @@ class CaseService {
       try {
         const updatedCase = await supabaseCaseService.updateCase(id, updates);
         if (updatedCase) {
-          console.log('✅ Case updated in Supabase:', updatedCase.title);
         }
         return updatedCase;
       } catch (error) {
@@ -211,7 +205,6 @@ class CaseService {
       try {
         const result = await multiUserCaseService.archiveCase(id);
         if (result) {
-          console.log('✅ Case archived in Multi-User SAAS');
         }
         return result;
       } catch (error) {
@@ -228,7 +221,6 @@ class CaseService {
       try {
         const result = await supabaseCaseService.deleteCase(id);
         if (result) {
-          console.log('✅ Case archived in Supabase');
         }
         return result;
       } catch (error) {

@@ -132,11 +132,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       
       // Log which service is being used
       if (caseService.isUsingMultiUser()) {
-        console.log('✅ Cases loaded from Multi-User SAAS database');
+        // Multi-User SAAS database
       } else if (caseService.isUsingSupabase()) {
-        console.log('⚠️ Cases loaded from single-user Supabase database');
-      } else {
-        console.log('⚠️ Cases loaded from local storage');
+        // Single-user Supabase database
       }
     } catch (error) {
       console.error('Error loading cases:', error);
@@ -162,10 +160,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       today.setHours(0, 0, 0, 0);
       const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      console.log('🔍 Chargement des événements...');
-      console.log('📅 Période:', today.toISOString(), 'à', thirtyDaysLater.toISOString());
-      console.log('👤 User ID:', user.id);
-
       // Charger depuis calendar_events (utilise start_time)
       const calendarResult = await supabase
         .from('calendar_events')
@@ -182,8 +176,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         .lte('start_time', thirtyDaysLater.toISOString())
         .order('start_time', { ascending: true });
 
-      console.log('📆 calendar_events:', calendarResult.data?.length || 0, calendarResult.error);
-
       // Charger depuis case_events (utilise event_date)
       const todayDate = today.toISOString().split('T')[0];
       const thirtyDaysDate = thirtyDaysLater.toISOString().split('T')[0];
@@ -195,8 +187,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         .gte('event_date', todayDate)
         .lte('event_date', thirtyDaysDate)
         .order('event_date', { ascending: true });
-
-      console.log('📋 case_events:', caseEventsResult.data?.length || 0, caseEventsResult.error);
 
       // Charger les titres des dossiers pour case_events
       let caseTitles: Record<string, string> = {};
@@ -255,8 +245,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       // Fusionner les deux sources
       const allEvents = [...calendarEvents, ...caseEvents];
 
-      console.log('✅ Total événements:', allEvents.length);
-
       // Trier par date et heure
       allEvents.sort((a, b) => {
         const dateTimeA = new Date(`${a.event_date}T${a.event_time || '00:00'}`);
@@ -265,8 +253,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       });
 
       const finalEvents = allEvents.slice(0, 10);
-      console.log('🎯 Événements finaux à afficher:', finalEvents);
-      
       setUpcomingEvents(finalEvents);
     } catch (error) {
       console.error('❌ Error loading upcoming events:', error);
@@ -284,11 +270,9 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       loadCaseStatistics(); // Refresh stats
       
       if (caseService.isUsingMultiUser()) {
-        console.log('✅ Case created successfully in Multi-User SAAS:', newCase);
+        // Multi-User SAAS
       } else if (caseService.isUsingSupabase()) {
-        console.log('✅ Case created successfully in Supabase:', newCase);
-      } else {
-        console.log('✅ Case created successfully in local storage:', newCase);
+        // Supabase
       }
     } catch (error) {
       console.error('Error creating case:', error);
@@ -306,7 +290,6 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
         loadCaseStatistics(); // Refresh stats
         setEditingCase(null);
         setShowEditCaseModal(false);
-        console.log('Case updated successfully:', updatedCase);
       }
     } catch (error) {
       console.error('Error updating case:', error);
@@ -323,8 +306,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
       const success = await caseService.deleteCase(caseId);
       if (success) {
         setActiveCases(prev => prev.filter(c => c.id !== caseId));
-        loadCaseStatistics(); // Refresh stats
-        console.log('Case archived successfully');
+        loadCaseStatistics();
       }
     } catch (error) {
       console.error('Error archiving case:', error);
@@ -384,7 +366,7 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
 
   const handleResultClick = (result: JurisprudenceResult | LegalText) => {
     // Handle result click - could open in modal or navigate to detail view
-    console.log('Result clicked:', result);
+    void result;
   };
 
   return (
