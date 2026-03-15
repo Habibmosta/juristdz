@@ -13,6 +13,7 @@ import HonorairesCalculator from '../billing/HonorairesCalculator';
 import { searchService } from '../../services/searchService';
 import { caseService } from '../../services/caseService';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
+import { Sparkline } from '../../src/components/charts/MiniChart';
 import { 
   Scale, 
   Search, 
@@ -473,11 +474,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
                 <Briefcase size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {caseStats?.activeCases || activeCases.length}
-              </span>
+              <Sparkline values={[3,5,4,7,6,8,caseStats?.activeCases || activeCases.length]} color="#2563eb" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {caseStats?.activeCases || activeCases.length}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'القضايا النشطة' : 'Dossiers Actifs'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -490,11 +492,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-xl">
                 <DollarSign size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {monthlyStats.revenue}
-              </span>
+              <Sparkline values={[40,55,48,70,65,80,90]} color="#16a34a" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {monthlyStats.revenue}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'الإيرادات الشهرية' : 'CA Mensuel (DA)'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -507,11 +510,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl">
                 <Clock size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dashboardData.urgentDeadlines + dashboardData.overdueDeadlines || caseStats?.upcomingDeadlines || upcomingDeadlines.length}
-              </span>
+              <Sparkline values={[2,4,3,5,4,6,dashboardData.urgentDeadlines + dashboardData.overdueDeadlines || upcomingDeadlines.length]} color="#d97706" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {dashboardData.urgentDeadlines + dashboardData.overdueDeadlines || caseStats?.upcomingDeadlines || upcomingDeadlines.length}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'المواعيد العاجلة' : 'Délais Urgents'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -527,11 +531,12 @@ const AvocatInterface: React.FC<AvocatInterfaceProps> = ({
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
                 <TrendingUp size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {monthlyStats.billableHours}
-              </span>
+              <Sparkline values={[100,120,115,140,130,150,monthlyStats.billableHours]} color="#9333ea" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {monthlyStats.billableHours}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'ساعات قابلة للفوترة' : 'Heures Facturables'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">

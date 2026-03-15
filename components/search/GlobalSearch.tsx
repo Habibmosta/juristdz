@@ -91,9 +91,9 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, language, 
       // Search in clients
       const { data: clients } = await supabase
         .from('clients')
-        .select('id, name, email, phone')
+        .select('id, first_name, last_name, email, phone, company_name')
         .eq('user_id', userId)
-        .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+        .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,company_name.ilike.%${searchQuery}%`)
         .limit(5);
 
       if (clients) {
@@ -101,8 +101,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, language, 
           searchResults.push({
             id: c.id,
             type: 'client',
-            title: c.name,
-            subtitle: c.email || c.phone,
+            title: `${c.last_name} ${c.first_name}`,
+            subtitle: c.company_name || c.email || c.phone,
             icon: <Users size={18} />,
             color: 'text-purple-500'
           });
@@ -111,10 +111,10 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, language, 
 
       // Search in documents
       const { data: documents } = await supabase
-        .from('case_documents')
-        .select('id, file_name, document_type, case_id, cases(title)')
+        .from('documents')
+        .select('id, title, document_type, created_at')
         .eq('user_id', userId)
-        .ilike('file_name', `%${searchQuery}%`)
+        .ilike('title', `%${searchQuery}%`)
         .limit(5);
 
       if (documents) {
@@ -122,11 +122,55 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, language, 
           searchResults.push({
             id: d.id,
             type: 'document',
-            title: d.file_name,
-            subtitle: d.cases?.title,
-            metadata: d.document_type,
+            title: d.title,
+            subtitle: d.document_type,
+            metadata: d.created_at ? new Date(d.created_at).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR') : undefined,
             icon: <File size={18} />,
             color: 'text-green-500'
+          });
+        });
+      }
+
+      // Search in notarial acts
+      const { data: acts } = await supabase
+        .from('notarial_acts')
+        .select('id, act_number, act_type, party_last_name, party_first_name, act_date')
+        .eq('user_id', userId)
+        .or(`act_number.ilike.%${searchQuery}%,party_last_name.ilike.%${searchQuery}%,act_object.ilike.%${searchQuery}%`)
+        .limit(5);
+
+      if (acts) {
+        acts.forEach((a: any) => {
+          searchResults.push({
+            id: a.id,
+            type: 'document',
+            title: `${a.act_number} — ${a.party_last_name} ${a.party_first_name}`,
+            subtitle: a.act_type,
+            metadata: a.act_date ? new Date(a.act_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR') : undefined,
+            icon: <File size={18} />,
+            color: 'text-amber-500'
+          });
+        });
+      }
+
+      // Search in bailiff exploits
+      const { data: exploits } = await supabase
+        .from('bailiff_exploits')
+        .select('id, exploit_number, exploit_type, recipient_name, exploit_date')
+        .eq('user_id', userId)
+        .or(`exploit_number.ilike.%${searchQuery}%,recipient_name.ilike.%${searchQuery}%,requester_name.ilike.%${searchQuery}%`)
+        .limit(5);
+
+      if (exploits) {
+        exploits.forEach((e: any) => {
+          searchResults.push({
+            id: e.id,
+            type: 'document',
+            title: `${e.exploit_number} — ${e.recipient_name}`,
+            subtitle: e.exploit_type,
+            metadata: e.exploit_date ? new Date(e.exploit_date).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR') : undefined,
+            icon: <File size={18} />,
+            color: 'text-emerald-500'
           });
         });
       }

@@ -5,6 +5,7 @@ import NewConstatHuissierModal from '../modals/NewConstatatHuissierModal';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { UserRole } from '../../types';
 import { EXPLOIT_TYPE_LABELS, EXPLOIT_STATUS_CONFIG } from '../../src/services/bailiffService';
+import { Sparkline } from '../../src/components/charts/MiniChart';
 import { 
   Gavel, 
   FileText, 
@@ -140,16 +141,13 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-xl">
                 <FileText size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dash.exploitsExecuted}
-              </span>
+              <Sparkline values={[3,5,4,7,6,8,dash.exploitsExecuted]} color="#16a34a" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{dash.exploitsExecuted}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'الاستدعاءات المبلغة' : 'Exploits Signifiés'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'هذا الشهر' : 'Ce mois-ci'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'هذا الشهر' : 'Ce mois-ci'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -157,16 +155,13 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
                 <DollarSign size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {formatDA(dash.exploitsTotalFees)}
-              </span>
+              <Sparkline values={[20,35,28,45,40,55,70]} color="#2563eb" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatDA(dash.exploitsTotalFees)}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'الرسوم المحصلة (دج)' : 'Frais Perçus (DA)'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'وفقاً للتعريفة الرسمية' : 'Selon tarif officiel'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'وفقاً للتعريفة الرسمية' : 'Selon tarif officiel'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -174,16 +169,13 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               <div className="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-xl">
                 <Scale size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dash.exploitsPending}
-              </span>
+              <Sparkline values={[1,2,3,2,4,3,dash.exploitsPending]} color="#ea580c" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{dash.exploitsPending}</span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'إجراءات التنفيذ' : 'Procédures en Cours'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'قيد التنفيذ' : 'En cours d\'exécution'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'قيد التنفيذ' : 'En cours d\'exécution'}</p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -191,19 +183,18 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
                 <TrendingUp size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dash.urgentDeadlines + dash.overdueDeadlines > 0
-                  ? <span className="text-red-500">{dash.urgentDeadlines + dash.overdueDeadlines}</span>
-                  : <span className="text-green-500">0</span>
-                }
-              </span>
+              <Sparkline values={[1,3,2,4,3,5,dash.urgentDeadlines + dash.overdueDeadlines]} color={dash.urgentDeadlines + dash.overdueDeadlines > 0 ? '#ef4444' : '#22c55e'} />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold">
+              {dash.urgentDeadlines + dash.overdueDeadlines > 0
+                ? <span className="text-red-500">{dash.urgentDeadlines + dash.overdueDeadlines}</span>
+                : <span className="text-green-500">0</span>
+              }
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'معدل الاسترداد' : 'Délais urgents'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {isAr ? 'مواعيد تحتاج متابعة' : 'À surveiller'}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{isAr ? 'مواعيد تحتاج متابعة' : 'À surveiller'}</p>
           </div>
         </div>
 

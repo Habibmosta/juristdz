@@ -36,6 +36,34 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
   const isAr = language === 'ar';
 
+  // Password strength
+  const getPasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (pwd.length >= 12) score++;
+    if (score <= 1) return { score, label: isAr ? 'ضعيف جداً' : 'Très faible', color: 'bg-red-500' };
+    if (score === 2) return { score, label: isAr ? 'ضعيف' : 'Faible', color: 'bg-orange-500' };
+    if (score === 3) return { score, label: isAr ? 'متوسط' : 'Moyen', color: 'bg-yellow-500' };
+    if (score === 4) return { score, label: isAr ? 'قوي' : 'Fort', color: 'bg-green-500' };
+    return { score, label: isAr ? 'قوي جداً' : 'Très fort', color: 'bg-emerald-500' };
+  };
+
+  const validateAlgerianPhone = (phone: string): boolean => {
+    if (!phone) return true; // optional
+    const cleaned = phone.replace(/[\s\-().]/g, '');
+    return /^(\+213|0)(5|6|7)\d{8}$/.test(cleaned);
+  };
+
+  const validateForm = (): string | null => {
+    if (!email.includes('@') || !email.includes('.')) return isAr ? 'بريد إلكتروني غير صالح' : 'Email invalide';
+    if (password.length < 6) return isAr ? 'كلمة المرور قصيرة جداً (6 أحرف على الأقل)' : 'Mot de passe trop court (6 caractères min)';
+    if (phoneNumber && !validateAlgerianPhone(phoneNumber)) return isAr ? 'رقم الهاتف غير صالح (مثال: 0555 123 456)' : 'Numéro de téléphone invalide (ex: 0555 123 456)';
+    return null;
+  };
+
   // Traductions
   const t = {
     signin: isAr ? 'تسجيل الدخول' : 'Connexion',
@@ -138,6 +166,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     // Valider les champs requis
     if (!email || !password || !firstName || !lastName) {
       setError('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
     
@@ -583,6 +617,23 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 </div>
                 <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>{t.minChars}</p>
               </div>
+
+              {/* Password strength indicator */}
+              {password.length > 0 && (() => {
+                const strength = getPasswordStrength(password);
+                return (
+                  <div className="mt-1">
+                    <div className="flex gap-1 mb-1">
+                      {[1,2,3,4,5].map(i => (
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : (theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200')}`} />
+                      ))}
+                    </div>
+                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {isAr ? 'قوة كلمة المرور: ' : 'Force: '}<span className="font-medium">{strength.label}</span>
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Profession */}
               <div>

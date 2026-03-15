@@ -5,6 +5,7 @@ import NewActeNotarialModal from '../modals/NewActeNotarialModal';
 import { useDashboardData } from '../../src/hooks/useDashboardData';
 import { UserRole } from '../../types';
 import { ACT_TYPE_LABELS, ACT_STATUS_CONFIG } from '../../src/services/notarialActService';
+import { Sparkline } from '../../src/components/charts/MiniChart';
 import { 
   FileSignature, 
   BookOpen, 
@@ -121,11 +122,12 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl">
                 <FileSignature size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dash.notarialActsMonth}
-              </span>
+              <Sparkline values={[4,6,5,8,7,9,dash.notarialActsMonth]} color="#d97706" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {dash.notarialActsMonth}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'العقود هذا الشهر' : 'Actes ce Mois'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -138,11 +140,12 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
               <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-xl">
                 <DollarSign size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {formatDA(dash.notarialActsValue)}
-              </span>
+              <Sparkline values={[50,70,60,90,80,100,120]} color="#16a34a" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {formatDA(dash.notarialActsValue)}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'رسوم التسجيل (دج)' : 'Droits Enregistrement (DA)'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -155,11 +158,12 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl">
                 <BookOpen size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dash.notarialActsTotal}
-              </span>
+              <Sparkline values={[10,15,20,25,30,35,dash.notarialActsTotal]} color="#2563eb" />
             </div>
-            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {dash.notarialActsTotal}
+            </span>
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mt-1">
               {isAr ? 'إجمالي الأرشيف' : 'Total Minutier'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -172,12 +176,14 @@ const NotaireInterface: React.FC<NotaireInterfaceProps> = ({
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
                 <TrendingUp size={20} />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {dash.urgentDeadlines + dash.overdueDeadlines > 0
-                  ? <span className="text-red-500">{dash.urgentDeadlines + dash.overdueDeadlines}</span>
-                  : <span className="text-green-500">0</span>
-                }
-              </span>
+              <Sparkline values={[1,3,2,4,3,5,dash.urgentDeadlines + dash.overdueDeadlines]} color={dash.urgentDeadlines + dash.overdueDeadlines > 0 ? '#ef4444' : '#22c55e'} />
+            </div>
+            <span className="text-2xl font-bold">
+              {dash.urgentDeadlines + dash.overdueDeadlines > 0
+                ? <span className="text-red-500">{dash.urgentDeadlines + dash.overdueDeadlines}</span>
+                : <span className="text-green-500">0</span>
+              }
+            </span>
             </div>
             <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
               {isAr ? 'مواعيد عاجلة' : 'Délais urgents'}
