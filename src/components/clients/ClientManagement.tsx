@@ -3,10 +3,12 @@ import { Language } from '../../types';
 import { 
   Users, Plus, Search, Filter, Phone, Mail, MapPin, 
   Briefcase, DollarSign, Calendar, MoreVertical, Edit2,
-  Trash2, Eye, FileText, TrendingUp
+  Trash2, Eye, FileText, TrendingUp, Download
 } from 'lucide-react';
 import { LimitChecker } from '../trial/LimitChecker';
 import { useAppToast } from '../../contexts/ToastContext';
+import { exportCSV, exportExcel, CLIENT_EXPORT_COLUMNS } from '../../services/exportService';
+import { auditService } from '../../services/auditService';
 
 interface Client {
   id: string;
@@ -161,6 +163,9 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
       });
       setShowCreateModal(false);
       
+      // Audit log
+      if (data) auditService.log({ user_id: userId, action: 'client.create', resource_type: 'client', resource_id: data.id });
+
       // Reload clients
       loadClients();
     } catch (error) {
@@ -251,6 +256,8 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
 
       if (error) throw error;
 
+      auditService.log({ user_id: userId, action: 'client.delete', resource_type: 'client', resource_id: clientId });
+
       // Reload clients
       loadClients();
     } catch (error) {
@@ -292,6 +299,20 @@ const ClientManagement: React.FC<ClientManagementProps> = ({ language, userId })
               {isAr ? 'عميل جديد' : 'Nouveau Client'}
             </button>
           </LimitChecker>
+          <div className="flex gap-2">
+            <button
+              onClick={() => exportCSV(filteredClients, CLIENT_EXPORT_COLUMNS, `clients-${new Date().toISOString().slice(0,10)}`)}
+              className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-medium flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm"
+            >
+              <Download size={16} />CSV
+            </button>
+            <button
+              onClick={() => exportExcel(filteredClients, CLIENT_EXPORT_COLUMNS, `clients-${new Date().toISOString().slice(0,10)}`)}
+              className="px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl font-medium flex items-center gap-2 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-sm"
+            >
+              <Download size={16} />Excel
+            </button>
+          </div>
         </div>
 
         {/* Statistics Cards */}

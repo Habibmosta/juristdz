@@ -5,6 +5,8 @@ import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { LimitChecker } from '../trial/LimitChecker';
 import { Sparkline } from '../charts/MiniChart';
 import { useAppToast } from '../../contexts/ToastContext';
+import { exportCSV, exportExcel, INVOICE_EXPORT_COLUMNS } from '../../services/exportService';
+import AlgerianPaymentModal from './AlgerianPaymentModal';
 
 interface InvoiceManagerProps {
   userId: string;
@@ -43,6 +45,7 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   
   const isAr = language === 'ar';
 
@@ -238,6 +241,20 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
             {isAr ? 'فاتورة جديدة' : 'Nouvelle Facture'}
           </button>
         </LimitChecker>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportCSV(invoices, INVOICE_EXPORT_COLUMNS, `factures-${new Date().toISOString().slice(0,10)}`)}
+            className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-medium flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm"
+          >
+            <Download size={16} />CSV
+          </button>
+          <button
+            onClick={() => exportExcel(invoices, INVOICE_EXPORT_COLUMNS, `factures-${new Date().toISOString().slice(0,10)}`)}
+            className="px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl font-medium flex items-center gap-2 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-sm"
+          >
+            <Download size={16} />Excel
+          </button>
+        </div>
       </div>
 
       {/* Statistics */}
@@ -368,6 +385,15 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
                           <Send size={18} />
                         </button>
                       )}
+                      {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                        <button
+                          onClick={() => setPaymentInvoice(invoice)}
+                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
+                          title={isAr ? 'تسجيل الدفع' : 'Enregistrer paiement'}
+                        >
+                          {isAr ? 'دفع' : 'Payer'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -392,6 +418,35 @@ export const InvoiceManager: React.FC<InvoiceManagerProps> = ({ userId, language
             setShowCreateModal(false);
             loadInvoices();
           }}
+        />
+      )}
+
+      {/* Payment Modal */}
+      {paymentInvoice && (
+        <AlgerianPaymentModal
+          language={language}
+          invoiceNumber={paymentInvoice.invoice_number}
+          amount={paymentInvoice.total}
+          clientName={paymentInvoice.client_name}
+          onConfirm={async (method, reference) => {
+            const { supabase } = await import('../../lib/supabase');
+            const { error } = await supabase
+              .from('invoices')
+              .update({
+                status: 'paid',
+                paid_at: new Date().toISOString(),
+                payment_method: method,
+                payment_reference: reference || null,
+              })
+              .eq('id', paymentInvoice.id);
+            if (error) throw error;
+            try {
+              const { auditService } = await import('../../services/auditService');
+              await auditService.log({ user_id: userId, action: 'invoice.paid', resource_type: 'invoice', resource_id: paymentInvoice.id, details: { method, amount: paymentInvoice.total } });
+            } catch {}
+            loadInvoices();
+          }}
+          onClose={() => setPaymentInvoice(null)}
         />
       )}
     </div>

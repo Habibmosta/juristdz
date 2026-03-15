@@ -180,6 +180,11 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
       if (error) throw error;
 
+      try {
+        const { auditService } = await import('../../services/auditService');
+        await auditService.log({ user_id: userId, action: 'invoice.create', resource_type: 'invoice', details: { invoice_number: invoiceNumber, total } });
+      } catch {}
+
       toast(isAr 
         ? `تم إنشاء الفاتورة بنجاح! رقم: ${invoiceNumber}`
         : `Facture créée avec succès! Numéro: ${invoiceNumber}`, 'success');

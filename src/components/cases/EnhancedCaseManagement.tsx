@@ -3,8 +3,11 @@ import { Case, Language } from '../../types';
 import { 
   Briefcase, Plus, Search, Filter, MoreVertical, ChevronRight, 
   Clock, User, Calendar, TrendingUp, AlertCircle, Grid, List,
-  SortAsc, Tag, DollarSign
+  SortAsc, Tag, DollarSign, Kanban, Download
 } from 'lucide-react';
+import CaseKanbanView from './CaseKanbanView';
+import { exportCSV, exportExcel, CASE_EXPORT_COLUMNS } from '../../services/exportService';
+import { auditService } from '../../services/auditService';
 import { CaseService } from '../../services/caseService';
 import CaseDetailView from './CaseDetailView';
 import { useRoleTerminology } from '../../hooks/useRoleTerminology';
@@ -32,7 +35,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('all');
   const [filterPriority, setFilterPriority] = useState<'all' | 'urgent' | 'high' | 'medium' | 'low'>('all');
   const [loading, setLoading] = useState(true);
@@ -179,6 +182,26 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
     }
 
     setFilteredCases(filtered);
+  };
+
+  const handleStatusChange = async (caseId: string, newStatus: string) => {
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { error } = await supabase
+        .from('cases')
+        .update({ status: newStatus })
+        .eq('id', caseId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setCases(prev => prev.map(c => c.id === caseId ? { ...c, status: newStatus as any } : c));
+      auditService.log({ user_id: userId, action: 'case.status_change', resource_type: 'case', resource_id: caseId, details: { new_status: newStatus } });
+      toast(isAr ? 'تم تحديث حالة الملف' : 'Statut du dossier mis à jour', 'success');
+    } catch (error) {
+      console.error('Error updating case status:', error);
+      toast(isAr ? 'خطأ في تحديث الحالة' : 'Erreur lors de la mise à jour', 'error');
+    }
   };
 
   // Get document checklist based on case type
@@ -377,6 +400,12 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
         throw error;
       }
 
+      // Audit log
+      try {
+        const { auditService } = await import('../../services/auditService');
+        await auditService.log({ user_id: userId, action: 'case.create', resource_type: 'case', resource_id: data.id, details: { case_number: data.case_number } });
+      } catch {}
+
       // Reset form and close modal
       setFormData({
         clientId: '',
@@ -410,6 +439,9 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
       // Reload cases then notify
       await loadCases();
       
+      // Audit log
+      auditService.log({ user_id: userId, action: 'case.create', resource_type: 'case', resource_id: data.id, details: { case_number: caseNumber } });
+
       toast(isAr 
         ? `تم إنشاء الملف بنجاح! رقم الملف: ${caseNumber}`
         : `Dossier créé avec succès! Numéro: ${caseNumber}`, 'success');
@@ -487,6 +519,24 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
               {t.createCase()}
             </button>
           </LimitChecker>
+          <div className="flex gap-2">
+            <button
+              onClick={() => exportCSV(filteredCases, CASE_EXPORT_COLUMNS, `dossiers-${new Date().toISOString().slice(0,10)}`)}
+              className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-medium flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm"
+              title={isAr ? 'تصدير CSV' : 'Exporter CSV'}
+            >
+              <Download size={16} />
+              CSV
+            </button>
+            <button
+              onClick={() => exportExcel(filteredCases, CASE_EXPORT_COLUMNS, `dossiers-${new Date().toISOString().slice(0,10)}`)}
+              className="px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl font-medium flex items-center gap-2 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-sm"
+              title={isAr ? 'تصدير Excel' : 'Exporter Excel'}
+            >
+              <Download size={16} />
+              Excel
+            </button>
+          </div>
         </div>
 
         {/* Statistics Cards */}
@@ -547,6 +597,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
                     ? 'bg-legal-gold text-white border-legal-gold'
                     : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
                 }`}
+                title={isAr ? 'شبكة' : 'Grille'}
               >
                 <Grid size={18} />
               </button>
@@ -557,8 +608,20 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
                     ? 'bg-legal-gold text-white border-legal-gold'
                     : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
                 }`}
+                title={isAr ? 'قائمة' : 'Liste'}
               >
                 <List size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`p-3 rounded-xl border transition-colors ${
+                  viewMode === 'kanban'
+                    ? 'bg-legal-gold text-white border-legal-gold'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
+                }`}
+                title={isAr ? 'كانبان' : 'Kanban'}
+              >
+                <Kanban size={18} />
               </button>
             </div>
 
@@ -604,11 +667,18 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
           )}
         </div>
 
-        {/* Cases Grid/List */}
+        {/* Cases Grid/List/Kanban */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-legal-gold"></div>
           </div>
+        ) : viewMode === 'kanban' ? (
+          <CaseKanbanView
+            cases={filteredCases}
+            language={language}
+            onCaseClick={(id) => setSelectedCaseId(id)}
+            onStatusChange={handleStatusChange}
+          />
         ) : filteredCases.length > 0 ? (
           <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
             {filteredCases.map(c => (

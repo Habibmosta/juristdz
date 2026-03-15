@@ -118,7 +118,7 @@ export class RoutingService {
 
     // Pour le rôle Admin, afficher uniquement les modes essentiels
     if (this.currentUser.activeRole === UserRole.ADMIN) {
-      allowedModes = [AppMode.DASHBOARD, AppMode.ADMIN];
+      allowedModes = [AppMode.DASHBOARD, AppMode.ADMIN, AppMode.PENDING_ACCOUNTS, AppMode.ANALYTICS];
     }
 
     return allowedModes

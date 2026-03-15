@@ -28,6 +28,7 @@ import TemplateContribution from './TemplateContribution';
 import DynamicLegalForm from './forms/DynamicLegalForm';
 import ProfessionalProfileForm from './ProfessionalProfileForm';
 import DocumentVersionHistory from '../src/components/documents/DocumentVersionHistory';
+import SignatureModal from '../src/components/documents/SignatureModal';
 import { useAppToast } from '../src/contexts/ToastContext';
 import { documentVersionService } from '../src/services/documentVersionService';
 import { pdfExportService } from '../src/services/pdfExportService';
@@ -105,6 +106,8 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   
   // Document state
   const [generatedDoc, setGeneratedDoc] = useState('');
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [signatureData, setSignatureData] = useState<{ dataUrl: string; signedAt: string; signerName: string } | null>(null);
   const [originalDoc, setOriginalDoc] = useState('');
   const [originalDocLang, setOriginalDocLang] = useState<Language>('fr');
   const [isDocTranslated, setIsDocTranslated] = useState(false);
@@ -1356,6 +1359,20 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
                   <FileText size={14} />
                   {language === 'ar' ? 'PDF' : 'PDF'}
                 </button>
+                <button
+                  onClick={() => setShowSignatureModal(true)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition ${
+                    signatureData
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-slate-700 text-white hover:bg-slate-600'
+                  }`}
+                  title={language === 'ar' ? 'التوقيع الإلكتروني' : 'Signature électronique'}
+                >
+                  <PenTool size={14} />
+                  {signatureData
+                    ? (language === 'ar' ? 'موقّع ✓' : 'Signé ✓')
+                    : (language === 'ar' ? 'توقيع' : 'Signer')}
+                </button>
               </div>
             </div>
 
@@ -1397,6 +1414,28 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
                   JuristDZ — Document généré par IA
                 </span>
               </div>
+
+              {/* Signature block */}
+              {signatureData && (
+                <div className="px-10 pb-8 border-t dark:border-slate-800 pt-6">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'توقيع:' : 'Signature :'}</p>
+                      <img src={signatureData.dataUrl} alt="Signature" className="h-16 object-contain" />
+                      <p className="text-xs text-slate-500 mt-1 font-medium">{signatureData.signerName}</p>
+                      <p className="text-[10px] text-slate-400">{new Date(signatureData.signedAt).toLocaleString(language === 'ar' ? 'ar-DZ' : 'fr-DZ')}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <CheckCircle size={12} className="text-green-600" />
+                        <span className="text-[10px] font-bold text-green-700 dark:text-green-400">
+                          {language === 'ar' ? 'موقّع إلكترونياً' : 'Signé électroniquement'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -1488,6 +1527,21 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
               setIsDocTranslated(false);
             }}
             onClose={() => setShowVersionHistory(false)}
+          />
+        )}
+
+        {/* Signature Modal */}
+        {showSignatureModal && (
+          <SignatureModal
+            language={language}
+            documentTitle={selectedTemplate ? (language === 'ar' ? selectedTemplate.name_ar : selectedTemplate.name) : 'Document'}
+            signerName={user ? `${user.firstName} ${user.lastName}` : ''}
+            onSign={(dataUrl, signedAt) => {
+              setSignatureData({ dataUrl, signedAt, signerName: user ? `${user.firstName} ${user.lastName}` : '' });
+              setShowSignatureModal(false);
+              toast(language === 'ar' ? 'تم التوقيع بنجاح' : 'Document signé avec succès', 'success');
+            }}
+            onClose={() => setShowSignatureModal(false)}
           />
         )}
       </div>

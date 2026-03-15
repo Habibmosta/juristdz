@@ -5,7 +5,7 @@ import RoleBasedLayout from './components/RoleBasedLayout';
 import ChatInterface from './components/ImprovedChatInterface';
 import EnhancedDraftingInterface from './components/EnhancedDraftingInterface';
 import AnalysisInterface from './components/AnalysisInterface';
-import AdminDashboard from './components/AdminDashboard';
+import AdminDashboard from './src/components/admin/AdminDashboard';
 import Documentation from './components/Documentation';
 import CaseManagement from './components/CaseManagement';
 import Dashboard from './components/Dashboard';
@@ -340,14 +340,7 @@ const App: React.FC = () => {
         />
       )}
       {currentMode === AppMode.ADMIN && (
-        <AdminDashboard 
-          language={language} 
-          users={[legacyUserStats]} 
-          licenseKeys={licenseKeys} 
-          transactions={transactions} 
-          onGenerateKey={generateLicenseKey} 
-          onSetUserPlan={setUserPlan} 
-        />
+        <AdminDashboard />
       )}
       {currentMode === AppMode.PENDING_ACCOUNTS && (
         <PendingAccountsManager 

@@ -8,6 +8,8 @@ import {
   User, Mail, Phone, Building, Hash, Camera, Save,
   CheckCircle, AlertCircle, Shield, Star, Clock
 } from 'lucide-react';
+import TwoFactorSetup from '../auth/TwoFactorSetup';
+import AuditLogViewer from '../admin/AuditLogViewer';
 
 interface Props {
   user: EnhancedUserProfile;
@@ -310,6 +312,16 @@ export default function UserProfilePage({ user, language, onUpdate }: Props) {
             : <><Save size={18} /> {isAr ? 'حفظ التغييرات' : 'Sauvegarder les modifications'}</>
           }
         </button>
+
+        {/* 2FA Section */}
+        <TwoFactorSetup
+          language={language}
+          mfaEnabled={user.mfaEnabled ?? false}
+          onUpdate={(enabled) => onUpdate({ ...user, mfaEnabled: enabled })}
+        />
+
+        {/* Audit log */}
+        <AuditLogViewer userId={user.id} language={language} />
 
       </div>
     </div>

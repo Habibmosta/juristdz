@@ -135,6 +135,10 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.TOOLS,
       AppMode.ADMIN,
       AppMode.DOCS,
+      AppMode.PENDING_ACCOUNTS,
+      AppMode.DEADLINES,
+      AppMode.NOTARIAL_REGISTRY,
+      AppMode.BAILIFF_REGISTRY,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.ADMIN,
