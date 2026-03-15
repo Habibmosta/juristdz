@@ -2,10 +2,18 @@
 -- Full-text search PostgreSQL (FR + AR), workflow de validation éditoriale
 -- Idempotent
 
-DROP POLICY IF EXISTS "Public can read validated jurisprudence" ON jurisprudence;
-DROP POLICY IF EXISTS "Authenticated users can contribute" ON jurisprudence;
-DROP POLICY IF EXISTS "Contributors can update own pending" ON jurisprudence;
-DROP POLICY IF EXISTS "Admins can manage all jurisprudence" ON jurisprudence;
+-- Drop policies only if table exists (avoids 42P01 error)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'jurisprudence') THEN
+    DROP POLICY IF EXISTS "Public can read validated jurisprudence" ON jurisprudence;
+    DROP POLICY IF EXISTS "Authenticated users can contribute" ON jurisprudence;
+    DROP POLICY IF EXISTS "Contributors can update own pending" ON jurisprudence;
+    DROP POLICY IF EXISTS "Admins can manage all jurisprudence" ON jurisprudence;
+  END IF;
+END;
+$$;
+
 DROP TABLE IF EXISTS jurisprudence CASCADE;
 
 CREATE TABLE jurisprudence (
