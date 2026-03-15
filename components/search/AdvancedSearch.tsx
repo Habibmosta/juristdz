@@ -26,6 +26,7 @@ import type {
 import { Language } from '../../types';
 import { searchService } from '../../services/searchService';
 import { UI_TRANSLATIONS } from '../../constants';
+import SearchResults from './SearchResults';
 
 interface AdvancedSearchProps {
   language: Language;
@@ -464,6 +465,16 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Search Results */}
+      {results && (
+        <SearchResults
+          results={results}
+          searchType={searchType}
+          language={language}
+          theme={theme}
+        />
       )}
     </div>
   );
