@@ -21,8 +21,7 @@ import type {
   LegalText,
   LegalDomain, 
   Jurisdiction, 
-  SortOption,
-  SearchFilter 
+  SortOption
 } from '../../types/search';
 import { Language } from '../../types';
 import { searchService } from '../../services/searchService';
@@ -58,7 +57,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const [selectedDomain, setSelectedDomain] = useState<LegalDomain | ''>('');
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<Jurisdiction | ''>('');
   const [dateRange, setDateRange] = useState<{ from: string; to: string }>({ from: '', to: '' });
-  const [sortBy, setSortBy] = useState<SortOption>(SortOption.RELEVANCE);
+  const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [maxResults, setMaxResults] = useState(50);
 
   // Suggestions state
@@ -117,28 +116,18 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
     try {
       // Build search query
-      const filters: SearchFilter[] = [];
-      
-      if (selectedDomain) {
-        filters.push({ field: 'domain', operator: 'equals', value: selectedDomain });
-      }
-      
-      if (selectedJurisdiction) {
-        filters.push({ field: 'jurisdiction', operator: 'equals', value: selectedJurisdiction });
-      }
-
       const query: SearchQuery = {
         text: searchText.trim(),
-        filters,
-        domain: selectedDomain || undefined,
-        jurisdiction: selectedJurisdiction || undefined,
-        dateRange: dateRange.from || dateRange.to ? {
-          from: dateRange.from ? new Date(dateRange.from) : undefined,
-          to: dateRange.to ? new Date(dateRange.to) : undefined
-        } : undefined,
-        maxResults,
-        sortBy,
-        language
+        type: searchType,
+        filters: {
+          domain: selectedDomain || undefined,
+          jurisdiction: selectedJurisdiction || undefined,
+          dateFrom: dateRange.from || undefined,
+          dateTo: dateRange.to || undefined,
+        },
+        sort: sortBy,
+        page: 1,
+        pageSize: maxResults,
       };
 
       // Execute search based on type
@@ -169,37 +158,36 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     setSelectedDomain('');
     setSelectedJurisdiction('');
     setDateRange({ from: '', to: '' });
-    setSortBy(SortOption.RELEVANCE);
+    setSortBy('relevance');
     setMaxResults(50);
   };
 
-  const getDomainLabel = (domain: LegalDomain) => {
-    const labels = {
-      [LegalDomain.CIVIL]: isAr ? 'مدني' : 'Civil',
-      [LegalDomain.CRIMINAL]: isAr ? 'جنائي' : 'Pénal',
-      [LegalDomain.COMMERCIAL]: isAr ? 'تجاري' : 'Commercial',
-      [LegalDomain.ADMINISTRATIVE]: isAr ? 'إداري' : 'Administratif',
-      [LegalDomain.FAMILY]: isAr ? 'أسرة' : 'Famille',
-      [LegalDomain.LABOR]: isAr ? 'عمل' : 'Travail',
-      [LegalDomain.TAX]: isAr ? 'ضرائب' : 'Fiscal',
-      [LegalDomain.CONSTITUTIONAL]: isAr ? 'دستوري' : 'Constitutionnel',
-      [LegalDomain.INTERNATIONAL]: isAr ? 'دولي' : 'International'
+  const getDomainLabel = (domain: LegalDomain): string => {
+    const labels: Record<LegalDomain, string> = {
+      civil: isAr ? 'مدني' : 'Civil',
+      penal: isAr ? 'جنائي' : 'Pénal',
+      commercial: isAr ? 'تجاري' : 'Commercial',
+      administratif: isAr ? 'إداري' : 'Administratif',
+      famille: isAr ? 'أسرة' : 'Famille',
+      travail: isAr ? 'عمل' : 'Travail',
+      fiscal: isAr ? 'ضرائب' : 'Fiscal',
+      constitutionnel: isAr ? 'دستوري' : 'Constitutionnel',
+      international: isAr ? 'دولي' : 'International',
+      immobilier: isAr ? 'عقاري' : 'Immobilier',
     };
-    return labels[domain] || domain;
+    return labels[domain] ?? domain;
   };
 
-  const getJurisdictionLabel = (jurisdiction: Jurisdiction) => {
-    const labels = {
-      [Jurisdiction.SUPREME_COURT]: isAr ? 'المحكمة العليا' : 'Cour Suprême',
-      [Jurisdiction.COUNCIL_OF_STATE]: isAr ? 'مجلس الدولة' : 'Conseil d\'État',
-      [Jurisdiction.COURT_OF_CASSATION]: isAr ? 'محكمة النقض' : 'Cour de Cassation',
-      [Jurisdiction.APPEAL_COURT]: isAr ? 'محكمة الاستئناف' : 'Cour d\'Appel',
-      [Jurisdiction.FIRST_INSTANCE]: isAr ? 'المحكمة الابتدائية' : 'Première Instance',
-      [Jurisdiction.COMMERCIAL_COURT]: isAr ? 'المحكمة التجارية' : 'Tribunal de Commerce',
-      [Jurisdiction.ADMINISTRATIVE_COURT]: isAr ? 'المحكمة الإدارية' : 'Tribunal Administratif',
-      [Jurisdiction.CRIMINAL_COURT]: isAr ? 'المحكمة الجنائية' : 'Tribunal Criminel'
+  const getJurisdictionLabel = (jurisdiction: Jurisdiction): string => {
+    const labels: Record<Jurisdiction, string> = {
+      cour_supreme: isAr ? 'المحكمة العليا' : 'Cour Suprême',
+      conseil_etat: isAr ? 'مجلس الدولة' : 'Conseil d\'État',
+      tribunal_administratif: isAr ? 'المحكمة الإدارية' : 'Tribunal Administratif',
+      cour_appel: isAr ? 'محكمة الاستئناف' : 'Cour d\'Appel',
+      tribunal: isAr ? 'المحكمة الابتدائية' : 'Tribunal',
+      tribunal_commerce: isAr ? 'المحكمة التجارية' : 'Tribunal de Commerce',
     };
-    return labels[jurisdiction] || jurisdiction;
+    return labels[jurisdiction] ?? jurisdiction;
   };
 
   return (
@@ -424,10 +412,10 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                     : 'bg-white border-slate-200 text-slate-900'
                 }`}
               >
-                <option value={SortOption.RELEVANCE}>{isAr ? 'الصلة' : 'Pertinence'}</option>
-                <option value={SortOption.DATE_DESC}>{isAr ? 'الأحدث أولاً' : 'Plus récent'}</option>
-                <option value={SortOption.DATE_ASC}>{isAr ? 'الأقدم أولاً' : 'Plus ancien'}</option>
-                <option value={SortOption.JURISDICTION}>{isAr ? 'الجهة القضائية' : 'Juridiction'}</option>
+                <option value="relevance">{isAr ? 'الصلة' : 'Pertinence'}</option>
+                <option value="date_desc">{isAr ? 'الأحدث أولاً' : 'Plus récent'}</option>
+                <option value="date_asc">{isAr ? 'الأقدم أولاً' : 'Plus ancien'}</option>
+                <option value="court">{isAr ? 'الجهة القضائية' : 'Juridiction'}</option>
               </select>
             </div>
 
@@ -470,25 +458,9 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-blue-800 dark:text-blue-200 font-medium">
-                {results.totalCount} {isAr ? 'نتيجة' : 'résultat(s)'} 
-                {results.totalCount > 0 && ` ${isAr ? 'في' : 'en'} ${results.searchTime}ms`}
+                {results.total} {isAr ? 'نتيجة' : 'résultat(s)'} 
+                {results.took != null && ` ${isAr ? 'في' : 'en'} ${results.took}ms`}
               </span>
-              {results.suggestions && results.suggestions.length > 0 && (
-                <div className="mt-2">
-                  <span className="text-sm text-blue-600 dark:text-blue-300">
-                    {isAr ? 'اقتراحات:' : 'Suggestions:'} 
-                  </span>
-                  {results.suggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(suggestion.term)}
-                      className="ml-2 text-sm text-blue-600 dark:text-blue-300 hover:underline"
-                    >
-                      {suggestion.term}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
