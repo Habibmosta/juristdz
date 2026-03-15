@@ -23,7 +23,8 @@ import {
   Timer,
   Globe,
   UserCheck,
-  User
+  User,
+  FolderOpen
 } from 'lucide-react';
 import { AppMode, UserRole, Language } from '../types';
 import { NavigationItem } from '../services/routingService';
@@ -79,6 +80,7 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
     FileSignature,
     Gavel,
     User,
+    FolderOpen,
   };
 
   // Role-specific styling

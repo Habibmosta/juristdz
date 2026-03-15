@@ -32,6 +32,7 @@ import LegalDeadlineTracker from './src/components/deadlines/LegalDeadlineTracke
 import NotarialRegistry from './src/components/notarial/NotarialRegistry';
 import BailiffRegistry from './src/components/bailiff/BailiffRegistry';
 import UserProfilePage from './src/components/profile/UserProfilePage';
+import DocumentManager from './src/components/documents/DocumentManager';
 import { useAccountStatus } from './src/hooks/useAccountStatus';
 import { AppMode, Language, UserStats, LicenseKey, Transaction, Case, UserRole, EnhancedUserProfile } from './types';
 import { databaseService } from './services/databaseService';
@@ -380,6 +381,12 @@ const App: React.FC = () => {
         <Documentation 
           language={language}
           userRole={profile?.profession as UserRole}
+        />
+      )}
+      {currentMode === AppMode.DOCUMENTS && (
+        <DocumentManager
+          userId={profile.id}
+          language={language}
         />
       )}
     </RoleBasedLayout>

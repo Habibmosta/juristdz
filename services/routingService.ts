@@ -238,6 +238,7 @@ export class RoutingService {
       [AppMode.NOTARIAL_REGISTRY]: language === 'ar' ? 'سجل العقود' : 'Registre Notarial',
       [AppMode.BAILIFF_REGISTRY]: language === 'ar' ? 'سجل المحاضر' : 'Registre Exploits',
       [AppMode.PROFILE]: language === 'ar' ? 'الملف الشخصي' : 'Mon Profil',
+      [AppMode.DOCUMENTS]: language === 'ar' ? 'المستندات' : 'Documents',
     };
 
     return labels[mode] || mode;
@@ -265,6 +266,7 @@ export class RoutingService {
       [AppMode.NOTARIAL_REGISTRY]: 'FileSignature',
       [AppMode.BAILIFF_REGISTRY]: 'Gavel',
       [AppMode.PROFILE]: 'User',
+      [AppMode.DOCUMENTS]: 'FolderOpen',
     };
 
     return icons[mode] || 'Circle';

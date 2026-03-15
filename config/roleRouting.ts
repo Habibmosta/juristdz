@@ -22,6 +22,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.TOOLS,
       AppMode.DOCS,
       AppMode.DEADLINES,
+      AppMode.DOCUMENTS,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -42,6 +43,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DOCS,
       AppMode.DEADLINES,
       AppMode.NOTARIAL_REGISTRY,
+      AppMode.DOCUMENTS,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -62,6 +64,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DOCS,
       AppMode.DEADLINES,
       AppMode.BAILIFF_REGISTRY,
+      AppMode.DOCUMENTS,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -78,6 +81,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.CALENDAR,
       AppMode.DOCS,
       AppMode.DEADLINES,
+      AppMode.DOCUMENTS,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -113,6 +117,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.CLIENTS,
       AppMode.CALENDAR,
       AppMode.DOCS,
+      AppMode.DOCUMENTS,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
