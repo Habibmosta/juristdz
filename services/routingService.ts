@@ -121,7 +121,9 @@ export class RoutingService {
       allowedModes = [AppMode.DASHBOARD, AppMode.ADMIN];
     }
 
-    return allowedModes.map(mode => ({
+    return allowedModes
+      .filter(mode => mode !== AppMode.PROFILE) // Profile accessible via user menu only
+      .map(mode => ({
       mode,
       label: this.getModeLabel(mode, lang),
       icon: this.getModeIcon(mode),
@@ -235,6 +237,7 @@ export class RoutingService {
       [AppMode.PENDING_ACCOUNTS]: language === 'ar' ? 'الحسابات المعلقة' : 'Comptes en attente',
       [AppMode.NOTARIAL_REGISTRY]: language === 'ar' ? 'سجل العقود' : 'Registre Notarial',
       [AppMode.BAILIFF_REGISTRY]: language === 'ar' ? 'سجل المحاضر' : 'Registre Exploits',
+      [AppMode.PROFILE]: language === 'ar' ? 'الملف الشخصي' : 'Mon Profil',
     };
 
     return labels[mode] || mode;
@@ -261,6 +264,7 @@ export class RoutingService {
       [AppMode.PENDING_ACCOUNTS]: 'UserCheck',
       [AppMode.NOTARIAL_REGISTRY]: 'FileSignature',
       [AppMode.BAILIFF_REGISTRY]: 'Gavel',
+      [AppMode.PROFILE]: 'User',
     };
 
     return icons[mode] || 'Circle';

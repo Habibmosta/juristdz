@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import { UI_TRANSLATIONS } from '../../constants';
 import { professionalDataService } from '../../src/services/professionalDataService';
+import { Sparkline } from '../../src/components/charts/MiniChart';
+import ReminderWidget from '../../src/components/reminders/ReminderWidget';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -262,15 +264,24 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold">{statistiques.coursTermines}</div>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <div className="text-2xl font-bold">{statistiques.coursTermines}</div>
+                <Sparkline values={[0,1,1,2,2,3,statistiques.coursTermines]} color="rgba(255,255,255,0.8)" />
+              </div>
               <div className="text-blue-100 text-sm">{isAr ? 'دورات مكتملة' : 'Cours terminés'}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{statistiques.exercicesReussis}</div>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <div className="text-2xl font-bold">{statistiques.exercicesReussis}</div>
+                <Sparkline values={[0,1,2,3,4,5,statistiques.exercicesReussis]} color="rgba(255,255,255,0.8)" />
+              </div>
               <div className="text-blue-100 text-sm">{isAr ? 'تمارين ناجحة' : 'Exercices réussis'}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{statistiques.tempsEtude}h</div>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <div className="text-2xl font-bold">{statistiques.tempsEtude}h</div>
+                <Sparkline values={[0,2,4,6,8,10,statistiques.tempsEtude]} color="rgba(255,255,255,0.8)" />
+              </div>
               <div className="text-blue-100 text-sm">{isAr ? 'ساعات دراسة' : 'Heures d\'étude'}</div>
             </div>
             <div className="text-center">
@@ -458,6 +469,9 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
           {/* Sidebar */}
           <div className="space-y-6">
             
+            {/* Rappels rapides */}
+            <ReminderWidget language={language} userId={user.id} compact />
+
             {/* Next Objective */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-200">

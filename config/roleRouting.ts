@@ -21,7 +21,8 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.ANALYTICS,
       AppMode.TOOLS,
       AppMode.DOCS,
-      AppMode.DEADLINES
+      AppMode.DEADLINES,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
     restrictedFeatures: []
@@ -34,13 +35,14 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
-      AppMode.CASES,      // ✅ Activé pour les actes notariés
-      AppMode.CLIENTS,    // ✅ Activé pour les parties
-      AppMode.CALENDAR,   // ✅ Activé pour les RDV
-      AppMode.BILLING,    // ✅ Activé pour la facturation
+      AppMode.CASES,
+      AppMode.CLIENTS,
+      AppMode.CALENDAR,
+      AppMode.BILLING,
       AppMode.DOCS,
       AppMode.DEADLINES,
-      AppMode.NOTARIAL_REGISTRY  // ✅ Registre des actes
+      AppMode.NOTARIAL_REGISTRY,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
     restrictedFeatures: [] // Plus de restrictions
@@ -53,13 +55,14 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
-      AppMode.CASES,      // ✅ Activé pour les exploits
-      AppMode.CLIENTS,    // ✅ Activé pour les requérants
-      AppMode.CALENDAR,   // ✅ Activé pour les missions
-      AppMode.BILLING,    // ✅ Activé pour la facturation
+      AppMode.CASES,
+      AppMode.CLIENTS,
+      AppMode.CALENDAR,
+      AppMode.BILLING,
       AppMode.DOCS,
       AppMode.DEADLINES,
-      AppMode.BAILIFF_REGISTRY  // ✅ Registre des exploits
+      AppMode.BAILIFF_REGISTRY,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
     restrictedFeatures: [] // Plus de restrictions
@@ -71,10 +74,11 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DASHBOARD,
       AppMode.RESEARCH,
       AppMode.ANALYSIS,
-      AppMode.CASES,      // ✅ Activé pour les affaires
-      AppMode.CALENDAR,   // ✅ Activé pour les audiences
+      AppMode.CASES,
+      AppMode.CALENDAR,
       AppMode.DOCS,
-      AppMode.DEADLINES
+      AppMode.DEADLINES,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
     restrictedFeatures: ['billing'] // Pas de facturation pour les magistrats
@@ -85,7 +89,8 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
     allowedModes: [
       AppMode.DASHBOARD,
       AppMode.RESEARCH,
-      AppMode.DOCS
+      AppMode.DOCS,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.RESEARCH,
     restrictedFeatures: [
@@ -104,10 +109,11 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DRAFTING,
       AppMode.ANALYSIS,
-      AppMode.CASES,      // ✅ Activé pour les dossiers juridiques
-      AppMode.CLIENTS,    // ✅ Activé pour les départements
-      AppMode.CALENDAR,   // ✅ Activé pour les échéances
-      AppMode.DOCS
+      AppMode.CASES,
+      AppMode.CLIENTS,
+      AppMode.CALENDAR,
+      AppMode.DOCS,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
     restrictedFeatures: ['billing'] // Pas de facturation externe
@@ -128,7 +134,8 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.ANALYTICS,
       AppMode.TOOLS,
       AppMode.ADMIN,
-      AppMode.DOCS
+      AppMode.DOCS,
+      AppMode.PROFILE
     ],
     defaultMode: AppMode.ADMIN,
     restrictedFeatures: []

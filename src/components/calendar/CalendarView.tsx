@@ -196,9 +196,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
     ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
     : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+  // Algerian calendar: week starts on Sunday, Fri+Sat are weekend
   const dayNames = isAr
     ? ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
     : ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+  // Algerian weekend: Friday (5) and Saturday (6)
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 5 || day === 6; // Fri or Sat
+  };
 
   const days = getDaysInMonth();
   const today = new Date();
@@ -296,11 +303,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 overflow-hidden">
           {/* Day Headers */}
           <div className="grid grid-cols-7 border-b dark:border-slate-800">
-            {dayNames.map(day => (
-              <div key={day} className="p-3 text-center font-bold text-sm text-slate-600 dark:text-slate-400">
-                {day}
-              </div>
-            ))}
+            {dayNames.map((day, idx) => {
+              const isFriSat = idx === 5 || idx === 6; // Fri=5, Sat=6
+              return (
+                <div key={day} className={`p-3 text-center font-bold text-sm ${
+                  isFriSat
+                    ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}>
+                  {day}
+                </div>
+              );
+            })}
           </div>
 
           {/* Days Grid */}
@@ -313,17 +327,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ userId, language }) 
               const dayEvents = getEventsForDate(day);
               const isToday = day.toDateString() === today.toDateString();
               const isSelected = selectedDate && day.toDateString() === selectedDate.toDateString();
+              const isDayWeekend = isWeekend(day);
 
               return (
                 <div
                   key={day.toISOString()}
                   onClick={() => setSelectedDate(day)}
-                  className={`min-h-[120px] border-b border-r dark:border-slate-800 p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                    isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  }`}
+                  className={`min-h-[120px] border-b border-r dark:border-slate-800 p-2 cursor-pointer transition-colors ${
+                    isDayWeekend
+                      ? 'bg-amber-50/60 dark:bg-amber-900/5 hover:bg-amber-100/60 dark:hover:bg-amber-900/10'
+                      : isSelected
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                  } ${isSelected && !isDayWeekend ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                 >
                   <div className={`text-sm font-bold mb-2 ${
-                    isToday ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center' : ''
+                    isToday
+                      ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center'
+                      : isDayWeekend
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : ''
                   }`}>
                     {day.getDate()}
                   </div>

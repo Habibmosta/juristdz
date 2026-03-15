@@ -22,7 +22,8 @@ import {
   Wrench,
   Timer,
   Globe,
-  UserCheck
+  UserCheck,
+  User
 } from 'lucide-react';
 import { AppMode, UserRole, Language } from '../types';
 import { NavigationItem } from '../services/routingService';
@@ -77,6 +78,7 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
     UserCheck,
     FileSignature,
     Gavel,
+    User,
   };
 
   // Role-specific styling
