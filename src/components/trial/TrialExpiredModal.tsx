@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, Check, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAppToast } from '../../contexts/ToastContext';
 
 interface TrialExpiredModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
   isAr = false
 }) => {
   const [loading, setLoading] = React.useState(false);
+  const { toast } = useAppToast();
 
   if (!isOpen) return null;
 
@@ -33,18 +35,18 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
       if (error) throw error;
 
       if (data.success) {
-        alert(isAr 
-          ? '✅ تم تفعيل اشتراكك بنجاح!'
-          : '✅ Votre abonnement a été activé avec succès!');
+        toast(isAr 
+          ? 'تم تفعيل اشتراكك بنجاح!'
+          : 'Votre abonnement a été activé avec succès!', 'success');
         window.location.reload();
       } else {
-        alert(data.message);
+        toast(data.message, 'error');
       }
     } catch (error: any) {
       console.error('Erreur conversion:', error);
-      alert(isAr 
-        ? '❌ حدث خطأ. يرجى المحاولة مرة أخرى.'
-        : '❌ Une erreur est survenue. Veuillez réessayer.');
+      toast(isAr 
+        ? 'حدث خطأ. يرجى المحاولة مرة أخرى.'
+        : 'Une erreur est survenue. Veuillez réessayer.', 'error');
     } finally {
       setLoading(false);
     }
@@ -66,18 +68,18 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
       if (error) throw error;
 
       if (data.success) {
-        alert(isAr 
-          ? '✅ تم التبديل إلى الخطة المجانية'
-          : '✅ Vous êtes maintenant sur le plan gratuit');
+        toast(isAr 
+          ? 'تم التبديل إلى الخطة المجانية'
+          : 'Vous êtes maintenant sur le plan gratuit', 'success');
         window.location.reload();
       } else {
-        alert(data.message);
+        toast(data.message, 'error');
       }
     } catch (error: any) {
       console.error('Erreur downgrade:', error);
-      alert(isAr 
-        ? '❌ حدث خطأ. يرجى المحاولة مرة أخرى.'
-        : '❌ Une erreur est survenue. Veuillez réessayer.');
+      toast(isAr 
+        ? 'حدث خطأ. يرجى المحاولة مرة أخرى.'
+        : 'Une erreur est survenue. Veuillez réessayer.', 'error');
     } finally {
       setLoading(false);
     }

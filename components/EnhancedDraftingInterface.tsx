@@ -28,6 +28,7 @@ import TemplateContribution from './TemplateContribution';
 import DynamicLegalForm from './forms/DynamicLegalForm';
 import ProfessionalProfileForm from './ProfessionalProfileForm';
 import DocumentVersionHistory from '../src/components/documents/DocumentVersionHistory';
+import { useAppToast } from '../src/contexts/ToastContext';
 import { documentVersionService } from '../src/services/documentVersionService';
 import { pdfExportService } from '../src/services/pdfExportService';
 
@@ -47,6 +48,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   user
 }) => {
   const t = UI_TRANSLATIONS[language];
+  const { toast } = useAppToast();
   
   // Configuration steps
   const [currentStep, setCurrentStep] = useState<ConfigStep>('template');
@@ -471,10 +473,9 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
       setShowProfileModal(false);
     } catch (error) {
       console.error('Error saving professional info:', error);
-      alert(language === 'ar' ? 
+      toast(language === 'ar' ? 
         'حدث خطأ أثناء حفظ المعلومات' :
-        'Erreur lors de l\'enregistrement des informations'
-      );
+        'Erreur lors de l\'enregistrement des informations', 'error');
     }
   };
 
@@ -483,10 +484,9 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     
     // VÉRIFICATION DU PROFIL PROFESSIONNEL
     if (!userProfile.professionalInfo) {
-      alert(language === 'ar' ? 
-        'يرجى إكمال معلوماتك المهنية أولاً لإنشاء وثائق قانونية صحيحة' :
-        'Veuillez compléter votre profil professionnel avant de générer des documents juridiques'
-      );
+      toast(language === 'ar' ? 
+        'يرجى إكمال معلوماتك المهنية أولاً' :
+        'Veuillez compléter votre profil professionnel', 'warning');
       setShowProfileModal(true);
       return;
     }
@@ -511,10 +511,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
     }
     
     if (missingFields.length > 0) {
-      alert(
-        (language === 'ar' ? 'حقول مفقودة: ' : 'Champs manquants: ') + 
-        missingFields.join(', ')
-      );
+      toast((language === 'ar' ? 'حقول مفقودة: ' : 'Champs manquants: ') + missingFields.join(', '), 'warning');
       setShowProfileModal(true);
       return;
     }
