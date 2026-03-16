@@ -43,6 +43,7 @@ WHERE p.account_status = 'trial'
 ORDER BY p.trial_ends_at;
 
 -- Fonction: activer un compte
+DROP FUNCTION IF EXISTS activate_account(UUID, UUID, DECIMAL, VARCHAR);
 CREATE OR REPLACE FUNCTION activate_account(
   p_user_id UUID,
   p_admin_id UUID,
@@ -54,9 +55,18 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+  -- Confirmer l'email dans auth.users
+  UPDATE auth.users
+  SET 
+    email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+    updated_at         = NOW()
+  WHERE id = p_user_id;
+
+  -- Activer le profil
   UPDATE profiles
   SET 
     account_status     = 'active',
+    email_verified     = true,
     validated_by       = p_admin_id,
     validated_at       = NOW(),
     payment_status     = CASE WHEN p_payment_amount IS NOT NULL THEN 'paid' ELSE payment_status END,
