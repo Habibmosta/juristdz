@@ -36,13 +36,11 @@ const SubscriptionPaymentModal: React.FC<Props> = ({ userId, plan, language, onC
     const payment = params.get('payment');
     const gw = params.get('gateway');
     const oid = params.get('orderId');
-    const pl = params.get('plan');
 
-    if (payment === 'success' && gw === 'paypal' && oid && pl) {
+    if (payment === 'success' && gw === 'paypal' && oid) {
       setGateway('paypal');
       setOrderId(oid);
       setStep('confirm_ref');
-      // Nettoyer l'URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -56,8 +54,7 @@ const SubscriptionPaymentModal: React.FC<Props> = ({ userId, plan, language, onC
       setOrderId(result.orderId);
 
       if (gw === 'paypal') {
-        const url = paymentService.initiatePayPal(pla
-n, result.orderId);
+        const url = paymentService.initiatePayPal(plan, result.orderId);
         window.open(url, '_blank');
         setStep('paypal_pending');
       } else {
@@ -65,7 +62,7 @@ n, result.orderId);
         setBaridimobInfo(info);
         setStep('baridimob_instructions');
       }
-    } catch (err: any) {
+    } catch {
       toast(isAr ? 'خطأ في إنشاء الطلب' : 'Erreur lors de la création de la commande', 'error');
     } finally {
       setLoading(false);
@@ -84,7 +81,7 @@ n, result.orderId);
       if (!result.success) throw new Error(result.error);
       setStep('success');
       setTimeout(() => { onSuccess(); onClose(); }, 2500);
-    } catch (err: any) {
+    } catch {
       toast(isAr ? 'خطأ في تأكيد الدفع' : 'Erreur lors de la confirmation', 'error');
     } finally {
       setLoading(false);
@@ -114,7 +111,7 @@ n, result.orderId);
             )}
             <div>
               <h2 className="font-bold text-lg">
-                {isAr ? 'تفعيل الاشتراك' : 'Activer l\'abonnement'}
+                {isAr ? 'تفعيل الاشتراك' : "Activer l'abonnement"}
               </h2>
               <p className="text-xs text-slate-500">
                 {isAr ? `خطة ${prices.label}` : `Plan ${prices.label}`} — {prices.dzd.toLocaleString()} DA/mois
@@ -131,7 +128,7 @@ n, result.orderId);
           {/* STEP 1 — Choisir la passerelle */}
           {step === 'choose_gateway' && (
             <div className="space-y-4">
-              <p className={`text-sm text-slate-500 dark:text-slate-400 mb-4`}>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                 {isAr ? 'اختر طريقة الدفع:' : 'Choisissez votre mode de paiement :'}
               </p>
 
@@ -146,9 +143,13 @@ n, result.orderId);
                 </div>
                 <div className="text-left flex-1">
                   <p className="font-bold text-slate-800 dark:text-slate-200">PayPal</p>
-                  <p className="text-xs text-slate-500">{isAr ? 'دفع دولي آمن' : 'Paiement international sécurisé'} — ${prices.usd} USD</p>
+                  <p className="text-xs text-slate-500">
+                    {isAr ? 'دفع دولي آمن' : 'Paiement international sécurisé'} — ${prices.usd} USD
+                  </p>
                 </div>
-                {loading && gateway === 'paypal' ? <Loader2 size={18} className="animate-spin text-blue-500" /> : <ExternalLink size={18} className="text-slate-400 group-hover:text-blue-500" />}
+                {loading && gateway === 'paypal'
+                  ? <Loader2 size={18} className="animate-spin text-blue-500" />
+                  : <ExternalLink size={18} className="text-slate-400 group-hover:text-blue-500" />}
               </button>
 
               {/* BaridiMob */}
@@ -162,16 +163,20 @@ n, result.orderId);
                 </div>
                 <div className="text-left flex-1">
                   <p className="font-bold text-slate-800 dark:text-slate-200">BaridiMob</p>
-                  <p className="text-xs text-slate-500">{isAr ? 'تحويل بريدي موب — الجزائر' : 'Virement BaridiMob — Algérie'} — {prices.dzd.toLocaleString()} DA</p>
+                  <p className="text-xs text-slate-500">
+                    {isAr ? 'تحويل بريدي موب — الجزائر' : 'Virement BaridiMob — Algérie'} — {prices.dzd.toLocaleString()} DA
+                  </p>
                 </div>
-                {loading && gateway === 'baridimob' ? <Loader2 size={18} className="animate-spin text-green-500" /> : <CreditCard size={18} className="text-slate-400 group-hover:text-green-500" />}
+                {loading && gateway === 'baridimob'
+                  ? <Loader2 size={18} className="animate-spin text-green-500" />
+                  : <CreditCard size={18} className="text-slate-400 group-hover:text-green-500" />}
               </button>
 
               <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs text-slate-500">
                 <AlertCircle size={14} className="flex-shrink-0" />
                 {isAr
                   ? 'جميع المدفوعات آمنة. سيتم تفعيل حسابك فور التحقق من الدفع.'
-                  : 'Tous les paiements sont sécurisés. Votre compte sera activé dès vérification du paiement.'}
+                  : 'Tous les paiements sont sécurisés. Votre compte sera activé dès vérification.'}
               </div>
             </div>
           )}
@@ -188,15 +193,15 @@ n, result.orderId);
                 </h3>
                 <p className="text-sm text-slate-500">
                   {isAr
-                    ? 'تم فتح نافذة PayPal. بعد الدفع، ستعود تلقائياً لهذه الصفحة.'
-                    : 'La fenêtre PayPal a été ouverte. Après le paiement, vous serez redirigé automatiquement.'}
+                    ? 'تم فتح نافذة PayPal. بعد الدفع، انقر على الزر أدناه.'
+                    : "La fenêtre PayPal a été ouverte. Après le paiement, cliquez ci-dessous."}
                 </p>
               </div>
               <button
                 onClick={() => setStep('confirm_ref')}
                 className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
               >
-                {isAr ? 'لقد أتممت الدفع ←' : 'J\'ai effectué le paiement →'}
+                {isAr ? 'لقد أتممت الدفع ←' : "J'ai effectué le paiement →"}
               </button>
             </div>
           )}
@@ -219,15 +224,6 @@ n, result.orderId);
                     <span className="font-bold text-green-700 dark:text-green-400">{baridimobInfo.amount.toLocaleString()} DA</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-slate-500">{isAr ? 'رقم الحساب:' : 'RIB :'}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs">{baridimobInfo.rib}</span>
-                      <button onClick={() => copyToClipboard(baridimobInfo.rib)} className="p-1 hover:bg-green-100 dark:hover:bg-green-900/50 rounded">
-                        {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} className="text-slate-400" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
                     <span className="text-slate-500">{isAr ? 'المرجع:' : 'Référence :'}</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold">{baridimobInfo.reference}</span>
@@ -240,13 +236,13 @@ n, result.orderId);
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium">{isAr ? 'خطوات التحويل:' : 'Étapes :'}</p>
-                {(isAr ? baridimobInfo.steps_ar : baridimobInfo.steps).map((step, i) => (
+                <p className="text-sm font-medium">{isAr ? 'خطوات:' : 'Étapes :'}</p>
+                {(isAr ? baridimobInfo.steps_ar : baridimobInfo.steps).map((s, i) => (
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <span className="w-5 h-5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                       {i + 1}
                     </span>
-                    <span className="text-slate-600 dark:text-slate-400">{step}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{s}</span>
                   </div>
                 ))}
               </div>
@@ -255,7 +251,7 @@ n, result.orderId);
                 onClick={() => setStep('confirm_ref')}
                 className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors"
               >
-                {isAr ? 'لقد أجريت التحويل ←' : 'J\'ai effectué le virement →'}
+                {isAr ? 'لقد أرسلت البريد الإلكتروني ←' : "J'ai envoyé l'email →"}
               </button>
             </div>
           )}
@@ -269,8 +265,8 @@ n, result.orderId);
                 </h3>
                 <p className="text-sm text-slate-500">
                   {gateway === 'paypal'
-                    ? (isAr ? 'رقم معاملة PayPal (يبدأ بـ PAYID أو TXN)' : 'Numéro de transaction PayPal (commence par PAYID ou TXN)')
-                    : (isAr ? 'رقم معاملة BaridiMob المرسل إليك برسالة SMS' : 'Numéro de transaction BaridiMob reçu par SMS')}
+                    ? (isAr ? 'رقم معاملة PayPal (يبدأ بـ PAYID)' : 'Numéro de transaction PayPal (commence par PAYID)')
+                    : (isAr ? 'رقم المعاملة المرسل إليك برسالة SMS' : 'Numéro de transaction reçu par SMS')}
                 </p>
               </div>
 
@@ -287,7 +283,7 @@ n, result.orderId);
                 <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
                 {isAr
                   ? 'سيتم التحقق من الدفع خلال 24 ساعة. ستتلقى إشعاراً بالبريد الإلكتروني عند التفعيل.'
-                  : 'Le paiement sera vérifié sous 24h. Vous recevrez un email de confirmation à l\'activation.'}
+                  : "Le paiement sera vérifié sous 24h. Vous recevrez un email de confirmation à l'activation."}
               </div>
 
               <button
@@ -308,12 +304,12 @@ n, result.orderId);
                 <CheckCircle2 size={40} className="text-green-600" />
               </div>
               <h3 className="font-bold text-xl text-green-700 dark:text-green-400">
-                {isAr ? 'تم تفعيل اشتراكك!' : 'Abonnement activé !'}
+                {isAr ? 'تم استلام طلبك!' : 'Demande reçue !'}
               </h3>
               <p className="text-sm text-slate-500">
                 {isAr
-                  ? `مرحباً بك في خطة ${prices.label}. يمكنك الآن الاستفادة من جميع الميزات.`
-                  : `Bienvenue dans le plan ${prices.label}. Vous pouvez maintenant profiter de toutes les fonctionnalités.`}
+                  ? 'سيتم التحقق من دفعتك وتفعيل حسابك خلال 24 ساعة.'
+                  : 'Votre paiement sera vérifié et votre compte activé sous 24h.'}
               </p>
             </div>
           )}
