@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertCircle, Check, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAppToast } from '../../contexts/ToastContext';
+import SubscriptionPaymentModal from '../billing/SubscriptionPaymentModal';
+import type { Language } from '../../../types';
 
 interface TrialExpiredModalProps {
   isOpen: boolean;
   onClose: () => void;
   userPlan: 'pro' | 'cabinet';
+  userId: string;
+  language: Language;
   isAr?: boolean;
 }
 
@@ -14,9 +18,12 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
   isOpen,
   onClose,
   userPlan,
+  userId,
+  language,
   isAr = false
 }) => {
   const [loading, setLoading] = React.useState(false);
+  const [showPayment, setShowPayment] = useState(false);
   const { toast } = useAppToast();
 
   if (!isOpen) return null;
@@ -153,18 +160,12 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
             </ul>
 
             <button
-              onClick={handleContinueWithPlan}
+              onClick={() => setShowPayment(true)}
               disabled={loading}
               className="w-full px-6 py-3 bg-legal-gold hover:bg-legal-gold/90 text-slate-900 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  {isAr ? 'متابعة مع' : 'Continuer avec'} {planName}
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              {isAr ? 'متابعة مع' : 'Continuer avec'} {planName}
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
@@ -197,6 +198,17 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Modal paiement */}
+      {showPayment && (
+        <SubscriptionPaymentModal
+          userId={userId}
+          plan={userPlan}
+          language={language}
+          onClose={() => setShowPayment(false)}
+          onSuccess={() => { setShowPayment(false); onClose(); window.location.reload(); }}
+        />
+      )}
     </div>
   );
 };
