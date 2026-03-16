@@ -98,6 +98,7 @@ END;
 $$;
 
 -- Fonction: suspendre les trials expirés (a appeler via cron ou manuellement)
+DROP FUNCTION IF EXISTS suspend_expired_trials();
 CREATE OR REPLACE FUNCTION suspend_expired_trials()
 RETURNS INTEGER
 LANGUAGE plpgsql
