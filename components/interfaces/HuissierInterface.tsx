@@ -106,6 +106,7 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
   };
 
   return (
+    <>
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
         
@@ -399,7 +400,7 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
         language={language}
         theme={theme}
       />
-    </div>
+    </>
   );
 };
 
