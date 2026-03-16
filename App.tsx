@@ -25,6 +25,7 @@ import WelcomeModal from './src/components/trial/WelcomeModal';
 import { TrialExpiredModal } from './src/components/trial/TrialExpiredModal';
 import SubscriptionExpiryBanner from './src/components/billing/SubscriptionExpiryBanner';
 import SubscriptionPage from './src/components/billing/SubscriptionPage';
+import UsageAlertBanner from './src/components/billing/UsageAlertBanner';
 import PendingAccountsManager from './src/components/admin/PendingAccountsManager';
 import LegalDeadlineTracker from './src/components/deadlines/LegalDeadlineTracker';
 import NotarialRegistry from './src/components/notarial/NotarialRegistry';
@@ -216,6 +217,8 @@ const App: React.FC = () => {
       <TrialBanner language={language} />
       {/* Subscription Expiry Banner (abonnements payants) */}
       <SubscriptionExpiryBanner userId={profile.id} language={language} />
+      {/* Usage Alert Banner (crédits faibles / quotas dépassés) */}
+      <UsageAlertBanner userId={profile.id} plan={(profile as any).subscription?.plan || profile.subscriptionPlan || 'free'} language={language} />
       
       {/* Welcome Modal */}
       {showWelcomeModal && accountStatus && (
