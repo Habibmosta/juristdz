@@ -304,22 +304,6 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
               </div>
             </div>
             )}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-bold text-slate-900 dark:text-slate-100">
-                            {procedure.type}
-                          </h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${getStatutColor(procedure.statut)}`}>
-                            {getStatutIcon(procedure.statut)}
-                            {isAr ? 
-                              (procedure.statut === 'en_cours' ? 'جاري' : 
-                               procedure.statut === 'suspendue' ? 'معلق' : 'منتهي') :
-                              procedure.statut.replace('_', ' ').toUpperCase()
-                            }
-                          </span>
-                        </div>
-                        
-                        <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400 mb-3">
           </div>
 
           {/* Sidebar */}
@@ -367,15 +351,7 @@ const HuissierInterface: React.FC<HuissierInterfaceProps> = ({
                 </button>
               </div>
             </div>
-                  <label className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wider">
-                    {isAr ? 'نوع الإجراء' : 'Type d\'acte'}
-                  </label>
-                  <select className="w-full mt-1 p-2 border border-green-200 dark:border-green-700 rounded-lg text-sm bg-white dark:bg-slate-800">
-                    <option>{isAr ? 'أمر بالدفع' : 'Commandement de payer'}</option>
-                    <option>{isAr ? 'استدعاء' : 'Assignation'}</option>
-                    <option>{isAr ? 'محضر حجز' : 'Procès-verbal de saisie'}</option>
-                  </select>
-                </div>
+
             {/* Contact Information */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
