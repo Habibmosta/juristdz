@@ -6,6 +6,7 @@ import {
 import type { Language } from '../../../types';
 import { paymentService, PLAN_PRICES, type SubscriptionPlan, type PaymentGateway } from '../../services/paymentService';
 import { useAppToast } from '../../contexts/ToastContext';
+import LegalAcceptanceModal from '../legal/LegalAcceptanceModal';
 
 interface Props {
   userId: string;
@@ -29,6 +30,8 @@ const SubscriptionPaymentModal: React.FC<Props> = ({ userId, plan, language, onC
   const [loading, setLoading] = useState(false);
   const [baridimobInfo, setBaridimobInfo] = useState<ReturnType<typeof paymentService.getBaridiMobInstructions> | null>(null);
   const [copied, setCopied] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [showLegal, setShowLegal] = useState(true);
 
   // Détecter retour PayPal via URL params
   useEffect(() => {
@@ -95,6 +98,17 @@ const SubscriptionPaymentModal: React.FC<Props> = ({ userId, plan, language, onC
   };
 
   return (
+    <>
+    {/* Acceptation CGV obligatoire avant paiement */}
+    {showLegal && !legalAccepted && (
+      <LegalAcceptanceModal
+        language={language}
+        mode="payment"
+        onAccept={() => { setLegalAccepted(true); setShowLegal(false); }}
+        onDecline={onClose}
+      />
+    )}
+    {legalAccepted && (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
         className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
@@ -317,6 +331,8 @@ const SubscriptionPaymentModal: React.FC<Props> = ({ userId, plan, language, onC
         </div>
       </div>
     </div>
+    )}
+    </>
   );
 };
 

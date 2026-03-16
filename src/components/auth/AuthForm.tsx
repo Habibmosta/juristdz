@@ -3,6 +3,7 @@ import { Mail, Lock, User, Phone, Building, Hash, Briefcase, AlertCircle, Loader
 import { supabase } from '../../lib/supabase';
 import { EmailVerificationModal } from './EmailVerificationModal';
 import { PlanSelectionModal } from './PlanSelectionModal';
+import LegalAcceptanceModal from '../legal/LegalAcceptanceModal';
 
 interface AuthFormProps {
   onSuccess: () => void;
@@ -19,6 +20,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [showPlanSelection, setShowPlanSelection] = useState(false);
+  const [showLegalAcceptance, setShowLegalAcceptance] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'cabinet'>('free');
   const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
@@ -175,7 +177,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       return;
     }
     
-    // Afficher le modal de sélection de plan
+    // Afficher d'abord les CGU, puis le modal de sélection de plan
+    setShowLegalAcceptance(true);
+  };
+
+  const handleLegalAccepted = () => {
+    setShowLegalAcceptance(false);
     setShowPlanSelection(true);
   };
 
@@ -754,6 +761,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             setShowEmailVerification(false);
             setMode('signin');
           }}
+        />
+      )}
+
+      {/* Legal Acceptance Modal — affiché avant la sélection du plan */}
+      {showLegalAcceptance && (
+        <LegalAcceptanceModal
+          language={language}
+          mode="signup"
+          onAccept={handleLegalAccepted}
+          onDecline={() => setShowLegalAcceptance(false)}
         />
       )}
 
