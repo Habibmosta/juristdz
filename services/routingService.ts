@@ -242,6 +242,7 @@ export class RoutingService {
       [AppMode.SETTINGS]: language === 'ar' ? 'الإعدادات' : 'Paramètres',
       [AppMode.TIME_MANAGEMENT]: language === 'ar' ? 'إدارة الوقت' : 'Gestion du temps',
       [AppMode.JURISPRUDENCE]: language === 'ar' ? 'الاجتهاد القضائي' : 'Jurisprudence',
+      [AppMode.SUBSCRIPTION]: language === 'ar' ? 'اشتراكي' : 'Mon abonnement',
     };
 
     return labels[mode] || mode;
@@ -273,6 +274,7 @@ export class RoutingService {
       [AppMode.SETTINGS]: 'SlidersHorizontal',
       [AppMode.TIME_MANAGEMENT]: 'Clock',
       [AppMode.JURISPRUDENCE]: 'BookMarked',
+      [AppMode.SUBSCRIPTION]: 'CreditCard',
     };
 
     return icons[mode] || 'Circle';

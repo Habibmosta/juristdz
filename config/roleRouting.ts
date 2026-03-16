@@ -26,6 +26,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.TIME_TRACKING,
       AppMode.TIME_MANAGEMENT,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.SETTINGS,
       AppMode.PROFILE
     ],
@@ -51,6 +52,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.TIME_TRACKING,
       AppMode.TIME_MANAGEMENT,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.SETTINGS,
       AppMode.PROFILE
     ],
@@ -76,6 +78,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.TIME_TRACKING,
       AppMode.TIME_MANAGEMENT,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.SETTINGS,
       AppMode.PROFILE
     ],
@@ -95,6 +98,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DEADLINES,
       AppMode.DOCUMENTS,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -108,6 +112,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.RESEARCH,
       AppMode.DOCS,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.RESEARCH,
@@ -133,6 +138,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.DOCS,
       AppMode.DOCUMENTS,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.PROFILE
     ],
     defaultMode: AppMode.DASHBOARD,
@@ -160,6 +166,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.NOTARIAL_REGISTRY,
       AppMode.BAILIFF_REGISTRY,
       AppMode.JURISPRUDENCE,
+      AppMode.SUBSCRIPTION,
       AppMode.SETTINGS,
       AppMode.PROFILE
     ],
