@@ -1,14 +1,14 @@
 -- ============================================================
--- FIX COMPLET: Trigger création profil + subscription
--- À exécuter dans Supabase SQL Editor
--- Idempotent: peut être exécuté plusieurs fois sans risque
+-- FIX COMPLET: Trigger creation profil + subscription
+-- A executer dans Supabase SQL Editor
+-- Idempotent: peut etre execute plusieurs fois sans risque
 -- ============================================================
 
--- ÉTAPE 1: Supprimer l'ancien trigger et fonction
+-- ETAPE 1: Supprimer l'ancien trigger et fonction
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 
--- ÉTAPE 2: Créer la fonction complète
+-- ETAPE 2: Creer la fonction complete
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 SECURITY DEFINER
@@ -20,20 +20,16 @@ DECLARE
   v_trial_days INT := 7;
   v_trial_end TIMESTAMPTZ;
 BEGIN
-  -- Récupérer le plan choisi (défaut: free)
   v_plan := COALESCE(NEW.raw_user_meta_data->>'plan', 'free');
   v_trial_end := NOW() + (v_trial_days || ' days')::INTERVAL;
 
-  -- -------------------------------------------------------
-  -- Insérer le profil
-  -- -------------------------------------------------------
+  -- Inserer le profil
   INSERT INTO public.profiles (
     id,
     email,
     first_name,
     last_name,
     profession,
-    role,
     registration_number,
     organization_name,
     phone_number,
@@ -53,31 +49,28 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'profession', 'avocat'),
-    COALESCE(NEW.raw_user_meta_data->>'profession', 'avocat'),
     NEW.raw_user_meta_data->>'registration_number',
     NEW.raw_user_meta_data->>'organization_name',
     NEW.raw_user_meta_data->>'phone_number',
     v_plan,
-    'trial',        -- account_status: trial par défaut
-    false,          -- is_admin
-    true,           -- is_active: actif dès l'inscription
-    v_trial_end,    -- trial_ends_at: 7 jours
-    'pending',      -- payment_status
+    'trial',
+    false,
+    true,
+    v_trial_end,
+    'pending',
     CASE v_plan
       WHEN 'pro'     THEN 500
       WHEN 'cabinet' THEN 9999
       ELSE 50
-    END,            -- credits_remaining selon le plan
+    END,
     NOW(),
     NOW()
   )
   ON CONFLICT (id) DO UPDATE SET
-    email          = EXCLUDED.email,
-    updated_at     = NOW();
+    email      = EXCLUDED.email,
+    updated_at = NOW();
 
-  -- -------------------------------------------------------
-  -- Insérer la subscription
-  -- -------------------------------------------------------
+  -- Inserer la subscription
   INSERT INTO public.subscriptions (
     user_id,
     plan,
@@ -109,15 +102,14 @@ EXCEPTION
 END;
 $$;
 
--- ÉTAPE 3: Créer le trigger
+-- ETAPE 3: Creer le trigger
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================================
--- ÉTAPE 4: Réparer les utilisateurs existants sans profil
--- (ceux créés avant que le trigger soit en place)
+-- ETAPE 4: Reparer les utilisateurs existants sans profil
 -- ============================================================
 INSERT INTO public.profiles (
   id,
@@ -125,7 +117,6 @@ INSERT INTO public.profiles (
   first_name,
   last_name,
   profession,
-  role,
   subscription_plan,
   account_status,
   is_admin,
@@ -142,7 +133,6 @@ SELECT
   COALESCE(u.raw_user_meta_data->>'first_name', ''),
   COALESCE(u.raw_user_meta_data->>'last_name', ''),
   COALESCE(u.raw_user_meta_data->>'profession', 'avocat'),
-  COALESCE(u.raw_user_meta_data->>'profession', 'avocat'),
   COALESCE(u.raw_user_meta_data->>'plan', 'free'),
   'trial',
   false,
@@ -158,7 +148,7 @@ WHERE NOT EXISTS (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Réparer aussi les subscriptions manquantes
+-- Reparer les subscriptions manquantes
 INSERT INTO public.subscriptions (user_id, plan, status, trial_ends_at, is_active, created_at, updated_at)
 SELECT
   p.id,
@@ -175,25 +165,19 @@ WHERE NOT EXISTS (
 ON CONFLICT (user_id) DO NOTHING;
 
 -- ============================================================
--- VÉRIFICATION
+-- VERIFICATION
 -- ============================================================
-SELECT
-  'Trigger créé' AS check,
-  COUNT(*) AS count
+SELECT 'Trigger cree' AS check, COUNT(*) AS count
 FROM information_schema.triggers
 WHERE trigger_name = 'on_auth_user_created'
 
 UNION ALL
 
-SELECT
-  'Utilisateurs auth sans profil' AS check,
-  COUNT(*) AS count
+SELECT 'Utilisateurs sans profil' AS check, COUNT(*) AS count
 FROM auth.users u
 WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = u.id)
 
 UNION ALL
 
-SELECT
-  'Profils total' AS check,
-  COUNT(*) AS count
+SELECT 'Profils total' AS check, COUNT(*) AS count
 FROM public.profiles;
