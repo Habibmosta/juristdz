@@ -112,15 +112,28 @@ export const paymentService = {
 
   /**
    * Initier un paiement PayPal — retourne l'URL de redirection
+   * Utilise le formulaire PayPal standard (fonctionne avec n'importe quel compte PayPal)
+   * En production : remplacer par PayPal Orders API v2 pour une expérience fluide
    */
   initiatePayPal(plan: SubscriptionPlan, orderId: string): string {
     const prices = PLAN_PRICES[plan];
-    const returnUrl = encodeURIComponent(`${window.location.origin}?payment=success&gateway=paypal&orderId=${orderId}&plan=${plan}`);
-    const cancelUrl = encodeURIComponent(`${window.location.origin}?payment=cancel`);
+    const PAYPAL_EMAIL = 'juristdz@outlook.com'; // Compte PayPal bêta — à remplacer par compte Business en production
+    const ref = `JDZ-${orderId.slice(0, 8).toUpperCase()}`;
 
-    // PayPal.me link (simple) — à remplacer par PayPal Checkout SDK en production
-    // Pour une vraie intégration, utiliser l'API PayPal Orders v2
-    return `https://www.paypal.com/paypalme/JuristDZ/${prices.usd}USD?return=${returnUrl}&cancel_return=${cancelUrl}`;
+    const params = new URLSearchParams({
+      cmd: '_xclick',
+      business: PAYPAL_EMAIL,
+      item_name: `JuristDZ - Abonnement ${prices.label} (${ref})`,
+      amount: prices.usd.toString(),
+      currency_code: 'USD',
+      custom: orderId,
+      return: `${window.location.origin}?payment=success&gateway=paypal&orderId=${orderId}&plan=${plan}`,
+      cancel_return: `${window.location.origin}?payment=cancel`,
+      no_shipping: '1',
+      no_note: '0',
+    });
+
+    return `https://www.paypal.com/cgi-bin/webscr?${params.toString()}`;
   },
 
   /**
