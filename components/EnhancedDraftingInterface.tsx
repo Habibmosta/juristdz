@@ -5,15 +5,16 @@ import { wilayaTemplateService } from '../services/wilayaTemplateService';
 import { clauseService } from '../services/clauseService';
 import { documentHeaderService } from '../services/documentHeaderService';
 import { documentSignatureService } from '../services/documentSignatureService';
-import { 
-  AVOCAT_TEMPLATES, 
-  NOTAIRE_TEMPLATES, 
-  HUISSIER_TEMPLATES, 
-  MAGISTRAT_TEMPLATES, 
-  JURISTE_TEMPLATES, 
-  ETUDIANT_TEMPLATES, 
-  UI_TRANSLATIONS 
+import {
+  AVOCAT_TEMPLATES,
+  NOTAIRE_TEMPLATES,
+  HUISSIER_TEMPLATES,
+  MAGISTRAT_TEMPLATES,
+  JURISTE_TEMPLATES,
+  ETUDIANT_TEMPLATES,
+  UI_TRANSLATIONS
 } from '../constants';
+import { OMNI_TEMPLATES } from '../src/templates/omni_professional_templates';
 import { AppMode, Language, UserRole, EnhancedUserProfile, ProfessionalInfo } from '../types';
 import { 
   FileText, Download, CheckCircle, ChevronRight, PenTool, Eye, 
@@ -75,16 +76,15 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   // Template selection
   const getTemplatesForRole = (role: UserRole) => {
     switch (role) {
-      case UserRole.AVOCAT: return AVOCAT_TEMPLATES;
-      case UserRole.NOTAIRE: return NOTAIRE_TEMPLATES;
-      case UserRole.HUISSIER: return HUISSIER_TEMPLATES;
-      case UserRole.MAGISTRAT: return MAGISTRAT_TEMPLATES;
-      case UserRole.JURISTE_ENTREPRISE: return JURISTE_TEMPLATES;
+      case UserRole.AVOCAT: return [...OMNI_TEMPLATES.filter(t => t.roles.includes('avocat')), ...AVOCAT_TEMPLATES];
+      case UserRole.NOTAIRE: return [...OMNI_TEMPLATES.filter(t => t.roles.includes('notaire')), ...NOTAIRE_TEMPLATES];
+      case UserRole.HUISSIER: return [...OMNI_TEMPLATES.filter(t => t.roles.includes('huissier')), ...HUISSIER_TEMPLATES];
+      case UserRole.MAGISTRAT: return [...OMNI_TEMPLATES.filter(t => t.roles.includes('magistrat')), ...MAGISTRAT_TEMPLATES];
+      case UserRole.JURISTE_ENTREPRISE: return [...OMNI_TEMPLATES.filter(t => t.roles.includes('juriste_entreprise')), ...JURISTE_TEMPLATES];
       case UserRole.ETUDIANT: return ETUDIANT_TEMPLATES;
       case UserRole.ADMIN:
-        return [...AVOCAT_TEMPLATES, ...NOTAIRE_TEMPLATES, ...HUISSIER_TEMPLATES, 
-                ...MAGISTRAT_TEMPLATES, ...JURISTE_TEMPLATES, ...ETUDIANT_TEMPLATES];
-      default: return AVOCAT_TEMPLATES;
+        return [...OMNI_TEMPLATES, ...ETUDIANT_TEMPLATES];
+      default: return [...OMNI_TEMPLATES.filter(t => t.roles.includes('avocat')), ...AVOCAT_TEMPLATES];
     }
   };
   
@@ -119,7 +119,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
   const [mobileTab, setMobileTab] = useState<'config' | 'preview'>('config');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['famille', 'civil', 'penal', 'notarial', 'huissier', 'commercial', 'administratif', 'travail', 'etudiant']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [currentDocumentId, setCurrentDocumentId] = useState<string>('');
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
