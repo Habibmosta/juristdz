@@ -14,7 +14,7 @@ import {
   ETUDIANT_TEMPLATES,
   UI_TRANSLATIONS
 } from '../constants';
-import { OMNI_TEMPLATES } from '../src/templates/omni_professional_templates';
+import { OMNI_TEMPLATES } from '@/src/templates/omni_professional_templates';
 import { AppMode, Language, UserRole, EnhancedUserProfile, ProfessionalInfo } from '../types';
 import { 
   FileText, Download, CheckCircle, ChevronRight, PenTool, Eye, 
