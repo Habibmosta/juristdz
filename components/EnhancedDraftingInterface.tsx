@@ -14,7 +14,7 @@ import {
   ETUDIANT_TEMPLATES,
   UI_TRANSLATIONS
 } from '../constants';
-import { OMNI_TEMPLATES } from '@/src/templates/omni_professional_templates';
+import { OMNI_TEMPLATES } from '../src/templates/omni_professional_templates';
 import { AppMode, Language, UserRole, EnhancedUserProfile, ProfessionalInfo } from '../types';
 import { 
   FileText, Download, CheckCircle, ChevronRight, PenTool, Eye, 
@@ -146,6 +146,13 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
   const groupedTemplates = filteredTemplates.reduce((acc, tpl) => {
     const cat = getTemplateCategory(tpl.id);
+
+    // Strict role-based category filtering
+    if (userRole === UserRole.AVOCAT && (cat.key === 'huissier' || cat.key === 'notarial')) return acc;
+    if (userRole === UserRole.NOTAIRE && (cat.key === 'huissier' || cat.key === 'penal')) return acc;
+    if (userRole === UserRole.HUISSIER && (cat.key === 'notarial' || cat.key === 'penal')) return acc;
+    if (userRole === UserRole.MAGISTRAT && (cat.key === 'huissier' || cat.key === 'notarial')) return acc;
+
     if (!acc[cat.key]) acc[cat.key] = { ...cat, templates: [] };
     acc[cat.key].templates.push(tpl);
     return acc;
