@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Language, EnhancedUserProfile } from '../../types';
+import { Language, EnhancedUserProfile, UserRole } from '../../types';
 import {
   Settings, Users, BarChart3, Shield, Database, Server, Activity,
   AlertTriangle, CheckCircle, TrendingUp, Clock, Eye, Edit, Trash2,
-  Plus, Search, Download, Wifi, Lock, Building, CreditCard, Gavel
+  Plus, Search, Download, Wifi, Lock, Building, CreditCard, Gavel, Filter
 } from 'lucide-react';
 import OrganizationManagement from './admin/OrganizationManagement';
 import SubscriptionManagement from './admin/SubscriptionManagement';
@@ -20,7 +20,7 @@ interface UtilisateurSysteme {
   id: string;
   nom: string;
   email: string;
-  role: string;
+  role: UserRole;
   organisation: string;
   dernierAcces: Date;
   statut: 'actif' | 'inactif' | 'suspendu';
@@ -42,6 +42,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [utilisateurs, setUtilisateurs] = useState<UtilisateurSysteme[]>([]);
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [statistiques, setStatistiques] = useState({
     utilisateursTotal: 0,
     utilisateursActifs: 0,
@@ -73,7 +74,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
           id: p.id,
           nom: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.email,
           email: p.email,
-          role: p.role || 'avocat',
+          role: (p.role as UserRole) || UserRole.AVOCAT,
           organisation: p.organization_name || '-',
           dernierAcces: p.last_sign_in_at ? new Date(p.last_sign_in_at) : new Date(0),
           statut: p.is_active === false ? 'inactif' : 'actif',
@@ -107,6 +108,47 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     };
     return map[statut] || 'bg-slate-100 text-slate-700';
   };
+
+  const getRoleBadgeColor = (role: UserRole) => {
+    const map: Record<UserRole, string> = {
+      [UserRole.AVOCAT]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      [UserRole.NOTAIRE]: 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      [UserRole.HUISSIER]: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      [UserRole.MAGISTRAT]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
+      [UserRole.ETUDIANT]: 'bg-teal-100 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400 border-teal-200 dark:border-teal-800',
+      [UserRole.JURISTE_ENTREPRISE]: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800',
+      [UserRole.ADMIN]: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800',
+    };
+    return map[role] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getRoleDisplayName = (role: UserRole, isAr: boolean): string => {
+    const names: Record<UserRole, string> = {
+      [UserRole.AVOCAT]: isAr ? 'محامي' : 'Avocat',
+      [UserRole.NOTAIRE]: isAr ? 'موثق' : 'Notaire',
+      [UserRole.HUISSIER]: isAr ? 'محضر قضائي' : 'Huissier',
+      [UserRole.MAGISTRAT]: isAr ? 'قاضي' : 'Magistrat',
+      [UserRole.ETUDIANT]: isAr ? 'طالب قانون' : 'Étudiant',
+      [UserRole.JURISTE_ENTREPRISE]: isAr ? 'مستشار قانوني' : 'Juriste Entreprise',
+      [UserRole.ADMIN]: isAr ? 'مدير' : 'Admin',
+    };
+    return names[role];
+  };
+
+  const getRoleFilterOptions = (isAr: boolean) => [
+    { value: 'all', label: isAr ? 'الكل' : 'Tous les rôles' },
+    { value: UserRole.AVOCAT, label: isAr ? 'محامون' : 'Avocats' },
+    { value: UserRole.NOTAIRE, label: isAr ? 'موثقون' : 'Notaires' },
+    { value: UserRole.HUISSIER, label: isAr ? 'محضرون' : 'Huissiers' },
+    { value: UserRole.MAGISTRAT, label: isAr ? 'قضاة' : 'Magistrats' },
+    { value: UserRole.ETUDIANT, label: isAr ? 'طلاب' : 'Étudiants' },
+    { value: UserRole.JURISTE_ENTREPRISE, label: isAr ? 'مستشارون' : 'Juristes Entreprise' },
+    { value: UserRole.ADMIN, label: isAr ? 'مدراء' : 'Administrateurs' },
+  ];
+
+  const filteredUtilisateurs = utilisateurs.filter(u =>
+    roleFilter === 'all' ? true : u.role === roleFilter
+  );
 
   const getTendanceIcon = (tendance: string) => {
     if (tendance === 'hausse') return <TrendingUp size={14} className="text-green-500" />;
@@ -217,14 +259,30 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               <div className="lg:col-span-2">
                 {/* Users Management */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
                     <h2 className="font-bold text-lg flex items-center gap-2">
                       <Users size={20} className="text-blue-500" />
                       {isAr ? 'Ø§Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' : 'Gestion Utilisateurs'}
                     </h2>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <Search size={14} className="text-slate-400" />
-                      <input type="text" placeholder={isAr ? 'Ø§Ù„Ø¨Ø­Ø«...' : 'Rechercher...'} className="bg-transparent border-none outline-none text-sm w-32" />
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <Filter size={14} className="text-slate-400" />
+                        <select
+                          value={roleFilter}
+                          onChange={(e) => setRoleFilter(e.target.value as UserRole | 'all')}
+                          className="bg-transparent border-none outline-none text-sm font-medium cursor-pointer"
+                        >
+                          {getRoleFilterOptions(isAr).map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <Search size={14} className="text-slate-400" />
+                        <input type="text" placeholder={isAr ? 'Ø§Ù„Ø¨Ø­Ø«...' : 'Rechercher...'} className="bg-transparent border-none outline-none text-sm w-32" />
+                      </div>
                     </div>
                   </div>
                   <div className="p-6 space-y-3">
@@ -233,22 +291,40 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto" />
                         <p className="mt-3 text-slate-400 text-sm">{isAr ? 'Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù…ÙŠÙ„...' : 'Chargement...'}</p>
                       </div>
-                    ) : utilisateurs.length === 0 ? (
+                    ) : filteredUtilisateurs.length === 0 ? (
                       <div className="text-center py-8 text-slate-400">
                         <Users size={40} className="mx-auto mb-2 opacity-30" />
-                        <p>{isAr ? 'Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ù…Ø³ØªØ®Ø¯Ù…ÙˆÙ†' : 'Aucun utilisateur'}</p>
+                        <p>{isAr ? 'لا يوجد مستخدمون' : 'Aucun utilisateur'}</p>
+                        {roleFilter !== 'all' && (
+                          <p className="text-sm mt-2">
+                            {isAr ? 'جرب تصفية أخرى' : 'Essayez un autre filtre'}
+                          </p>
+                        )}
                       </div>
-                    ) : utilisateurs.map(u => (
+                    ) : filteredUtilisateurs.map(u => (
                       <div key={u.id} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-blue-500 transition-colors">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-slate-900 dark:text-slate-100">{u.nom}</span>
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatutColor(u.statut)}`}>
-                                {u.statut === 'actif' ? (isAr ? 'Ù†Ø´Ø·' : 'ACTIF') : (isAr ? 'ØºÙŠØ± Ù†Ø´Ø·' : 'INACTIF')}
-                              </span>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                              {u.nom.charAt(0).toUpperCase()}
                             </div>
-                            <p className="text-xs text-slate-500">{u.email} - {u.role} - {u.credits} credits</p>
+                            <div>
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="font-bold text-slate-900 dark:text-slate-100">{u.nom}</span>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatutColor(u.statut)}`}>
+                                  {u.statut === 'actif' ? (isAr ? 'نشط' : 'ACTIF') : (isAr ? 'غير نشط' : 'INACTIF')}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <span>{u.email}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span className={`px-2 py-0.5 rounded border font-medium ${getRoleBadgeColor(u.role)}`}>
+                                  {getRoleDisplayName(u.role, isAr)}
+                                </span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span>{u.credits} {isAr ? 'رصيد' : 'crédits'}</span>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex gap-1">
                             <button className="p-2 text-slate-400 hover:text-blue-500 transition-colors"><Eye size={15} /></button>
