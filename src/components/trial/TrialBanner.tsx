@@ -18,6 +18,8 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ language }) => {
 
   if (loading || !accountStatus || !profile) return null;
   if (accountStatus.status === 'active') return null;
+  // L'admin ne voit jamais ces banners
+  if (profile.activeRole === 'admin' || profile.profession === 'admin') return null;
 
   const openPayment = (plan: 'pro' | 'cabinet' = 'pro') => {
     setPaymentPlan(plan);

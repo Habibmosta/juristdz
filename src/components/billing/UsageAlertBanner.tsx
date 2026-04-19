@@ -29,8 +29,9 @@ const UsageAlertBanner: React.FC<Props> = ({ userId, plan, language }) => {
   const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
+    // Admin et plan cabinet = illimité, pas de banner
+    if (plan === 'cabinet' || plan === 'admin') return;
     checkUsage();
-    // Revérifier toutes les 5 minutes
     const interval = setInterval(checkUsage, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [userId, plan]);

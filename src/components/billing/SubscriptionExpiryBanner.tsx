@@ -25,6 +25,11 @@ const SubscriptionExpiryBanner: React.FC<Props> = ({ userId, language }) => {
         .single();
 
       if (!data || data.status !== 'active' || !data.expires_at) return;
+      // Cabinet avec expiration dans 10 ans = admin, pas de banner
+      if (data.plan === 'cabinet') {
+        const diff = new Date(data.expires_at).getTime() - Date.now();
+        if (diff > 365 * 24 * 60 * 60 * 1000) return; // > 1 an = admin
+      }
 
       const diff = new Date(data.expires_at).getTime() - Date.now();
       const days = Math.ceil(diff / 86400000);
