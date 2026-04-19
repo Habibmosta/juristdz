@@ -193,6 +193,7 @@ CREATE POLICY "Users can manage own notarial acts" ON notarial_acts
 GRANT SELECT, INSERT, UPDATE, DELETE ON notarial_acts TO authenticated;
 
 -- RPC: get next act number
+DROP FUNCTION IF EXISTS get_next_act_number(UUID, INTEGER);
 CREATE OR REPLACE FUNCTION get_next_act_number(p_user_id UUID, p_year INTEGER DEFAULT NULL)
 RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
@@ -245,6 +246,7 @@ CREATE POLICY "Users can manage own exploits" ON bailiff_exploits
 GRANT SELECT, INSERT, UPDATE, DELETE ON bailiff_exploits TO authenticated;
 
 -- RPC: get next exploit number
+DROP FUNCTION IF EXISTS get_next_exploit_number(UUID, INTEGER);
 CREATE OR REPLACE FUNCTION get_next_exploit_number(p_user_id UUID, p_year INTEGER DEFAULT NULL)
 RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
@@ -326,6 +328,7 @@ ON CONFLICT (user_id) DO NOTHING;
 -- ============================================================
 -- 9. RPC: generate_case_number
 -- ============================================================
+DROP FUNCTION IF EXISTS generate_case_number(UUID);
 CREATE OR REPLACE FUNCTION generate_case_number(p_user_id UUID)
 RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
@@ -348,6 +351,7 @@ $$;
 -- ============================================================
 -- 10. RPC: is_admin
 -- ============================================================
+DROP FUNCTION IF EXISTS is_admin(UUID);
 CREATE OR REPLACE FUNCTION is_admin(p_user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
