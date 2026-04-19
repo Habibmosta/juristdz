@@ -322,8 +322,7 @@ GRANT SELECT, INSERT, UPDATE ON subscriptions TO authenticated;
 INSERT INTO subscriptions (user_id, plan, status)
 SELECT id, COALESCE(subscription_plan, 'free'), 'active'
 FROM profiles
-WHERE id NOT IN (SELECT user_id FROM subscriptions)
-ON CONFLICT (user_id) DO NOTHING;
+WHERE id NOT IN (SELECT user_id FROM subscriptions);
 
 -- ============================================================
 -- 9. RPC: generate_case_number
