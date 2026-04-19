@@ -5,7 +5,7 @@ import {
   AlertTriangle, CheckCircle, TrendingUp, Clock, Eye, Edit, Trash2,
   Plus, Search, Download, Wifi, Lock, Building, CreditCard, Gavel,
   Filter, Scale, BookOpen, Briefcase, GraduationCap, Building2, Star,
-  X, Save, UserCheck, UserX, Ban, RefreshCw, Mail, Phone, Hash, Lock
+  X, Save, UserCheck, UserX, Ban, RefreshCw, Mail, Phone, Hash
 } from 'lucide-react';
 import OrganizationManagement from './admin/OrganizationManagement';
 import SubscriptionManagement from './admin/SubscriptionManagement';

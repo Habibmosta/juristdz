@@ -30,7 +30,7 @@ const UsageAlertBanner: React.FC<Props> = ({ userId, plan, language }) => {
 
   useEffect(() => {
     // Admin et plan cabinet = illimité, pas de banner
-    if (plan === 'cabinet' || plan === 'admin') return;
+    if (plan === 'cabinet' || plan === 'admin') return undefined;
     checkUsage();
     const interval = setInterval(checkUsage, 5 * 60 * 1000);
     return () => clearInterval(interval);
