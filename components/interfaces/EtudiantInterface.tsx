@@ -96,7 +96,7 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
       const data = await professionalDataService.getByProfession(user.id, 'etudiant', 20);
       
       // Transformer les données
-      const transformedData = data.map((item: any) => ({
+      const transformedData: Cours[] = data.map((item: any) => ({
         id: item.id,
         titre: item.title,
         domaine: item.metadata?.matiere || 'Droit',

@@ -728,7 +728,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
           </div>
         ) : viewMode === 'kanban' ? (
           <CaseKanbanView
-            cases={filteredCases}
+            cases={filteredCases as any[]}
             language={language}
             onCaseClick={(id) => setSelectedCaseId(id)}
             onStatusChange={handleStatusChange}
