@@ -4,7 +4,8 @@ import {
   Settings, Users, BarChart3, Shield, Database, Server, Activity,
   AlertTriangle, CheckCircle, TrendingUp, Clock, Eye, Edit, Trash2,
   Plus, Search, Download, Wifi, Lock, Building, CreditCard, Gavel,
-  Filter, Scale, BookOpen, Briefcase, GraduationCap, Building2, Star
+  Filter, Scale, BookOpen, Briefcase, GraduationCap, Building2, Star,
+  X, Save, UserCheck, UserX, Ban, RefreshCw, Mail, Phone, Hash
 } from 'lucide-react';
 import OrganizationManagement from './admin/OrganizationManagement';
 import SubscriptionManagement from './admin/SubscriptionManagement';
@@ -60,6 +61,13 @@ interface MetriqueSysteme {
 
 type AdminTab = 'overview' | 'organizations' | 'subscriptions' | 'payments' | 'jurisprudence';
 
+// Modal state types
+interface EditForm {
+  firstName: string; lastName: string; profession: string;
+  organisation: string; plan: string; credits: string;
+  accountStatus: string; isAdmin: boolean;
+}
+
 const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme = 'light' }) => {
   const isAr = language === 'ar';
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -69,11 +77,108 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatut, setFilterStatut] = useState<string>('all');
   const [statistiques, setStatistiques] = useState({
-    utilisateursTotal: 0,
-    utilisateursActifs: 0,
-    requetesJour: 0,
-    uptimeSysteme: 99.9,
+    utilisateursTotal: 0, utilisateursActifs: 0, requetesJour: 0, uptimeSysteme: 99.9,
   });
+
+  // CRUD modal state
+  const [selectedUser, setSelectedUser] = useState<UtilisateurSysteme | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'delete' | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm>({
+    firstName: '', lastName: '', profession: 'avocat',
+    organisation: '', plan: 'free', credits: '5',
+    accountStatus: 'active', isAdmin: false,
+  });
+  const [deleteReason, setDeleteReason] = useState('');
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const openModal = (u: UtilisateurSysteme, mode: 'view' | 'edit' | 'delete') => {
+    setSelectedUser(u);
+    setModalMode(mode);
+    if (mode === 'edit') {
+      const [firstName, ...rest] = u.nom.split(' ');
+      setEditForm({
+        firstName: firstName || '',
+        lastName: rest.join(' ') || '',
+        profession: u.profession || 'avocat',
+        organisation: u.organisation === '-' ? '' : u.organisation,
+        plan: u.plan || 'free',
+        credits: String(u.credits || 5),
+        accountStatus: u.statut === 'actif' ? 'active' : u.statut === 'suspendu' ? 'suspended' : 'blocked',
+        isAdmin: u.profession === 'admin',
+      });
+    }
+    setDeleteReason('');
+  };
+
+  const closeModal = () => { setSelectedUser(null); setModalMode(null); };
+
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      const { supabase } = await import('../../src/lib/supabase');
+      const { data, error } = await supabase.rpc('admin_update_user_profile', {
+        p_user_id:        selectedUser.id,
+        p_first_name:     editForm.firstName || null,
+        p_last_name:      editForm.lastName || null,
+        p_profession:     editForm.profession || null,
+        p_organization:   editForm.organisation || null,
+        p_account_status: editForm.accountStatus || null,
+        p_subscription_plan: editForm.plan || null,
+        p_credits:        editForm.credits ? parseInt(editForm.credits) : null,
+        p_is_admin:       editForm.isAdmin,
+      });
+      if (error) throw error;
+      if ((data as any)?.success === false) throw new Error((data as any).message);
+      showToast('Profil mis à jour avec succès');
+      closeModal();
+      loadRealData();
+    } catch (e: any) {
+      showToast(e.message || 'Erreur lors de la mise à jour', 'error');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      const { supabase } = await import('../../src/lib/supabase');
+      const { data, error } = await supabase.rpc('admin_delete_user', {
+        p_user_id: selectedUser.id,
+        p_reason:  deleteReason || 'Supprimé par administrateur',
+      });
+      if (error) throw error;
+      showToast('Compte bloqué et désactivé');
+      closeModal();
+      loadRealData();
+    } catch (e: any) {
+      showToast(e.message || 'Erreur lors de la suppression', 'error');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleQuickAction = async (u: UtilisateurSysteme, action: 'activate' | 'suspend' | 'deactivate' | 'reactivate') => {
+    setActionLoading(true);
+    try {
+      const { supabase } = await import('../../src/lib/supabase');
+      let rpc = '';
+      if (action === 'activate')   rpc = 'admin_activate_account';
+      if (action === 'suspend')    rpc = 'admin_suspend_account';
+      if (action === 'deactivate') rpc = 'admin_deactivate_user';
+      if (action === 'reactivate') rpc = 'admin_reactivate_user';
+      const { error } = await supabase.rpc(rpc, { p_user_id: u.id });
+      if (error) throw error;
+      showToast(`Action effectuée sur ${u.nom}`);
+      loadRealData();
+    } catch (e: any) {
+      showToast(e.message || 'Erreur', 'error');
+    } finally { setActionLoading(false); }
+  };
 
   // Comptage par rôle pour les badges du filtre
   const roleCount = utilisateurs.reduce<Record<string, number>>((acc, u) => {
@@ -173,6 +278,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     }`;
 
   return (
+    <>
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
 
@@ -457,13 +563,25 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
                           {/* Actions */}
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title={isAr ? 'عرض' : 'Voir'}>
+                            <button
+                              onClick={() => openModal(u, 'view')}
+                              className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Voir le profil"
+                            >
                               <Eye size={14} />
                             </button>
-                            <button className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors" title={isAr ? 'تعديل' : 'Modifier'}>
+                            <button
+                              onClick={() => openModal(u, 'edit')}
+                              className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                              title="Modifier"
+                            >
                               <Edit size={14} />
                             </button>
-                            <button className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title={isAr ? 'حذف' : 'Supprimer'}>
+                            <button
+                              onClick={() => openModal(u, 'delete')}
+                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Bloquer / Supprimer"
+                            >
                               <Trash2 size={14} />
                             </button>
                           </div>
@@ -537,6 +655,171 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
       </div>
     </div>
+
+      {/* ── TOAST ── */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-xl text-white font-medium flex items-center gap-2 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* ── MODAL VIEW ── */}
+      {modalMode === 'view' && selectedUser && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="font-bold text-lg flex items-center gap-2"><Eye size={18} className="text-blue-500" /> Profil utilisateur</h2>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              {[
+                { label: 'Nom complet', value: selectedUser.nom },
+                { label: 'Email', value: selectedUser.email },
+                { label: 'Rôle', value: ROLE_CONFIG[selectedUser.profession]?.label_fr || selectedUser.profession },
+                { label: 'Organisation', value: selectedUser.organisation },
+                { label: 'Plan', value: PLAN_CONFIG[selectedUser.plan]?.label || selectedUser.plan },
+                { label: 'Crédits', value: String(selectedUser.credits) },
+                { label: 'Statut', value: selectedUser.statut },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                  <span className="text-sm text-slate-500">{label}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{value || '—'}</span>
+                </div>
+              ))}
+            </div>
+            <div className="p-6 pt-0 flex gap-3">
+              <button onClick={() => { closeModal(); openModal(selectedUser, 'edit'); }} className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
+                <Edit size={15} /> Modifier
+              </button>
+              <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL EDIT ── */}
+      {modalMode === 'edit' && selectedUser && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-900">
+              <h2 className="font-bold text-lg flex items-center gap-2"><Edit size={18} className="text-amber-500" /> Modifier — {selectedUser.nom}</h2>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prénom</label>
+                  <input value={editForm.firstName} onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom</label>
+                  <input value={editForm.lastName} onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rôle / Profession</label>
+                <select value={editForm.profession} onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                  {Object.entries(ROLE_CONFIG).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label_fr}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Organisation / Cabinet</label>
+                <input value={editForm.organisation} onChange={e => setEditForm(f => ({ ...f, organisation: e.target.value }))}
+                  placeholder="Nom du cabinet..."
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan</label>
+                  <select value={editForm.plan} onChange={e => setEditForm(f => ({ ...f, plan: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                    <option value="free">Gratuit</option>
+                    <option value="pro">Pro</option>
+                    <option value="cabinet">Cabinet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crédits</label>
+                  <input type="number" value={editForm.credits} onChange={e => setEditForm(f => ({ ...f, credits: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Statut du compte</label>
+                <select value={editForm.accountStatus} onChange={e => setEditForm(f => ({ ...f, accountStatus: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                  <option value="active">Actif</option>
+                  <option value="trial">Essai</option>
+                  <option value="suspended">Suspendu</option>
+                  <option value="blocked">Bloqué</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer p-3 bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800">
+                <input type="checkbox" checked={editForm.isAdmin} onChange={e => setEditForm(f => ({ ...f, isAdmin: e.target.checked }))}
+                  className="w-4 h-4 accent-rose-600" />
+                <div>
+                  <span className="text-sm font-bold text-rose-700 dark:text-rose-400">Administrateur plateforme</span>
+                  <p className="text-xs text-rose-500">Accès complet à toutes les fonctions admin</p>
+                </div>
+              </label>
+            </div>
+            <div className="p-6 pt-0 flex gap-3 sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+              <button onClick={handleSaveEdit} disabled={actionLoading}
+                className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {actionLoading ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}
+                Enregistrer
+              </button>
+              <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DELETE ── */}
+      {modalMode === 'delete' && selectedUser && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-red-200 dark:border-red-800">
+            <div className="flex items-center justify-between p-6 border-b border-red-100 dark:border-red-900">
+              <h2 className="font-bold text-lg flex items-center gap-2 text-red-600"><Ban size={18} /> Bloquer le compte</h2>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  ⚠️ Le compte de <strong>{selectedUser.nom}</strong> ({selectedUser.email}) sera <strong>bloqué et désactivé</strong>. L'utilisateur ne pourra plus se connecter.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Raison (optionnel)</label>
+                <textarea value={deleteReason} onChange={e => setDeleteReason(e.target.value)}
+                  rows={3} placeholder="Raison du blocage..."
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-red-400 resize-none" />
+              </div>
+            </div>
+            <div className="p-6 pt-0 flex gap-3">
+              <button onClick={handleDelete} disabled={actionLoading}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {actionLoading ? <RefreshCw size={15} className="animate-spin" /> : <Ban size={15} />}
+                Bloquer le compte
+              </button>
+              <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
