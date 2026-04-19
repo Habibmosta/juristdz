@@ -25,6 +25,7 @@ import type {
 } from '../../types/search';
 import { Language } from '../../types';
 import { jurisprudenceService } from '../../services/jurisprudenceService';
+import { searchService } from '../../services/searchService';
 import { UI_TRANSLATIONS } from '../../constants';
 import SearchResults from './SearchResults';
 import ContributeJurisprudenceModal from '../jurisprudence/ContributeJurisprudenceModal';

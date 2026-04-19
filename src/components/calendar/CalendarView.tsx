@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, MapPin, Users, Bell } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 import { CreateEventModal } from './CreateEventModal';
 
 interface CalendarViewProps {

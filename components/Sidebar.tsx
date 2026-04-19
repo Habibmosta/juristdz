@@ -221,15 +221,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                   </>
                 )}
-            </>
-          )}
-            <button onClick={() => setShowShareModal(true)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+
+                <button onClick={() => setShowShareModal(true)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
               theme === 'light' ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-800/50'
             }`}>
               <Share2 size={18} />
               <span className="font-medium text-sm">{t.menu_share}</span>
             </button>
           </div>
+            </>
+          )}
         </nav>
 
         {/* Bottom Section - Controls */}
@@ -289,13 +290,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {userStats.name || (isAr ? 'مستخدم' : 'Utilisateur')}
                 </p>
                 <p className="text-xs text-slate-500 truncate">
-                  {userStats.role === 'admin' ? (isAr ? 'مسؤول' : 'Administrateur') :
-                   userStats.role === 'avocat' ? (isAr ? 'محامي' : 'Avocat') :
-                   userStats.role === 'magistrat' ? (isAr ? 'قاضي' : 'Magistrat') :
-                   userStats.role === 'notaire' ? (isAr ? 'موثق' : 'Notaire') :
-                   userStats.role === 'huissier' ? (isAr ? 'محضر' : 'Huissier') :
-                   userStats.role === 'juriste' ? (isAr ? 'قانوني' : 'Juriste') :
-                   (isAr ? 'طالب' : 'Étudiant')}
+                  {userStats.role === 'admin' ? (isAr ? 'مسؤول' : 'Administrateur') : (isAr ? 'مستخدم' : 'Utilisateur')}
                 </p>
               </div>
             </div>

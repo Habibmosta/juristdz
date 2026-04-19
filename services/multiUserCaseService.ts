@@ -415,8 +415,8 @@ class MultiUserCaseService {
       return {
         totalCases: allCases.length,
         activeCases: activeCases.length,
-        closedCases: allCases.filter(c => c.status === 'closed').length,
-        urgentCases: allCases.filter(c => c.priority === 'urgent').length,
+        closedCases: allCases.filter(c => c.status === 'archived').length,
+        urgentCases: allCases.filter(c => c.priority === 'urgent' || c.priority === 'high').length,
         upcomingDeadlines: allCases.filter(c => 
           c.deadline && c.deadline <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         ).length,

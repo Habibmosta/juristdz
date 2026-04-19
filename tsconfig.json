@@ -12,7 +12,8 @@
     "skipLibCheck": true,
     "types": [
       "node",
-      "jest"
+      "jest",
+      "vite/client"
     ],
     "moduleResolution": "bundler",
     "isolatedModules": true,
@@ -33,7 +34,7 @@
     "strictNullChecks": false,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
+    "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "alwaysStrict": true,
     

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Clock, AlertTriangle, XCircle } from 'lucide-react';
 import { useAccountStatus } from '../../hooks/useAccountStatus';
 import { useAuth } from '../../hooks/useAuth';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 import SubscriptionPaymentModal from '../billing/SubscriptionPaymentModal';
 
 interface TrialBannerProps {

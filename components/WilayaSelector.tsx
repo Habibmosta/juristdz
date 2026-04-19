@@ -7,6 +7,7 @@ import {
   getTribunauxByWilaya,
   getFormatRC,
   getFormatNIF,
+  getConservationFonciere,
   WilayaData 
 } from '../data/wilayaSpecificData';
 
@@ -107,14 +108,14 @@ const WilayaSelector: React.FC<WilayaSelectorProps> = ({
           </div>
 
           {/* Conservation Foncière */}
-          {wilayaData.conservation_fonciere.length > 0 && (
+          {getConservationFonciere(wilayaData).length > 0 && (
             <div>
               <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
                 <Building2 size={16} />
                 {language === 'ar' ? 'المحافظة العقارية' : 'Conservation Foncière'}
               </h3>
               <div className="space-y-2">
-                {wilayaData.conservation_fonciere.map((cf, index) => (
+                {getConservationFonciere(wilayaData).map((cf, index) => (
                   <div key={index} className="p-3 bg-white dark:bg-slate-900 rounded border text-xs">
                     <p className="font-bold">
                       {language === 'ar' ? cf.name_ar : cf.name_fr}
@@ -126,7 +127,8 @@ const WilayaSelector: React.FC<WilayaSelectorProps> = ({
                       </p>
                     )}
                     <p className="text-slate-500 mt-1">
-                      {language === 'ar' ? 'الدائرة:' : 'Circonscription:'} {cf.circonscription.join(', ')}
+                      {language === 'ar' ? 'الدائرة:' : 'Circonscription:'}{' '}
+                      {(cf.circonscription || cf.circonscriptions || []).join(', ')}
                     </p>
                   </div>
                 ))}

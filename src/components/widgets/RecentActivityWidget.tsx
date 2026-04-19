@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, FileText, Users, DollarSign, Calendar, Clock } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 
 interface ActivityItem {
   id: string;

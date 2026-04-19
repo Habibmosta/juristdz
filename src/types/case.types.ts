@@ -11,8 +11,8 @@ export interface Case {
   case_type: 'civil' | 'penal' | 'commercial' | 'administratif' | 'famille' | 'travail' | 'autre';
   
   // Statut et priorité
-  status: 'nouveau' | 'en_cours' | 'audience' | 'jugement' | 'cloture' | 'archive';
-  priority: 'basse' | 'normale' | 'haute' | 'urgente';
+  status: 'nouveau' | 'en_cours' | 'audience' | 'jugement' | 'cloture' | 'archive' | 'archived' | 'active';
+  priority: 'basse' | 'normale' | 'haute' | 'urgente' | 'low' | 'medium' | 'high' | 'urgent';
   
   // Dates importantes
   opened_date: string;
@@ -30,6 +30,8 @@ export interface Case {
   client_role?: string;
   adverse_party_name?: string;
   adverse_party_lawyer?: string;
+  opposing_party?: string;
+  opposing_lawyer?: string;
   
   // Financier
   estimated_value?: number;
@@ -47,6 +49,23 @@ export interface Case {
   created_at: string;
   updated_at: string;
   archived_at?: string;
+  
+  // CamelCase aliases (legacy compatibility)
+  clientName?: string;
+  client_name?: string;
+  clientPhone?: string;
+  client_phone?: string;
+  clientEmail?: string;
+  client_email?: string;
+  clientAddress?: string;
+  client_address?: string;
+  caseType?: string;
+  assignedLawyer?: string;
+  assigned_lawyer?: string;
+  createdAt?: Date | string;
+  deadline?: Date | string;
+  estimatedValue?: number;
+  case_object?: string;
   
   // Relations (depuis les vues)
   total_documents?: number;

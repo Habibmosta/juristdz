@@ -216,7 +216,7 @@ const EnhancedDraftingInterface: React.FC<EnhancedDraftingInterfaceProps> = ({
 
   // Autosave when generatedDoc changes in edit mode
   useEffect(() => {
-    if (!generatedDoc || !currentDocumentId || !isEditing) return;
+    if (!generatedDoc || !currentDocumentId || !isEditing) return undefined;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setAutoSaveStatus('saving');
     autoSaveTimerRef.current = setTimeout(async () => {

@@ -107,6 +107,14 @@ export interface EnhancedUserProfile {
   emailVerified: boolean;
   mfaEnabled: boolean;
   
+  // Subscription & account status (from DB)
+  account_status?: 'active' | 'trial' | 'suspended' | 'blocked' | 'expired';
+  subscriptionPlan?: SubscriptionPlan;
+  trial_ends_at?: string;
+  payment_status?: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  suspension_reason?: string;
+  created_at?: string;
+  
   // Informations professionnelles pour génération de documents
   professionalInfo?: ProfessionalInfo;
 }
@@ -131,6 +139,28 @@ export interface Case {
   lastUpdated?: Date;
   documents?: string[];
   tags?: string[];
+  // Snake_case aliases (from DB / new case type)
+  case_number?: string;
+  case_object?: string;
+  case_type?: string;
+  client_name?: string;
+  client_phone?: string;
+  client_email?: string;
+  client_address?: string;
+  assigned_lawyer?: string;
+  court_name?: string;
+  judge_name?: string;
+  opposing_party?: string;
+  adverse_party_name?: string;
+  opposing_lawyer?: string;
+  adverse_party_lawyer?: string;
+  created_at?: string;
+  opened_date?: string;
+  next_hearing_date?: string;
+  nextHearing?: string;
+  caseNumber?: string;
+  statute_of_limitations?: string;
+  estimated_value?: number;
 }
 
 export interface UserFeedback {
@@ -146,6 +176,7 @@ export interface UserFeedback {
 export interface UserStats {
   id: string;
   email: string;
+  name?: string;
   credits: number;
   plan: SubscriptionPlan;
   isPro: boolean;

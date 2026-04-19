@@ -7,7 +7,7 @@ export interface TribunalInfo {
   phone?: string;
   fax?: string;
   email?: string;
-  type: 'civil' | 'commercial' | 'administratif' | 'famille' | 'penal';
+  type: 'civil' | 'commercial' | 'administratif' | 'famille' | 'penal' | 'premiere_instance';
 }
 
 export interface ConservationFonciereInfo {
@@ -16,7 +16,8 @@ export interface ConservationFonciereInfo {
   address: string;
   phone?: string;
   email?: string;
-  circonscription: string[];
+  circonscription?: string[];
+  circonscriptions?: string[];  // alias used by newer wilayas
 }
 
 export interface BarreauInfo {
@@ -34,7 +35,7 @@ export interface WilayaData {
   name_ar: string;
   code_postal_prefix: string;
   tribunaux: TribunalInfo[];
-  conservation_fonciere: ConservationFonciereInfo[];
+  conservation_fonciere: ConservationFonciereInfo[] | ConservationFonciereInfo;
   barreau?: BarreauInfo;
   chambre_notaires?: {
     name_fr: string;
@@ -482,6 +483,13 @@ export const WILAYAS_DATA: { [key: string]: WilayaData } = {
 // Fonction pour obtenir les données d'une wilaya
 export function getWilayaData(wilayaCode: string): WilayaData | null {
   return WILAYAS_DATA[wilayaCode] || null;
+}
+
+// Helper pour normaliser conservation_fonciere en tableau
+export function getConservationFonciere(wilayaData: WilayaData): ConservationFonciereInfo[] {
+  const cf = wilayaData.conservation_fonciere;
+  if (!cf) return [];
+  return Array.isArray(cf) ? cf : [cf];
 }
 
 // Fonction pour obtenir tous les tribunaux d'une wilaya

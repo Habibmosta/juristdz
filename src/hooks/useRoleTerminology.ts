@@ -8,8 +8,8 @@ import { UserRole } from '../../types';
  * Permet une interface ultra-personnalisée selon la profession
  */
 export function useRoleTerminology(language: 'fr' | 'ar' = 'fr') {
-  const { user } = useAuth();
-  const userRole = (user?.profession as UserRole) || UserRole.AVOCAT;
+  const { profile } = useAuth();
+  const userRole = (profile?.activeRole as UserRole) || UserRole.AVOCAT;
 
   const terminology = useMemo(() => {
     return getTerminology(userRole);

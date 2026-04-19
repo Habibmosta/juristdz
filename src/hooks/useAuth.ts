@@ -80,7 +80,14 @@ export const useAuth = () => {
           isActive: data.is_active,
           emailVerified: data.email_verified,
           mfaEnabled: data.mfa_enabled,
-          professionalInfo: data.professional_info || undefined
+          professionalInfo: data.professional_info || undefined,
+          // Subscription & account fields
+          account_status: data.account_status,
+          subscriptionPlan: data.subscription_plan,
+          trial_ends_at: data.trial_ends_at,
+          payment_status: data.payment_status,
+          suspension_reason: data.suspension_reason,
+          created_at: data.created_at,
         };
 
         setProfile(enhancedProfile);

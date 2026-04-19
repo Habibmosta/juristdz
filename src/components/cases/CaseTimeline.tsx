@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Language } from '../../types';
+import { Language } from '@/types';
 import { 
   Clock, Plus, Filter, Search, FileText, Phone, Mail, 
   Calendar, User, Edit2, Trash2, MessageSquare, Briefcase,

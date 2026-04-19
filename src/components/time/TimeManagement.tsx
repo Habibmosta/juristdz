@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, BarChart2 } from 'lucide-react';
-import { Language } from '../../types';
+import { Language } from '@/types';
 import TimeTracker from './TimeTracker';
 import TimeEntriesList from './TimeEntriesList';
 import WeeklyTimeReport from './WeeklyTimeReport';

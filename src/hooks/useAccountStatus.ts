@@ -17,7 +17,7 @@ export interface AccountUsage {
 }
 
 export interface AccountStatus {
-  status: 'trial' | 'suspended' | 'active' | 'blocked';
+  status: 'trial' | 'suspended' | 'active' | 'blocked' | 'expired';
   isTrialExpired: boolean;
   daysRemaining: number;
   trialEndsAt: Date | null;
@@ -77,18 +77,18 @@ export const useAccountStatus = () => {
         trialEndsAt,
         paymentStatus: profile.payment_status as any || 'pending',
         usage: usage ? {
-          casesCount: usage.cases_count || 0,
-          clientsCount: usage.clients_count || 0,
-          documentsCount: usage.documents_count || 0,
-          invoicesCount: usage.invoices_count || 0,
-          casesLimit: usage.cases_limit,
-          clientsLimit: usage.clients_limit,
-          documentsLimit: usage.documents_limit,
-          invoicesLimit: usage.invoices_limit,
-          canCreateCase: usage.can_create_case,
-          canCreateClient: usage.can_create_client,
-          canCreateDocument: usage.can_create_document,
-          canCreateInvoice: usage.can_create_invoice,
+          casesCount: (usage as any).cases_count || 0,
+          clientsCount: (usage as any).clients_count || 0,
+          documentsCount: (usage as any).documents_count || 0,
+          invoicesCount: (usage as any).invoices_count || 0,
+          casesLimit: (usage as any).cases_limit,
+          clientsLimit: (usage as any).clients_limit,
+          documentsLimit: (usage as any).documents_limit,
+          invoicesLimit: (usage as any).invoices_limit,
+          canCreateCase: (usage as any).can_create_case,
+          canCreateClient: (usage as any).can_create_client,
+          canCreateDocument: (usage as any).can_create_document,
+          canCreateInvoice: (usage as any).can_create_invoice,
         } : null,
         canAccess,
         isReadOnly,

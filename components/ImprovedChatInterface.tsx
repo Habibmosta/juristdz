@@ -1243,7 +1243,7 @@ ${cleanedText}`;
                       
                       <div className="flex-shrink-0">
                         <div className="w-6 h-6 sm:w-8 sm:h-8 bg-legal-blue rounded-full flex items-center justify-center">
-                          <ChevronDown size={12} sm:size={14} className="text-white rotate-[-90deg]" />
+                          <ChevronDown size={12} className="text-white rotate-[-90deg]" />
                         </div>
                       </div>
                     </div>
@@ -1313,7 +1313,7 @@ ${cleanedText}`;
                           {message.citations.map((citation, idx) => (
                             <a 
                               key={idx} 
-                              href={citation.url} 
+                              href={citation.uri} 
                               target="_blank" 
                               rel="noopener noreferrer" 
                               className="block text-xs text-blue-600 hover:underline truncate"

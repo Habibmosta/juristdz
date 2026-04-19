@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Clock, Calendar, DollarSign, FileText } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 import { useAppToast } from '../../contexts/ToastContext';
 
 interface TimeTrackerProps {

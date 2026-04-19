@@ -51,7 +51,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose, language, 
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
-      return;
+      return undefined;
     }
 
     const timer = setTimeout(() => {

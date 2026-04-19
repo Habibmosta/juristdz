@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, CheckCircle, Clock, Users, FileText, DollarSign } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 
 interface WelcomeModalProps {
   language: Language;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Download, Send, Eye, DollarSign, Calendar, User } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { LimitChecker } from '../trial/LimitChecker';
 import { Sparkline } from '../charts/MiniChart';

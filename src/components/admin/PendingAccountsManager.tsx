@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, CheckCircle, XCircle, Clock, DollarSign, Briefcase, Mail, Phone } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 import { useAppToast } from '../../contexts/ToastContext';
 
 interface PendingAccountsManagerProps {
