@@ -118,6 +118,25 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
   const closeModal = () => { setSelectedUser(null); setModalMode(null); };
 
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleResetPassword = async (email: string, nom: string) => {
+    if (!confirm(`Envoyer un email de réinitialisation du mot de passe à ${email} ?`)) return;
+    setResetLoading(true);
+    try {
+      const { supabase } = await import('../../src/lib/supabase');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      showToast(`Email de réinitialisation envoyé à ${email}`);
+    } catch (e: any) {
+      showToast(e.message || 'Erreur lors de l\'envoi', 'error');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!selectedUser) return;
     setActionLoading(true);
@@ -692,6 +711,15 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               <button onClick={() => { closeModal(); openModal(selectedUser, 'edit'); }} className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
                 <Edit size={15} /> Modifier
               </button>
+              <button
+                onClick={() => handleResetPassword(selectedUser.email, selectedUser.nom)}
+                disabled={resetLoading}
+                className="px-4 py-2.5 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                title="Envoyer email de réinitialisation mot de passe"
+              >
+                {resetLoading ? <RefreshCw size={15} className="animate-spin" /> : <Mail size={15} />}
+                Réinit. MDP
+              </button>
               <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 Fermer
               </button>
@@ -777,7 +805,16 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                 {actionLoading ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}
                 Enregistrer
               </button>
-              <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              <button
+                onClick={() => handleResetPassword(selectedUser.email, selectedUser.nom)}
+                disabled={resetLoading}
+                className="px-4 py-2.5 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                title="Envoyer un email de réinitialisation du mot de passe"
+              >
+                {resetLoading ? <RefreshCw size={15} className="animate-spin" /> : <Mail size={15} />}
+                MDP
+              </button>
+              <button onClick={closeModal} className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 Annuler
               </button>
             </div>
