@@ -107,22 +107,26 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     try {
       setLoading(true);
       const { supabase } = await import('../../src/lib/supabase');
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, role, organization_name, last_sign_in_at, is_active, subscription_plan, credits_remaining')
+        .select('id, first_name, last_name, email, profession, organization_name, last_sign_in_at, is_active, subscription_plan, credits_remaining, account_status, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
+
+      if (profilesError) {
+        console.error('AdminInterface profiles error:', profilesError);
+      }
 
       if (profiles) {
         const mapped: UtilisateurSysteme[] = profiles.map((p: any) => ({
           id: p.id,
           nom: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.email,
           email: p.email,
-          role: p.role || p.profession || 'avocat',
-          profession: p.profession || p.role || 'avocat',
+          role: p.profession || 'avocat',
+          profession: p.profession || 'avocat',
           organisation: p.organization_name || '-',
           dernierAcces: p.last_sign_in_at ? new Date(p.last_sign_in_at) : new Date(0),
-          statut: p.is_active === false ? 'inactif' : 'actif',
+          statut: p.account_status === 'suspended' ? 'suspendu' : p.is_active === false ? 'inactif' : 'actif',
           credits: p.credits_remaining || 0,
           plan: p.subscription_plan || 'free',
         }));
