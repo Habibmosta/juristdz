@@ -109,7 +109,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       const { supabase } = await import('../../src/lib/supabase');
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, profession, organization_name, last_sign_in_at, is_active, subscription_plan, credits_remaining, account_status, created_at')
+        .select('id, first_name, last_name, email, profession, organization_name, is_active, subscription_plan, credits_remaining, account_status, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
 
