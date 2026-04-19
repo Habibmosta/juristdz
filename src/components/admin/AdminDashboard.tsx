@@ -3,9 +3,21 @@ import { supabase } from '../../lib/supabase';
 import { 
   Users, Clock, TrendingUp, AlertCircle, Calendar, 
   CheckCircle, XCircle, Timer, Award, Filter, Mail, 
-  UserCheck, UserX, Shield 
+  UserCheck, UserX, Shield, Scale, BookOpen, Briefcase,
+  Gavel, GraduationCap, Building2, Search
 } from 'lucide-react';
 import { useAppToast } from '../../contexts/ToastContext';
+
+// Config rôle → label + couleur + icône
+const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  avocat:             { label: 'Avocat',            color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',    icon: <Scale size={10} /> },
+  notaire:            { label: 'Notaire',            color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300', icon: <BookOpen size={10} /> },
+  huissier:           { label: 'Huissier',           color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', icon: <Briefcase size={10} /> },
+  magistrat:          { label: 'Magistrat',          color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',       icon: <Gavel size={10} /> },
+  etudiant:           { label: 'Étudiant',           color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', icon: <GraduationCap size={10} /> },
+  juriste_entreprise: { label: 'Juriste Entreprise', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',   icon: <Building2 size={10} /> },
+  admin:              { label: 'Admin',              color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',    icon: <Shield size={10} /> },
+};
 
 interface UserWithSubscription {
   id: string;
@@ -56,6 +68,8 @@ export const AdminDashboard: React.FC = () => {
     unverifiedEmails: 0
   });
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -286,29 +300,37 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    if (filterCategory === 'all') return true;
-    
-    const daysRemaining = getDaysRemaining(user);
-    const status = user.subscription?.status || 'unknown';
-    const plan = user.subscription?.plan || 'free';
-
-    switch (filterCategory) {
-      case 'free':
-        return plan === 'free' && status === 'active';
-      case 'trial':
-        return status === 'trial' || status === 'pending';
-      case 'paid':
-        return status === 'active' && plan !== 'free';
-      case 'expiring':
-        return daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7;
-      case 'expired':
-        return daysRemaining !== null && daysRemaining <= 0;
-      case 'unverified':
-        return !user.email_verified;
-      default:
-        return true;
+    // Filtre catégorie
+    if (filterCategory !== 'all') {
+      const daysRemaining = getDaysRemaining(user);
+      const status = user.subscription?.status || 'unknown';
+      const plan = user.subscription?.plan || 'free';
+      switch (filterCategory) {
+        case 'free':     if (!(plan === 'free' && status === 'active')) return false; break;
+        case 'trial':    if (!(status === 'trial' || status === 'pending')) return false; break;
+        case 'paid':     if (!(status === 'active' && plan !== 'free')) return false; break;
+        case 'expiring': if (!(daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7)) return false; break;
+        case 'expired':  if (!(daysRemaining !== null && daysRemaining <= 0)) return false; break;
+        case 'unverified': if (user.email_verified) return false; break;
+      }
     }
+    // Filtre rôle
+    if (filterRole !== 'all' && (user.profession || 'avocat') !== filterRole) return false;
+    // Recherche texte
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!(`${user.first_name} ${user.last_name}`.toLowerCase().includes(q) ||
+            user.email.toLowerCase().includes(q))) return false;
+    }
+    return true;
   });
+
+  // Comptage par rôle
+  const roleCount = users.reduce<Record<string, number>>((acc, u) => {
+    const r = u.profession || 'avocat';
+    acc[r] = (acc[r] || 0) + 1;
+    return acc;
+  }, {});
 
   if (loading) {
     return (
@@ -455,89 +477,91 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Filtres */}
-        <div className="mb-6 flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-slate-400" />
-            <span className="text-sm text-slate-400 font-medium">Catégorie:</span>
+        <div className="mb-6 space-y-4">
+          {/* Barre de recherche */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Rechercher par nom ou email..."
+                className="bg-transparent border-none outline-none text-sm w-full"
+              />
+            </div>
+            {(filterCategory !== 'all' || filterRole !== 'all' || searchTerm) && (
+              <button
+                onClick={() => { setFilterCategory('all'); setFilterRole('all'); setSearchTerm(''); }}
+                className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-400 transition-colors"
+              >
+                Réinitialiser
+              </button>
+            )}
           </div>
 
-          <button
-            onClick={() => setFilterCategory('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'all'
-                ? 'bg-legal-gold text-slate-950'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-legal-gold'
-            }`}
-          >
-            Tous ({users.length})
-          </button>
+          {/* Filtre par rôle */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-slate-400" />
+              <span className="text-sm text-slate-400 font-medium">Rôle:</span>
+            </div>
+            <button
+              onClick={() => setFilterRole('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filterRole === 'all'
+                  ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-slate-400'
+              }`}
+            >
+              Tous ({users.length})
+            </button>
+            {Object.entries(ROLE_CONFIG).filter(([key]) => roleCount[key]).map(([key, cfg]) => (
+              <button
+                key={key}
+                onClick={() => setFilterRole(filterRole === key ? 'all' : key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  filterRole === key
+                    ? cfg.color + ' ring-2 ring-offset-1 ring-current'
+                    : cfg.color + ' opacity-70 hover:opacity-100'
+                }`}
+              >
+                {cfg.icon}
+                {cfg.label} ({roleCount[key]})
+              </button>
+            ))}
+          </div>
 
-          <button
-            onClick={() => setFilterCategory('trial')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'trial'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-blue-500'
-            }`}
-          >
-            Essais gratuits ({stats.trialUsers})
-          </button>
+          {/* Filtre par catégorie */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <span className="text-sm text-slate-400 font-medium">Catégorie:</span>
+            </div>
 
-          <button
-            onClick={() => setFilterCategory('free')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'free'
-                ? 'bg-slate-500 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-500'
-            }`}
-          >
-            Gratuits ({stats.freeUsers})
-          </button>
-
-          <button
-            onClick={() => setFilterCategory('paid')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'paid'
-                ? 'bg-green-500 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-green-500'
-            }`}
-          >
-            Payants ({stats.paidUsers})
-          </button>
-
-          <button
-            onClick={() => setFilterCategory('expiring')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'expiring'
-                ? 'bg-amber-500 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-amber-500'
-            }`}
-          >
-            Expirent bientôt ({stats.expiringSoon})
-          </button>
-
-          <button
-            onClick={() => setFilterCategory('expired')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'expired'
-                ? 'bg-red-500 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-red-500'
-            }`}
-          >
-            Expirés ({stats.expired})
-          </button>
-
-          <button
-            onClick={() => setFilterCategory('unverified')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterCategory === 'unverified'
-                ? 'bg-amber-500 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-amber-500'
-            }`}
-          >
-            <Mail className="w-4 h-4 inline mr-1" />
-            Non vérifiés ({stats.unverifiedEmails})
-          </button>
+            <button onClick={() => setFilterCategory('all')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'all' ? 'bg-legal-gold text-slate-950' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-legal-gold'}`}>
+              Tous ({users.length})
+            </button>
+            <button onClick={() => setFilterCategory('trial')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'trial' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-blue-500'}`}>
+              Essais gratuits ({stats.trialUsers})
+            </button>
+            <button onClick={() => setFilterCategory('free')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'free' ? 'bg-slate-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-500'}`}>
+              Gratuits ({stats.freeUsers})
+            </button>
+            <button onClick={() => setFilterCategory('paid')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'paid' ? 'bg-green-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-green-500'}`}>
+              Payants ({stats.paidUsers})
+            </button>
+            <button onClick={() => setFilterCategory('expiring')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'expiring' ? 'bg-amber-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-amber-500'}`}>
+              Expirent bientôt ({stats.expiringSoon})
+            </button>
+            <button onClick={() => setFilterCategory('expired')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'expired' ? 'bg-red-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-red-500'}`}>
+              Expirés ({stats.expired})
+            </button>
+            <button onClick={() => setFilterCategory('unverified')} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${filterCategory === 'unverified' ? 'bg-amber-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-amber-500'}`}>
+              <Mail className="w-4 h-4 inline mr-1" />
+              Non vérifiés ({stats.unverifiedEmails})
+            </button>
+          </div>
         </div>
 
         {/* Table des Utilisateurs */}
@@ -548,6 +572,9 @@ export const AdminDashboard: React.FC = () => {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Utilisateur
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Rôle
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Catégorie
@@ -586,6 +613,18 @@ export const AdminDashboard: React.FC = () => {
                           </p>
                           <p className="text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const roleKey = user.profession || 'avocat';
+                          const cfg = ROLE_CONFIG[roleKey] || ROLE_CONFIG['avocat'];
+                          return (
+                            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold w-fit ${cfg.color}`}>
+                              {cfg.icon}
+                              {cfg.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4">
                         {getStatusBadge(user)}
@@ -700,7 +739,7 @@ export const AdminDashboard: React.FC = () => {
                 })}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                       <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>Aucun utilisateur dans cette catégorie</p>
                     </td>
