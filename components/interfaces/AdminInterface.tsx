@@ -5,7 +5,7 @@ import {
   AlertTriangle, CheckCircle, TrendingUp, Clock, Eye, Edit, Trash2,
   Plus, Search, Download, Wifi, Lock, Building, CreditCard, Gavel,
   Filter, Scale, BookOpen, Briefcase, GraduationCap, Building2, Star,
-  X, Save, UserCheck, UserX, Ban, RefreshCw, Mail, Phone, Hash
+  X, Save, UserCheck, UserX, Ban, RefreshCw, Mail, Phone, Hash, Lock
 } from 'lucide-react';
 import OrganizationManagement from './admin/OrganizationManagement';
 import SubscriptionManagement from './admin/SubscriptionManagement';
@@ -119,6 +119,34 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const closeModal = () => { setSelectedUser(null); setModalMode(null); };
 
   const [resetLoading, setResetLoading] = useState(false);
+  const [showForcePassword, setShowForcePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [forcePasswordLoading, setForcePasswordLoading] = useState(false);
+
+  const handleForcePassword = async () => {
+    if (!selectedUser) return;
+    if (newPassword.length < 8) {
+      showToast('Le mot de passe doit contenir au moins 8 caractères', 'error');
+      return;
+    }
+    setForcePasswordLoading(true);
+    try {
+      const { supabase } = await import('../../src/lib/supabase');
+      const { data, error } = await supabase.rpc('admin_force_password', {
+        p_user_id: selectedUser.id,
+        p_new_password: newPassword,
+      });
+      if (error) throw error;
+      if ((data as any)?.success === false) throw new Error((data as any).message);
+      showToast(`Mot de passe mis à jour pour ${selectedUser.nom}`);
+      setShowForcePassword(false);
+      setNewPassword('');
+    } catch (e: any) {
+      showToast(e.message || 'Erreur lors de la mise à jour', 'error');
+    } finally {
+      setForcePasswordLoading(false);
+    }
+  };
 
   const handleResetPassword = async (email: string, nom: string) => {
     if (!confirm(`Envoyer un email de réinitialisation du mot de passe à ${email} ?`)) return;
@@ -814,10 +842,47 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                 {resetLoading ? <RefreshCw size={15} className="animate-spin" /> : <Mail size={15} />}
                 MDP
               </button>
+              <button
+                onClick={() => setShowForcePassword(v => !v)}
+                className="px-4 py-2.5 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                title="Forcer un nouveau mot de passe"
+              >
+                <Lock size={15} />
+                Forcer MDP
+              </button>
               <button onClick={closeModal} className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 Annuler
               </button>
             </div>
+
+            {/* Force password inline section */}
+            {showForcePassword && (
+              <div className="mx-6 mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 space-y-3">
+                <p className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                  🔐 Forcer un nouveau mot de passe
+                </p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">
+                  Le mot de passe sera changé immédiatement. Les sessions actives seront invalidées.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Nouveau mot de passe (min. 8 caractères)"
+                    className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-xl bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-purple-400"
+                  />
+                  <button
+                    onClick={handleForcePassword}
+                    disabled={forcePasswordLoading || newPassword.length < 8}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {forcePasswordLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                    Appliquer
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
