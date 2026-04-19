@@ -83,7 +83,6 @@ CREATE TABLE IF NOT EXISTS time_entries (
   description TEXT NOT NULL,
   hours DECIMAL(6,2) NOT NULL DEFAULT 0,
   hourly_rate DECIMAL(10,2) DEFAULT 0,
-  amount DECIMAL(12,2) GENERATED ALWAYS AS (hours * hourly_rate) STORED,
   is_billable BOOLEAN DEFAULT TRUE,
   entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
   activity_type TEXT DEFAULT 'consultation',
@@ -92,8 +91,30 @@ CREATE TABLE IF NOT EXISTS time_entries (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Si la table existait déjà avec 'date' au lieu de 'entry_date, ajouter entry_date comme alias
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='time_entries' AND column_name='date')
+  AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='time_entries' AND column_name='entry_date') THEN
+    ALTER TABLE time_entries ADD COLUMN entry_date DATE;
+    UPDATE time_entries SET entry_date = "date" WHERE entry_date IS NULL;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON time_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(entry_date);
+-- La colonne peut s'appeler 'date' (ancienne) ou 'entry_date' (nouvelle)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='time_entries' AND column_name='entry_date') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE tablename='time_entries' AND indexname='idx_time_entries_date') THEN
+      EXECUTE 'CREATE INDEX idx_time_entries_date ON time_entries(entry_date)';
+    END IF;
+  ELSIF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='time_entries' AND column_name='date') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE tablename='time_entries' AND indexname='idx_time_entries_date') THEN
+      EXECUTE 'CREATE INDEX idx_time_entries_date ON time_entries("date")';
+    END IF;
+  END IF;
+END $$;
 
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage own time entries" ON time_entries;
