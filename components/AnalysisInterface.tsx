@@ -218,7 +218,7 @@ const AnalysisInterface: React.FC<AnalysisInterfaceProps> = ({ language }) => {
           limitResult={limitResult}
           language={language}
           onClose={closeLimitModal}
-          onUpgrade={() => navigate('/billing')}
+          onUpgrade={() => { window.location.href = '/billing'; }}
         />
       )}
     </div>

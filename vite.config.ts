@@ -31,6 +31,27 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        chunkSizeWarningLimit: 1000,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // React core
+              'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+              // Supabase
+              'vendor-supabase': ['@supabase/supabase-js'],
+              // UI icons
+              'vendor-lucide': ['lucide-react'],
+              // PDF / document generation
+              'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+              // Markdown
+              'vendor-markdown': ['react-markdown'],
+              // Google AI
+              'vendor-ai': ['@google/genai'],
+            }
+          }
+        }
       }
     };
 });

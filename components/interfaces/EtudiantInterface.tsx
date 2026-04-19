@@ -96,7 +96,7 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
       const data = await professionalDataService.getByProfession(user.id, 'etudiant', 20);
       
       // Transformer les données
-      const transformedData = data.map((item: any) => ({
+      const transformedData: Cours[] = data.map((item: any) => ({
         id: item.id,
         titre: item.title,
         domaine: item.metadata?.matiere || 'Droit',
@@ -107,12 +107,12 @@ const EtudiantInterface: React.FC<EtudiantInterfaceProps> = ({
         verrouille: item.metadata?.verrouille || false
       }));
       
-      setCours(transformedData);
+      setCours(transformedData as Cours[]);
 
       // Calculer les statistiques réelles
       const termines = transformedData.filter((c: Cours) => c.statut === 'termine').length;
       const progressionMoy = transformedData.length > 0
-        ? Math.round(transformedData.reduce((sum: number, c: Cours) => sum + c.progression, 0) / transformedData.length)
+        ? Math.round((transformedData as Cours[]).reduce((sum: number, c: Cours) => sum + (c.progression as number), 0) / transformedData.length)
         : 0;
 
       // Charger les stats depuis Supabase (documents générés = exercices)

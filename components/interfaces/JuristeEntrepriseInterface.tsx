@@ -115,7 +115,7 @@ const JuristeEntrepriseInterface: React.FC<JuristeEntrepriseInterfaceProps> = ({
         risque: item.metadata?.risque || 'faible'
       }));
       
-      setContratsEnCours(transformedData);
+      setContratsEnCours(transformedData as ContratEnCours[]);
     } catch (error) {
       console.error('Erreur chargement données juriste entreprise:', error);
     } finally {

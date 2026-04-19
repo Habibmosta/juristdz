@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, DollarSign, FileText, Trash2, Edit2, Download, Filter } from 'lucide-react';
-import { Language } from '../../types';
+import { Language } from '@/types';
 import { timeTrackingService, TimeEntry, TimeStats } from '../../services/timeTrackingService';
 
 interface TimeEntriesListProps {

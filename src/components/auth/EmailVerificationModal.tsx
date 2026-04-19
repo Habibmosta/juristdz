@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mail, CheckCircle, X } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 
 interface EmailVerificationModalProps {
   email: string;

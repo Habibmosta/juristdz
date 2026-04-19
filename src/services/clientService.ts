@@ -136,7 +136,7 @@ export class ClientService {
       .eq('case_id', caseId);
 
     if (error) throw error;
-    return data?.map(item => item.clients).filter(Boolean) || [];
+    return (data?.map(item => item.clients).filter(Boolean) || []) as unknown as Client[];
   }
 
   /**

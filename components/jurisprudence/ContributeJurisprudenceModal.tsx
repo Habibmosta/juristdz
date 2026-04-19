@@ -52,7 +52,7 @@ const ContributeJurisprudenceModal: React.FC<Props> = ({
 
   // OCR state
   const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrResult, setOcrResult] = useState<{ text: string; language: string; confidence: number } | null>(null);
+  const [ocrResult, setOcrResult] = useState<{ text: string; language: string; confidence: number; pages?: number } | null>(null);
   const [showOcrText, setShowOcrText] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

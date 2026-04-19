@@ -118,7 +118,7 @@ export default function UserProfilePage({ user, language, onUpdate }: Props) {
 
   const plan = user.subscriptionPlan || 'free';
   const planCfg = PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG] || PLAN_CONFIG.free;
-  const roleLabel = ROLE_LABELS[user.role as UserRole];
+  const roleLabel = ROLE_LABELS[user.activeRole];
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
@@ -169,7 +169,7 @@ export default function UserProfilePage({ user, language, onUpdate }: Props) {
                   <Star size={10} className="inline mr-1" />
                   {isAr ? planCfg.label.ar : planCfg.label.fr}
                 </span>
-                {user.trialEndsAt && new Date(user.trialEndsAt) > new Date() && (
+                {user.trial_ends_at && new Date(user.trial_ends_at) > new Date() && (
                   <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 text-xs font-bold rounded-full">
                     <Clock size={10} className="inline mr-1" />
                     {isAr ? 'تجربة مجانية' : 'Essai gratuit'}

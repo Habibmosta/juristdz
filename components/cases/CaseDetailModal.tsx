@@ -59,7 +59,7 @@ export const CaseDetailModal: React.FC<CaseDetailModalProps> = ({
                 </span>
                 <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
                   {case_.status === 'active' ? (isAr ? 'نشط' : 'Actif') : 
-                   case_.status === 'closed' ? (isAr ? 'مغلق' : 'Fermé') :
+                   case_.status === 'archived' ? (isAr ? 'مؤرشف' : 'Archivé') :
                    (isAr ? 'معلق' : 'En attente')}
                 </span>
               </div>

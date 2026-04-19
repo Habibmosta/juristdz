@@ -8,7 +8,8 @@ export type AuditAction =
   | 'client.create' | 'client.update' | 'client.delete'
   | 'invoice.create' | 'invoice.update' | 'invoice.delete' | 'invoice.paid'
   | 'document.create' | 'document.export' | 'document.delete'
-  | 'profile.update' | 'auth.login' | 'auth.logout' | 'auth.2fa_enable' | 'auth.2fa_disable';
+  | 'profile.update' | 'auth.login' | 'auth.logout' | 'auth.2fa_enable' | 'auth.2fa_disable'
+  | 'subscription.activated' | 'subscription.cancelled' | 'subscription.updated';
 
 export interface AuditEntry {
   user_id: string;

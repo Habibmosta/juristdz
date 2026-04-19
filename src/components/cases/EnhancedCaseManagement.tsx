@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Case, Language } from '../../types';
+import { Language } from '@/types';
+import type { Case } from '../../types/case.types';
 import { 
   Briefcase, Plus, Search, Filter, MoreVertical, ChevronRight, 
   Clock, User, Calendar, TrendingUp, AlertCircle, Grid, List,
@@ -453,7 +454,15 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
         flatFee: '',
         contingencyPercentage: '',
         retainerAmount: '',
-        notes: ''
+        notes: '',
+        assignedLawyer: '',
+        documentsToCollect: [],
+        initialConsultationDate: '',
+        clientObjective: '',
+        legalStrategy: '',
+        estimatedDuration: '',
+        riskLevel: 'medium',
+        successProbability: '',
       });
       setClientSearchTerm('');
       setDocumentChecklist([]);
@@ -719,7 +728,7 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
           </div>
         ) : viewMode === 'kanban' ? (
           <CaseKanbanView
-            cases={filteredCases}
+            cases={filteredCases as any[]}
             language={language}
             onCaseClick={(id) => setSelectedCaseId(id)}
             onStatusChange={handleStatusChange}
@@ -1522,7 +1531,15 @@ const EnhancedCaseManagement: React.FC<EnhancedCaseManagementProps> = ({ languag
                       flatFee: '',
                       contingencyPercentage: '',
                       retainerAmount: '',
-                      notes: ''
+                      notes: '',
+                      assignedLawyer: '',
+                      documentsToCollect: [],
+                      initialConsultationDate: '',
+                      clientObjective: '',
+                      legalStrategy: '',
+                      estimatedDuration: '',
+                      riskLevel: 'medium',
+                      successProbability: '',
                     });
                   }}
                   className="flex-1 px-6 py-3 border dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"

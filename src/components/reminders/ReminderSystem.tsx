@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Language } from '../../types';
+import { Language } from '@/types';
 import { 
   Bell, Plus, Clock, CheckCircle, X, Calendar, AlertCircle,
   Repeat, Trash2, Edit2, Filter, Search

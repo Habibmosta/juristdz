@@ -190,15 +190,14 @@ const App: React.FC = () => {
     );
   }
 
-  // Convert enhanced profile to legacy UserStats for backward compatibility
   const legacyUserStats: UserStats = {
     id: profile.id,
     email: profile.email,
-    credits: 5,
-    plan: 'free',
-    isPro: false,
-    role: 'admin', // Force admin pour accéder à l'interface SaaS
-    joinedAt: new Date()
+    credits: (profile as any).credits ?? 5,
+    plan: (profile as any).subscription?.plan || profile.subscriptionPlan || 'free',
+    isPro: ['pro', 'cabinet'].includes((profile as any).subscription?.plan || profile.subscriptionPlan || ''),
+    role: profile.activeRole === UserRole.ADMIN ? 'admin' : 'user',
+    joinedAt: new Date(profile.created_at || Date.now())
   };
 
   return (
@@ -234,8 +233,9 @@ const App: React.FC = () => {
         <TrialExpiredModal
           isOpen={showTrialExpiredModal}
           onClose={() => setShowTrialExpiredModal(false)}
-          userPlan={(profile as any).subscription?.plan || 'pro'}
-          isAr={language === 'ar'}
+          userPlan={(profile.subscriptionPlan === 'cabinet' ? 'cabinet' : 'pro')}
+          userId={profile.id}
+          language={language}
         />
       )}
       

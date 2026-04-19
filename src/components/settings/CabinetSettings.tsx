@@ -116,7 +116,7 @@ const translations = {
 
 const CabinetSettings: React.FC<CabinetSettingsProps> = ({ userId, language, userRole }) => {
   const t = translations[language];
-  const { showToast } = useToast();
+  const { addToast } = useToast();
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -170,10 +170,10 @@ const CabinetSettings: React.FC<CabinetSettingsProps> = ({ userId, language, use
 
       // Persist theme preference
       localStorage.setItem('juristdz_theme', settings.theme);
-      showToast(t.saved, 'success');
+      addToast(t.saved, 'success');
     } catch (err) {
       console.error('Error saving settings:', err);
-      showToast('Erreur lors de la sauvegarde', 'error');
+      addToast('Erreur lors de la sauvegarde', 'error');
     } finally {
       setSaving(false);
     }

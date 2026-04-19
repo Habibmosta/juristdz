@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useAccountStatus } from '../../hooks/useAccountStatus';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 
 interface LimitCheckerProps {
   resourceType: 'case' | 'client' | 'document' | 'invoice';

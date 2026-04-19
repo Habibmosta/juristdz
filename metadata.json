@@ -1,7 +1,0 @@
-{
-  "name": "JuristDZ - IA Juridique Algérienne",
-  "description": "Assistant juridique vertical dédié au droit algérien pour les avocats et professionnels du droit.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}

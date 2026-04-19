@@ -1,4 +1,4 @@
-import { getWilayaData, getTribunauxByWilaya, getFormatRC, getFormatNIF } from '../data/wilayaSpecificData';
+import { getWilayaData, getTribunauxByWilaya, getFormatRC, getFormatNIF, getConservationFonciere } from '../data/wilayaSpecificData';
 
 export interface WilayaTemplateVariables {
   // Informations de la wilaya
@@ -59,8 +59,9 @@ class WilayaTemplateService {
     }
 
     // Ajouter les informations de la conservation foncière
-    if (wilayaData.conservation_fonciere.length > 0) {
-      const cf = wilayaData.conservation_fonciere[0];
+    const cfList = getConservationFonciere(wilayaData);
+    if (cfList.length > 0) {
+      const cf = cfList[0];
       variables.conservation_name_fr = cf.name_fr;
       variables.conservation_name_ar = cf.name_ar;
       variables.conservation_address = cf.address;

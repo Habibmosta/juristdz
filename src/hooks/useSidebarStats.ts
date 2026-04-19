@@ -16,7 +16,10 @@ export const useSidebarStats = (userId: string | null): SidebarStats => {
   });
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setStats(s => ({ ...s, loading: false }));
+      return undefined;
+    }
     let cancelled = false;
 
     const load = async () => {

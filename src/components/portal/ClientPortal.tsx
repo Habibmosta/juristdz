@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, MessageSquare, Download, Eye, Lock, User, Calendar, DollarSign, Bell, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import type { Language } from '../../types';
+import type { Language } from '@/types';
 
 interface ClientPortalProps {
   clientId: string;

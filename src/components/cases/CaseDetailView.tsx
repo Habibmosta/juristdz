@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Case, Language } from '../../types';
+import { Language } from '@/types';
+import type { Case } from '../../types/case.types';
 import { 
   ArrowLeft, Calendar, Clock, User, Phone, Mail, MapPin, 
   FileText, DollarSign, AlertCircle, CheckCircle, Edit2, 
@@ -7,7 +8,7 @@ import {
   Tag, TrendingUp, Activity
 } from 'lucide-react';
 import { CaseService } from '../../services/caseService';
-import { DocumentService } from '../../services/documentService';
+import { documentService } from '../../services/documentService';
 import { ClientService } from '../../services/clientService';
 import CaseTimeline from './CaseTimeline';
 import { useRoleTerminology } from '../../hooks/useRoleTerminology';
@@ -721,12 +722,12 @@ const CaseDetailView: React.FC<CaseDetailViewProps> = ({ caseId, language, onBac
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-500">{isAr ? 'تاريخ الإنشاء' : 'Créé le'}</span>
-                    <span className="font-medium">{caseData.createdAt.toLocaleDateString()}</span>
+                    <span className="font-medium">{new Date(caseData.createdAt as string | Date).toLocaleDateString()}</span>
                   </div>
                   {caseData.deadline && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-500">{isAr ? 'الموعد النهائي' : 'Échéance'}</span>
-                      <span className="font-medium text-orange-600">{caseData.deadline.toLocaleDateString()}</span>
+                      <span className="font-medium text-orange-600">{new Date(caseData.deadline as string | Date).toLocaleDateString()}</span>
                     </div>
                   )}
                   {caseData.estimatedValue && (

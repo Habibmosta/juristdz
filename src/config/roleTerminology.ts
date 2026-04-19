@@ -395,24 +395,22 @@ export function getTerminology(role: UserRole): RoleTerminology {
   return ROLE_TERMINOLOGY[role] || ROLE_TERMINOLOGY[UserRole.AVOCAT];
 }
 
+export type TermCategory = 'case' | 'client' | 'document' | 'event';
+
 /**
  * Obtenir un terme traduit selon le rôle et la langue
  */
 export function getTerm(
   role: UserRole, 
-  category: keyof RoleTerminology, 
+  category: TermCategory, 
   language: 'fr' | 'ar',
   plural: boolean = false
 ): string {
   const terminology = getTerminology(role);
   const term = terminology[category];
   
-  if (typeof term === 'object' && 'singular' in term) {
-    if (language === 'ar') {
-      return plural ? term.pluralAr : term.singularAr;
-    }
-    return plural ? term.plural : term.singular;
+  if (language === 'ar') {
+    return plural ? term.pluralAr : term.singularAr;
   }
-  
-  return '';
+  return plural ? term.plural : term.singular;
 }

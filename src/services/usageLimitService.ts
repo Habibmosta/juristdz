@@ -608,12 +608,12 @@ export class UsageLimitService {
       .eq('user_id', userId)
       .single();
     
-    // Récupérer les statistiques d'usage
+    // Récupérer les statistiques d'usage (table peut ne pas exister encore)
     const { data: stats } = await supabase
       .from('usage_stats')
-      .select('*')
+      .select('credits_used_today, credits_used_this_month, api_calls_today, storage_used_gb, last_reset_date')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     return {
       userId,
