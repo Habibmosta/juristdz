@@ -409,13 +409,11 @@ BEGIN
         ct.title,
         ct.due_date,
         ct.priority,
-        ct.status,
         c.title AS case_title,
         c.case_number
       FROM case_tasks ct
       LEFT JOIN cases c ON ct.case_id = c.id
       WHERE ct.due_date < CURRENT_DATE
-        AND ct.status NOT IN ('terminee', 'annulee')
       ORDER BY ct.due_date ASC
     $view$;
   END IF;
