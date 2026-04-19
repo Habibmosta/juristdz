@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS time_entries (
   hourly_rate DECIMAL(10,2) DEFAULT 0,
   amount DECIMAL(12,2) GENERATED ALWAYS AS (hours * hourly_rate) STORED,
   is_billable BOOLEAN DEFAULT TRUE,
-  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
   activity_type TEXT DEFAULT 'consultation',
   invoice_id UUID,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS time_entries (
 );
 
 CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON time_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date);
+CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(entry_date);
 
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage own time entries" ON time_entries;
@@ -339,41 +339,61 @@ END;
 $$;
 
 -- ============================================================
--- 11. VUE upcoming_hearings
+-- 11. VUE upcoming_hearings (après ajout de next_hearing_date)
 -- ============================================================
-CREATE OR REPLACE VIEW upcoming_hearings AS
-SELECT
-  c.id AS case_id,
-  c.user_id,
-  c.title,
-  c.case_number,
-  c.next_hearing_date AS hearing_date,
-  c.court_name,
-  c.status
-FROM cases c
-WHERE c.next_hearing_date >= CURRENT_DATE
-  AND c.status NOT IN ('cloture', 'archive', 'archived')
-ORDER BY c.next_hearing_date ASC;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'cases' AND column_name = 'next_hearing_date'
+  ) THEN
+    EXECUTE $view$
+      CREATE OR REPLACE VIEW upcoming_hearings AS
+      SELECT
+        c.id AS case_id,
+        c.user_id,
+        c.title,
+        c.case_number,
+        c.next_hearing_date AS hearing_date,
+        c.court_name,
+        c.status
+      FROM cases c
+      WHERE c.next_hearing_date >= CURRENT_DATE
+        AND c.status NOT IN ('cloture', 'archive', 'archived')
+      ORDER BY c.next_hearing_date ASC
+    $view$;
+  END IF;
+END $$;
 
 -- ============================================================
--- 12. VUE overdue_tasks
+-- 12. VUE overdue_tasks (seulement si case_tasks existe)
 -- ============================================================
-CREATE OR REPLACE VIEW overdue_tasks AS
-SELECT
-  ct.id,
-  ct.user_id,
-  ct.case_id,
-  ct.title,
-  ct.due_date,
-  ct.priority,
-  ct.status,
-  c.title AS case_title,
-  c.case_number
-FROM case_tasks ct
-LEFT JOIN cases c ON ct.case_id = c.id
-WHERE ct.due_date < CURRENT_DATE
-  AND ct.status NOT IN ('terminee', 'annulee')
-ORDER BY ct.due_date ASC;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'case_tasks'
+  ) THEN
+    EXECUTE $view$
+      CREATE OR REPLACE VIEW overdue_tasks AS
+      SELECT
+        ct.id,
+        ct.user_id,
+        ct.case_id,
+        ct.title,
+        ct.due_date,
+        ct.priority,
+        ct.status,
+        c.title AS case_title,
+        c.case_number
+      FROM case_tasks ct
+      LEFT JOIN cases c ON ct.case_id = c.id
+      WHERE ct.due_date < CURRENT_DATE
+        AND ct.status NOT IN ('terminee', 'annulee')
+      ORDER BY ct.due_date ASC
+    $view$;
+  END IF;
+END $$;
 
 -- ============================================================
 -- VÉRIFICATION
