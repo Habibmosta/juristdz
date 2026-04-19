@@ -63,20 +63,27 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     try {
       setLoading(true);
       const { supabase } = await import('../../src/lib/supabase');
-      const { data: profiles } = await supabase
+
+      // Charger les profils avec les colonnes existantes
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, role, organization_name, last_sign_in_at, is_active, subscription_plan, credits_remaining')
+        .select('id, first_name, last_name, email, profession, subscription_plan, credits_remaining, is_active, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
+
+      if (profilesError) {
+        console.error('Erreur chargement profils:', profilesError);
+        return;
+      }
 
       if (profiles) {
         const mapped: UtilisateurSysteme[] = profiles.map((p: any) => ({
           id: p.id,
           nom: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.email,
           email: p.email,
-          role: (p.role as UserRole) || UserRole.AVOCAT,
-          organisation: p.organization_name || '-',
-          dernierAcces: p.last_sign_in_at ? new Date(p.last_sign_in_at) : new Date(0),
+          role: (p.profession as UserRole) || UserRole.AVOCAT,
+          organisation: '-',
+          dernierAcces: p.created_at ? new Date(p.created_at) : new Date(0),
           statut: p.is_active === false ? 'inactif' : 'actif',
           credits: p.credits_remaining || 0,
         }));
@@ -86,10 +93,13 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       }
 
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      const { count: reqCount } = await supabase
+      const { count: reqCount, error: docError } = await supabase
         .from('documents').select('*', { count: 'exact', head: true })
         .gte('created_at', today.toISOString());
-      setStatistiques(s => ({ ...s, requetesJour: reqCount || 0 }));
+
+      if (!docError) {
+        setStatistiques(s => ({ ...s, requetesJour: reqCount || 0 }));
+      }
     } catch (err) {
       console.error('AdminInterface loadRealData error:', err);
     } finally {
