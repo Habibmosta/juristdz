@@ -77,13 +77,24 @@ CREATE TABLE IF NOT EXISTS legal_deadlines (
   notes TEXT,
   priority TEXT NOT NULL DEFAULT 'medium'
     CHECK (priority IN ('low','medium','high','critical')),
-  status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending','urgent','overdue','completed')),
   is_completed BOOLEAN DEFAULT FALSE,
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ajouter la colonne status si elle n'existe pas (table déjà créée sans elle)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'legal_deadlines' AND column_name = 'status'
+  ) THEN
+    ALTER TABLE legal_deadlines
+      ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending','urgent','overdue','completed'));
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_legal_deadlines_user_id ON legal_deadlines(user_id);
 CREATE INDEX IF NOT EXISTS idx_legal_deadlines_deadline_date ON legal_deadlines(deadline_date ASC);
@@ -185,6 +196,20 @@ CREATE TABLE IF NOT EXISTS invoices (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   sent_at TIMESTAMPTZ
 );
+
+-- Ajouter les colonnes manquantes si la table existait déjà
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoices' AND column_name='invoice_date') THEN
+    ALTER TABLE invoices ADD COLUMN invoice_date DATE NOT NULL DEFAULT CURRENT_DATE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoices' AND column_name='total_amount') THEN
+    ALTER TABLE invoices ADD COLUMN total_amount DECIMAL(15,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoices' AND column_name='issue_date') THEN
+    ALTER TABLE invoices ADD COLUMN issue_date DATE NOT NULL DEFAULT CURRENT_DATE;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
