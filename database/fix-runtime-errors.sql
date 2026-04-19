@@ -372,7 +372,8 @@ BEGIN
     WHERE table_name = 'cases' AND column_name = 'next_hearing_date'
   ) THEN
     EXECUTE $view$
-      CREATE OR REPLACE VIEW upcoming_hearings AS
+      DROP VIEW IF EXISTS upcoming_hearings;
+      CREATE VIEW upcoming_hearings AS
       SELECT
         c.id AS case_id,
         c.user_id,
@@ -399,7 +400,8 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'case_tasks'
   ) THEN
     EXECUTE $view$
-      CREATE OR REPLACE VIEW overdue_tasks AS
+      DROP VIEW IF EXISTS overdue_tasks;
+      CREATE VIEW overdue_tasks AS
       SELECT
         ct.id,
         ct.user_id,
