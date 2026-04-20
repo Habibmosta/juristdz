@@ -11,6 +11,7 @@ import OrganizationManagement from './admin/OrganizationManagement';
 import SubscriptionManagement from './admin/SubscriptionManagement';
 import JurisprudenceValidationPanel from '../jurisprudence/JurisprudenceValidationPanel';
 import AdminPaymentsPanel from '../../src/components/billing/AdminPaymentsPanel';
+import Modal from '../../src/components/common/Modal';
 
 interface AdminInterfaceProps {
   user: EnhancedUserProfile;
@@ -714,7 +715,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
       {/* ÔöÇÔöÇ MODAL VIEW ÔöÇÔöÇ */}
       {modalMode === 'view' && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <Modal onClose={closeModal}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
               <h2 className="font-bold text-lg flex items-center gap-2"><Eye size={18} className="text-blue-500" /> Profil utilisateur</h2>
@@ -754,12 +755,12 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ÔöÇÔöÇ MODAL EDIT ÔöÇÔöÇ */}
       {modalMode === 'edit' && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <Modal onClose={closeModal}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-900">
               <h2 className="font-bold text-lg flex items-center gap-2"><Edit size={18} className="text-amber-500" /> Modifier ÔÇö {selectedUser.nom}</h2>
@@ -885,12 +886,12 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               </div>
             )}
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ÔöÇÔöÇ MODAL DELETE ÔöÇÔöÇ */}
       {modalMode === 'delete' && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <Modal onClose={closeModal}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between p-6 border-b border-red-100 dark:border-red-900">
               <h2 className="font-bold text-lg flex items-center gap-2 text-red-600"><Ban size={18} /> Bloquer le compte</h2>
@@ -920,7 +921,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );
