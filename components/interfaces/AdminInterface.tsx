@@ -100,7 +100,11 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const openModal = (u: UtilisateurSysteme, mode: 'view' | 'edit' | 'delete') => {
     setSelectedUser(u);
     setModalMode(mode);
+    // Bloquer le scroll de la page et remonter en haut du viewport
+    document.body.style.overflow = 'hidden';
     if (mode === 'edit') {
+      setShowForcePassword(false);
+      setNewPassword('');
       const [firstName, ...rest] = u.nom.split(' ');
       setEditForm({
         firstName: firstName || '',
@@ -116,7 +120,12 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     setDeleteReason('');
   };
 
-  const closeModal = () => { setSelectedUser(null); setModalMode(null); };
+  const closeModal = () => {
+    setSelectedUser(null);
+    setModalMode(null);
+    // Restaurer le scroll
+    document.body.style.overflow = '';
+  };
 
   const [resetLoading, setResetLoading] = useState(false);
   const [showForcePassword, setShowForcePassword] = useState(false);
@@ -714,7 +723,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
       {/* â”€â”€ MODAL VIEW â”€â”€ */}
       {modalMode === 'view' && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
+        >
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
               <h2 className="font-bold text-lg flex items-center gap-2"><Eye size={18} className="text-blue-500" /> Profil utilisateur</h2>
@@ -760,7 +772,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
       {/* ── MODAL EDIT — système d'onglets, pas de scroll ── */}
       {modalMode === 'edit' && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
+        >
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 flex flex-col" style={{ maxHeight: 'min(90vh, 660px)' }}>
 
             {/* Header avec avatar */}
@@ -950,7 +965,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
       {/* ── MODAL DELETE ── */}
       {modalMode === 'delete' && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
+        >
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between p-6 border-b border-red-100 dark:border-red-900">
               <h2 className="font-bold text-lg flex items-center gap-2 text-red-600"><Ban size={18} /> Bloquer le compte</h2>
