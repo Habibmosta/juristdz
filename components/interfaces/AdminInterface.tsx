@@ -326,7 +326,8 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
   return (
     <>
-    <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
+      {/* ── MAIN SCROLLABLE CONTENT ── */}
+      <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
@@ -759,44 +760,71 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       {/* ── MODAL EDIT ── */}
       {modalMode === 'edit' && selectedUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-900">
-              <h2 className="font-bold text-lg flex items-center gap-2"><Edit size={18} className="text-amber-500" /> Modifier — {selectedUser.nom}</h2>
-              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X size={18} /></button>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+
+            {/* Header — sticky top */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <Edit size={18} className="text-amber-500" />
+                Modifier — {selectedUser.nom}
+              </h2>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                <X size={18} />
+              </button>
             </div>
-            <div className="p-6 space-y-4">
+
+            {/* Body — scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prénom</label>
-                  <input value={editForm.firstName} onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                  <input
+                    value={editForm.firstName}
+                    onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                  />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom</label>
-                  <input value={editForm.lastName} onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                  <input
+                    value={editForm.lastName}
+                    onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                  />
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rôle / Profession</label>
-                <select value={editForm.profession} onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                <select
+                  value={editForm.profession}
+                  onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                >
                   {Object.entries(ROLE_CONFIG).map(([key, cfg]) => (
                     <option key={key} value={key}>{cfg.label_fr}</option>
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Organisation / Cabinet</label>
-                <input value={editForm.organisation} onChange={e => setEditForm(f => ({ ...f, organisation: e.target.value }))}
+                <input
+                  value={editForm.organisation}
+                  onChange={e => setEditForm(f => ({ ...f, organisation: e.target.value }))}
                   placeholder="Nom du cabinet..."
-                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan</label>
-                  <select value={editForm.plan} onChange={e => setEditForm(f => ({ ...f, plan: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                  <select
+                    value={editForm.plan}
+                    onChange={e => setEditForm(f => ({ ...f, plan: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                  >
                     <option value="free">Gratuit</option>
                     <option value="pro">Pro</option>
                     <option value="cabinet">Cabinet</option>
@@ -804,32 +832,79 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crédits</label>
-                  <input type="number" value={editForm.credits} onChange={e => setEditForm(f => ({ ...f, credits: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                  <input
+                    type="number"
+                    value={editForm.credits}
+                    onChange={e => setEditForm(f => ({ ...f, credits: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                  />
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Statut du compte</label>
-                <select value={editForm.accountStatus} onChange={e => setEditForm(f => ({ ...f, accountStatus: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                <select
+                  value={editForm.accountStatus}
+                  onChange={e => setEditForm(f => ({ ...f, accountStatus: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                >
                   <option value="active">Actif</option>
                   <option value="trial">Essai</option>
                   <option value="suspended">Suspendu</option>
                   <option value="blocked">Bloqué</option>
                 </select>
               </div>
+
               <label className="flex items-center gap-3 cursor-pointer p-3 bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800">
-                <input type="checkbox" checked={editForm.isAdmin} onChange={e => setEditForm(f => ({ ...f, isAdmin: e.target.checked }))}
-                  className="w-4 h-4 accent-rose-600" />
+                <input
+                  type="checkbox"
+                  checked={editForm.isAdmin}
+                  onChange={e => setEditForm(f => ({ ...f, isAdmin: e.target.checked }))}
+                  className="w-4 h-4 accent-rose-600"
+                />
                 <div>
                   <span className="text-sm font-bold text-rose-700 dark:text-rose-400">Administrateur plateforme</span>
                   <p className="text-xs text-rose-500">Accès complet à toutes les fonctions admin</p>
                 </div>
               </label>
+
+              {/* Force password section — inside scrollable body, visible when toggled */}
+              {showForcePassword && (
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 space-y-3">
+                  <p className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                    🔐 Forcer un nouveau mot de passe
+                  </p>
+                  <p className="text-xs text-purple-600 dark:text-purple-400">
+                    Le mot de passe sera changé immédiatement. Les sessions actives seront invalidées.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      placeholder="Nouveau mot de passe (min. 8 caractères)"
+                      className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-xl bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                    <button
+                      onClick={handleForcePassword}
+                      disabled={forcePasswordLoading || newPassword.length < 8}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {forcePasswordLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                      Appliquer
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="p-6 pt-0 flex gap-3 sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-              <button onClick={handleSaveEdit} disabled={actionLoading}
-                className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+
+            {/* Footer — sticky bottom */}
+            <div className="p-6 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
+              <button
+                onClick={handleSaveEdit}
+                disabled={actionLoading}
+                className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
                 {actionLoading ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}
                 Enregistrer
               </button>
@@ -844,45 +919,23 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               </button>
               <button
                 onClick={() => setShowForcePassword(v => !v)}
-                className="px-4 py-2.5 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                className={`px-4 py-2.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${
+                  showForcePassword
+                    ? 'bg-purple-700 text-white hover:bg-purple-800'
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                }`}
                 title="Forcer un nouveau mot de passe"
               >
                 <Lock size={15} />
                 Forcer MDP
               </button>
-              <button onClick={closeModal} className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
                 Annuler
               </button>
             </div>
-
-            {/* Force password inline section */}
-            {showForcePassword && (
-              <div className="mx-6 mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 space-y-3">
-                <p className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
-                  🔐 Forcer un nouveau mot de passe
-                </p>
-                <p className="text-xs text-purple-600 dark:text-purple-400">
-                  Le mot de passe sera changé immédiatement. Les sessions actives seront invalidées.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Nouveau mot de passe (min. 8 caractères)"
-                    className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-xl bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-purple-400"
-                  />
-                  <button
-                    onClick={handleForcePassword}
-                    disabled={forcePasswordLoading || newPassword.length < 8}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {forcePasswordLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-                    Appliquer
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
