@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Language, EnhancedUserProfile } from '../../types';
 import {
   Settings, Users, BarChart3, Shield, Database, Server, Activity,
@@ -31,18 +31,18 @@ interface UtilisateurSysteme {
   plan: string;
 }
 
-// Config rôle → couleur + icône + label
+// Config rÃ´le â†’ couleur + icÃ´ne + label
 const ROLE_CONFIG: Record<string, {
   label_fr: string; label_ar: string;
   color: string; icon: React.ReactNode;
 }> = {
-  avocat:             { label_fr: 'Avocat',           label_ar: 'محامي',         color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',    icon: <Scale size={11} /> },
-  notaire:            { label_fr: 'Notaire',           label_ar: 'موثق',          color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300', icon: <BookOpen size={11} /> },
-  huissier:           { label_fr: 'Huissier',          label_ar: 'محضر',          color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', icon: <Briefcase size={11} /> },
-  magistrat:          { label_fr: 'Magistrat',         label_ar: 'قاضي',          color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',       icon: <Gavel size={11} /> },
-  etudiant:           { label_fr: 'Étudiant',          label_ar: 'طالب',          color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', icon: <GraduationCap size={11} /> },
-  juriste_entreprise: { label_fr: 'Juriste Entreprise',label_ar: 'مستشار قانوني', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',   icon: <Building2 size={11} /> },
-  admin:              { label_fr: 'Administrateur',    label_ar: 'مدير',          color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',    icon: <Shield size={11} /> },
+  avocat:             { label_fr: 'Avocat',           label_ar: 'Ù…Ø­Ø§Ù…ÙŠ',         color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',    icon: <Scale size={11} /> },
+  notaire:            { label_fr: 'Notaire',           label_ar: 'Ù…ÙˆØ«Ù‚',          color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300', icon: <BookOpen size={11} /> },
+  huissier:           { label_fr: 'Huissier',          label_ar: 'Ù…Ø­Ø¶Ø±',          color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', icon: <Briefcase size={11} /> },
+  magistrat:          { label_fr: 'Magistrat',         label_ar: 'Ù‚Ø§Ø¶ÙŠ',          color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',       icon: <Gavel size={11} /> },
+  etudiant:           { label_fr: 'Ã‰tudiant',          label_ar: 'Ø·Ø§Ù„Ø¨',          color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', icon: <GraduationCap size={11} /> },
+  juriste_entreprise: { label_fr: 'Juriste Entreprise',label_ar: 'Ù…Ø³ØªØ´Ø§Ø± Ù‚Ø§Ù†ÙˆÙ†ÙŠ', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',   icon: <Building2 size={11} /> },
+  admin:              { label_fr: 'Administrateur',    label_ar: 'Ù…Ø¯ÙŠØ±',          color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',    icon: <Shield size={11} /> },
 };
 
 const PLAN_CONFIG: Record<string, { label: string; color: string }> = {
@@ -126,7 +126,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const handleForcePassword = async () => {
     if (!selectedUser) return;
     if (newPassword.length < 8) {
-      showToast('Le mot de passe doit contenir au moins 8 caractères', 'error');
+      showToast('Le mot de passe doit contenir au moins 8 caractÃ¨res', 'error');
       return;
     }
     setForcePasswordLoading(true);
@@ -138,18 +138,18 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       });
       if (error) throw error;
       if ((data as any)?.success === false) throw new Error((data as any).message);
-      showToast(`Mot de passe mis à jour pour ${selectedUser.nom}`);
+      showToast(`Mot de passe mis Ã  jour pour ${selectedUser.nom}`);
       setShowForcePassword(false);
       setNewPassword('');
     } catch (e: any) {
-      showToast(e.message || 'Erreur lors de la mise à jour', 'error');
+      showToast(e.message || 'Erreur lors de la mise Ã  jour', 'error');
     } finally {
       setForcePasswordLoading(false);
     }
   };
 
   const handleResetPassword = async (email: string, nom: string) => {
-    if (!confirm(`Envoyer un email de réinitialisation du mot de passe à ${email} ?`)) return;
+    if (!confirm(`Envoyer un email de rÃ©initialisation du mot de passe Ã  ${email} ?`)) return;
     setResetLoading(true);
     try {
       const { supabase } = await import('../../src/lib/supabase');
@@ -157,7 +157,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      showToast(`Email de réinitialisation envoyé à ${email}`);
+      showToast(`Email de rÃ©initialisation envoyÃ© Ã  ${email}`);
     } catch (e: any) {
       showToast(e.message || 'Erreur lors de l\'envoi', 'error');
     } finally {
@@ -183,11 +183,11 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       });
       if (error) throw error;
       if ((data as any)?.success === false) throw new Error((data as any).message);
-      showToast('Profil mis à jour avec succès');
+      showToast('Profil mis Ã  jour avec succÃ¨s');
       closeModal();
       loadRealData();
     } catch (e: any) {
-      showToast(e.message || 'Erreur lors de la mise à jour', 'error');
+      showToast(e.message || 'Erreur lors de la mise Ã  jour', 'error');
     } finally { setActionLoading(false); }
   };
 
@@ -198,10 +198,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       const { supabase } = await import('../../src/lib/supabase');
       const { data, error } = await supabase.rpc('admin_delete_user', {
         p_user_id: selectedUser.id,
-        p_reason:  deleteReason || 'Supprimé par administrateur',
+        p_reason:  deleteReason || 'SupprimÃ© par administrateur',
       });
       if (error) throw error;
-      showToast('Compte bloqué et désactivé');
+      showToast('Compte bloquÃ© et dÃ©sactivÃ©');
       closeModal();
       loadRealData();
     } catch (e: any) {
@@ -220,21 +220,21 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       if (action === 'reactivate') rpc = 'admin_reactivate_user';
       const { error } = await supabase.rpc(rpc, { p_user_id: u.id });
       if (error) throw error;
-      showToast(`Action effectuée sur ${u.nom}`);
+      showToast(`Action effectuÃ©e sur ${u.nom}`);
       loadRealData();
     } catch (e: any) {
       showToast(e.message || 'Erreur', 'error');
     } finally { setActionLoading(false); }
   };
 
-  // Comptage par rôle pour les badges du filtre
+  // Comptage par rÃ´le pour les badges du filtre
   const roleCount = utilisateurs.reduce<Record<string, number>>((acc, u) => {
     const r = u.profession || u.role || 'avocat';
     acc[r] = (acc[r] || 0) + 1;
     return acc;
   }, {});
 
-  // Utilisateurs filtrés
+  // Utilisateurs filtrÃ©s
   const utilisateursFiltres = utilisateurs.filter(u => {
     const role = u.profession || u.role || 'avocat';
     const matchRole   = filterRole === 'all' || role === filterRole;
@@ -247,10 +247,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   });
 
   const metriques: MetriqueSysteme[] = [
-    { nom: isAr ? 'Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙˆÙ† Ø§Ù„Ù†Ø´Ø·ÙˆÙ†' : 'Utilisateurs Actifs', valeur: statistiques.utilisateursActifs, tendance: 'hausse', statut: 'bon' },
-    { nom: isAr ? 'Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø°ÙƒØ§Ø¡ Ø§Ù„Ø§ØµØ·Ù†Ø§Ø¹ÙŠ/ÙŠÙˆÙ…' : 'Requetes IA/jour', valeur: statistiques.requetesJour, tendance: 'hausse', statut: 'bon' },
-    { nom: isAr ? 'ÙˆÙ‚Øª Ø§Ù„ØªØ´ØºÙŠÙ„' : 'Uptime Systeme', valeur: statistiques.uptimeSysteme, unite: '%', tendance: 'stable', statut: 'bon' },
-    { nom: isAr ? 'Ø§Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' : 'Total Utilisateurs', valeur: statistiques.utilisateursTotal, tendance: 'hausse', statut: 'bon' },
+    { nom: isAr ? 'Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦Ã™Ë†Ã™â€  Ã˜Â§Ã™â€žÃ™â€ Ã˜Â´Ã˜Â·Ã™Ë†Ã™â€ ' : 'Utilisateurs Actifs', valeur: statistiques.utilisateursActifs, tendance: 'hausse', statut: 'bon' },
+    { nom: isAr ? 'Ã˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â°Ã™Æ’Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜Â§Ã˜ÂµÃ˜Â·Ã™â€ Ã˜Â§Ã˜Â¹Ã™Å /Ã™Å Ã™Ë†Ã™â€¦' : 'Requetes IA/jour', valeur: statistiques.requetesJour, tendance: 'hausse', statut: 'bon' },
+    { nom: isAr ? 'Ã™Ë†Ã™â€šÃ˜Âª Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â´Ã˜ÂºÃ™Å Ã™â€ž' : 'Uptime Systeme', valeur: statistiques.uptimeSysteme, unite: '%', tendance: 'stable', statut: 'bon' },
+    { nom: isAr ? 'Ã˜Â§Ã˜Â¬Ã™â€¦Ã˜Â§Ã™â€žÃ™Å  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦Ã™Å Ã™â€ ' : 'Total Utilisateurs', valeur: statistiques.utilisateursTotal, tendance: 'hausse', statut: 'bon' },
   ];
 
   useEffect(() => { loadRealData(); }, []);
@@ -326,7 +326,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
 
   return (
     <>
-      {/* ── MAIN SCROLLABLE CONTENT ── */}
+      {/* â”€â”€ MAIN SCROLLABLE CONTENT â”€â”€ */}
       <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto space-y-8">
 
@@ -335,20 +335,20 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
               <Settings className="text-red-600" size={32} />
-              {isAr ? 'Ù„ÙˆØ­Ø© ØªØ­ÙƒÙ… Ø§Ù„Ù…Ø¯ÙŠØ±' : 'Administration Systeme'}
+              {isAr ? 'Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â© Ã˜ÂªÃ˜Â­Ã™Æ’Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¯Ã™Å Ã˜Â±' : 'Administration Systeme'}
             </h1>
             <p className="text-slate-500 mt-1">
-              {isAr ? `Ù…Ø±Ø­Ø¨Ø§ ${user.firstName}` : `Bienvenue ${user.firstName} - Gestion complete de la plateforme`}
+              {isAr ? `Ã™â€¦Ã˜Â±Ã˜Â­Ã˜Â¨Ã˜Â§ ${user.firstName}` : `Bienvenue ${user.firstName} - Gestion complete de la plateforme`}
             </p>
           </div>
           <div className="flex gap-3">
             <button className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium hover:border-red-600 transition-colors">
               <Download size={16} className="inline mr-2" />
-              {isAr ? 'ØªØµØ¯ÙŠØ± Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª' : 'Export Donnees'}
+              {isAr ? 'Ã˜ÂªÃ˜ÂµÃ˜Â¯Ã™Å Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â¨Ã™Å Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª' : 'Export Donnees'}
             </button>
             <button className="px-6 py-2 bg-red-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
               <Plus size={18} />
-              {isAr ? 'Ù…Ø³ØªØ®Ø¯Ù… Ø¬Ø¯ÙŠØ¯' : 'Nouvel Utilisateur'}
+              {isAr ? 'Ã™â€¦Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â¯Ã™â€¦ Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯' : 'Nouvel Utilisateur'}
             </button>
           </div>
         </div>
@@ -358,23 +358,23 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setActiveTab('overview')} className={tabClass('overview')}>
               <BarChart3 size={16} className="inline mr-2" />
-              {isAr ? 'Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ø©' : "Vue d'ensemble"}
+              {isAr ? 'Ã™â€ Ã˜Â¸Ã˜Â±Ã˜Â© Ã˜Â¹Ã˜Â§Ã™â€¦Ã˜Â©' : "Vue d'ensemble"}
             </button>
             <button onClick={() => setActiveTab('organizations')} className={tabClass('organizations')}>
               <Building size={16} className="inline mr-2" />
-              {isAr ? 'Ø§Ù„Ù…Ù†Ø¸Ù…Ø§Øª' : 'Organisations'}
+              {isAr ? 'Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â¸Ã™â€¦Ã˜Â§Ã˜Âª' : 'Organisations'}
             </button>
             <button onClick={() => setActiveTab('subscriptions')} className={tabClass('subscriptions')}>
               <CreditCard size={16} className="inline mr-2" />
-              {isAr ? 'Ø§Ù„Ø§Ø´ØªØ±Ø§ÙƒØ§Øª' : 'Abonnements'}
+              {isAr ? 'Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â´Ã˜ÂªÃ˜Â±Ã˜Â§Ã™Æ’Ã˜Â§Ã˜Âª' : 'Abonnements'}
             </button>
             <button onClick={() => setActiveTab('payments')} className={tabClass('payments')}>
               <CreditCard size={16} className="inline mr-2" />
-              {isAr ? 'Ø§Ù„Ù…Ø¯ÙÙˆØ¹Ø§Øª' : 'Paiements'}
+              {isAr ? 'Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¯Ã™ÂÃ™Ë†Ã˜Â¹Ã˜Â§Ã˜Âª' : 'Paiements'}
             </button>
             <button onClick={() => setActiveTab('jurisprudence')} className={tabClass('jurisprudence')}>
               <Gavel size={16} className="inline mr-2" />
-              {isAr ? 'Ø§Ù„Ø§Ø¬ØªÙ‡Ø§Ø¯ Ø§Ù„Ù‚Ø¶Ø§Ø¦ÙŠ' : 'Jurisprudence'}
+              {isAr ? 'Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â¬Ã˜ÂªÃ™â€¡Ã˜Â§Ã˜Â¯ Ã˜Â§Ã™â€žÃ™â€šÃ˜Â¶Ã˜Â§Ã˜Â¦Ã™Å ' : 'Jurisprudence'}
             </button>
           </div>
         </div>
@@ -389,15 +389,15 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={20} /></div>
                   <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.utilisateursTotal}</span>
                 </div>
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'إجمالي المستخدمين' : 'Utilisateurs Total'}</h3>
-                <p className="text-xs text-slate-500 mt-1">{statistiques.utilisateursActifs} {isAr ? 'نشط' : 'actifs'}</p>
+                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' : 'Utilisateurs Total'}</h3>
+                <p className="text-xs text-slate-500 mt-1">{statistiques.utilisateursActifs} {isAr ? 'Ù†Ø´Ø·' : 'actifs'}</p>
               </div>
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-xl"><Activity size={20} /></div>
                   <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.requetesJour}</span>
                 </div>
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'طلبات يومية' : 'Requetes/Jour'}</h3>
+                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'Ø·Ù„Ø¨Ø§Øª ÙŠÙˆÙ…ÙŠØ©' : 'Requetes/Jour'}</h3>
                 <p className="text-xs text-slate-500 mt-1">+12% vs hier</p>
               </div>
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -405,16 +405,16 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                   <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Server size={20} /></div>
                   <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{statistiques.uptimeSysteme}%</span>
                 </div>
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'وقت التشغيل' : 'Uptime Systeme'}</h3>
-                <p className="text-xs text-slate-500 mt-1">{isAr ? 'ممتاز' : 'Excellent'}</p>
+                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'ÙˆÙ‚Øª Ø§Ù„ØªØ´ØºÙŠÙ„' : 'Uptime Systeme'}</h3>
+                <p className="text-xs text-slate-500 mt-1">{isAr ? 'Ù…Ù…ØªØ§Ø²' : 'Excellent'}</p>
               </div>
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><AlertTriangle size={20} /></div>
                   <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">0</span>
                 </div>
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'تنبيهات نشطة' : 'Alertes Actives'}</h3>
-                <p className="text-xs text-slate-500 mt-1">0 {isAr ? 'حرجة' : 'critiques'}</p>
+                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">{isAr ? 'ØªÙ†Ø¨ÙŠÙ‡Ø§Øª Ù†Ø´Ø·Ø©' : 'Alertes Actives'}</h3>
+                <p className="text-xs text-slate-500 mt-1">0 {isAr ? 'Ø­Ø±Ø¬Ø©' : 'critiques'}</p>
               </div>
             </div>
 
@@ -423,7 +423,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
                 <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
                   <Shield size={16} className="text-slate-400" />
-                  {isAr ? 'توزيع المستخدمين حسب الدور' : 'Répartition par rôle'}
+                  {isAr ? 'ØªÙˆØ²ÙŠØ¹ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø­Ø³Ø¨ Ø§Ù„Ø¯ÙˆØ±' : 'RÃ©partition par rÃ´le'}
                 </h3>
                 <div className="flex flex-wrap gap-3">
                   {Object.entries(ROLE_CONFIG).filter(([key]) => roleCount[key]).map(([key, cfg]) => (
@@ -456,7 +456,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-lg flex items-center gap-2">
                         <Users size={20} className="text-blue-500" />
-                        {isAr ? 'إدارة المستخدمين' : 'Gestion Utilisateurs'}
+                        {isAr ? 'Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' : 'Gestion Utilisateurs'}
                         <span className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full">
                           {utilisateursFiltres.length}/{utilisateurs.length}
                         </span>
@@ -472,7 +472,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                           type="text"
                           value={searchTerm}
                           onChange={e => setSearchTerm(e.target.value)}
-                          placeholder={isAr ? 'بحث بالاسم أو البريد...' : 'Nom, email, organisation...'}
+                          placeholder={isAr ? 'Ø¨Ø­Ø« Ø¨Ø§Ù„Ø§Ø³Ù… Ø£Ùˆ Ø§Ù„Ø¨Ø±ÙŠØ¯...' : 'Nom, email, organisation...'}
                           className="bg-transparent border-none outline-none text-sm w-full"
                         />
                       </div>
@@ -485,7 +485,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                           onChange={e => setFilterRole(e.target.value)}
                           className="bg-transparent border-none outline-none text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
                         >
-                          <option value="all">{isAr ? 'كل الأدوار' : 'Tous les rôles'}</option>
+                          <option value="all">{isAr ? 'ÙƒÙ„ Ø§Ù„Ø£Ø¯ÙˆØ§Ø±' : 'Tous les rÃ´les'}</option>
                           {Object.entries(ROLE_CONFIG).map(([key, cfg]) => (
                             <option key={key} value={key}>
                               {isAr ? cfg.label_ar : cfg.label_fr} {roleCount[key] ? `(${roleCount[key]})` : ''}
@@ -501,10 +501,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                           onChange={e => setFilterStatut(e.target.value)}
                           className="bg-transparent border-none outline-none text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
                         >
-                          <option value="all">{isAr ? 'كل الحالات' : 'Tous les statuts'}</option>
-                          <option value="actif">{isAr ? 'نشط' : 'Actif'}</option>
-                          <option value="inactif">{isAr ? 'غير نشط' : 'Inactif'}</option>
-                          <option value="suspendu">{isAr ? 'موقوف' : 'Suspendu'}</option>
+                          <option value="all">{isAr ? 'ÙƒÙ„ Ø§Ù„Ø­Ø§Ù„Ø§Øª' : 'Tous les statuts'}</option>
+                          <option value="actif">{isAr ? 'Ù†Ø´Ø·' : 'Actif'}</option>
+                          <option value="inactif">{isAr ? 'ØºÙŠØ± Ù†Ø´Ø·' : 'Inactif'}</option>
+                          <option value="suspendu">{isAr ? 'Ù…ÙˆÙ‚ÙˆÙ' : 'Suspendu'}</option>
                         </select>
                       </div>
                     </div>
@@ -519,7 +519,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                             : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
-                        {isAr ? 'الكل' : 'Tous'} ({utilisateurs.length})
+                        {isAr ? 'Ø§Ù„ÙƒÙ„' : 'Tous'} ({utilisateurs.length})
                       </button>
                       {Object.entries(ROLE_CONFIG).filter(([key]) => roleCount[key]).map(([key, cfg]) => (
                         <button
@@ -541,18 +541,18 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                     {loading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto" />
-                        <p className="mt-3 text-slate-400 text-sm">{isAr ? 'جاري التحميل...' : 'Chargement...'}</p>
+                        <p className="mt-3 text-slate-400 text-sm">{isAr ? 'Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù…ÙŠÙ„...' : 'Chargement...'}</p>
                       </div>
                     ) : utilisateursFiltres.length === 0 ? (
                       <div className="text-center py-10 text-slate-400">
                         <Users size={40} className="mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">{isAr ? 'لا يوجد مستخدمون' : 'Aucun utilisateur trouvé'}</p>
+                        <p className="text-sm">{isAr ? 'Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ù…Ø³ØªØ®Ø¯Ù…ÙˆÙ†' : 'Aucun utilisateur trouvÃ©'}</p>
                         {(filterRole !== 'all' || filterStatut !== 'all' || searchTerm) && (
                           <button
                             onClick={() => { setFilterRole('all'); setFilterStatut('all'); setSearchTerm(''); }}
                             className="mt-2 text-xs text-blue-500 hover:underline"
                           >
-                            {isAr ? 'إعادة تعيين الفلاتر' : 'Réinitialiser les filtres'}
+                            {isAr ? 'Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† Ø§Ù„ÙÙ„Ø§ØªØ±' : 'RÃ©initialiser les filtres'}
                           </button>
                         )}
                       </div>
@@ -579,9 +579,9 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                               </span>
                               {/* Status badge */}
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatutColor(u.statut)}`}>
-                                {u.statut === 'actif' ? (isAr ? 'نشط' : 'ACTIF') :
-                                 u.statut === 'suspendu' ? (isAr ? 'موقوف' : 'SUSPENDU') :
-                                 (isAr ? 'غير نشط' : 'INACTIF')}
+                                {u.statut === 'actif' ? (isAr ? 'Ù†Ø´Ø·' : 'ACTIF') :
+                                 u.statut === 'suspendu' ? (isAr ? 'Ù…ÙˆÙ‚ÙˆÙ' : 'SUSPENDU') :
+                                 (isAr ? 'ØºÙŠØ± Ù†Ø´Ø·' : 'INACTIF')}
                               </span>
                               {/* Plan badge */}
                               <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${planCfg.color}`}>
@@ -592,7 +592,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                             <div className="flex items-center gap-2 mt-0.5">
                               <p className="text-xs text-slate-500 truncate">{u.email}</p>
                               {u.organisation !== '-' && (
-                                <span className="text-slate-300 dark:text-slate-600">·</span>
+                                <span className="text-slate-300 dark:text-slate-600">Â·</span>
                               )}
                               {u.organisation !== '-' && (
                                 <p className="text-xs text-slate-400 truncate">{u.organisation}</p>
@@ -604,7 +604,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                           <div className="hidden md:flex flex-col items-end shrink-0">
                             <span className="text-[10px] text-slate-400">
                               {u.dernierAcces.getTime() === 0
-                                ? (isAr ? 'لم يتصل' : 'Jamais')
+                                ? (isAr ? 'Ù„Ù… ÙŠØªØµÙ„' : 'Jamais')
                                 : u.dernierAcces.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR')}
                             </span>
                           </div>
@@ -645,7 +645,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
                   <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                     <BarChart3 size={18} className="text-green-500" />
-                    {isAr ? 'Ù…Ù‚Ø§ÙŠÙŠØ³ Ø§Ù„Ù†Ø¸Ø§Ù…' : 'Metriques Systeme'}
+                    {isAr ? 'Ã™â€¦Ã™â€šÃ˜Â§Ã™Å Ã™Å Ã˜Â³ Ã˜Â§Ã™â€žÃ™â€ Ã˜Â¸Ã˜Â§Ã™â€¦' : 'Metriques Systeme'}
                   </h3>
                   <div className="space-y-3">
                     {metriques.map((m, i) => (
@@ -666,13 +666,13 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl border border-green-200 dark:border-green-800 p-6">
                   <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-green-800 dark:text-green-200">
                     <CheckCircle size={18} />
-                    {isAr ? 'Ø­Ø§Ù„Ø© Ø§Ù„Ù†Ø¸Ø§Ù…' : 'Etat du Systeme'}
+                    {isAr ? 'Ã˜Â­Ã˜Â§Ã™â€žÃ˜Â© Ã˜Â§Ã™â€žÃ™â€ Ã˜Â¸Ã˜Â§Ã™â€¦' : 'Etat du Systeme'}
                   </h3>
                   {[
-                    { icon: <Server size={14} />, label: isAr ? 'Ø§Ù„Ø®ÙˆØ§Ø¯Ù…' : 'Serveurs' },
-                    { icon: <Database size={14} />, label: isAr ? 'Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª' : 'Base de donnees' },
-                    { icon: <Wifi size={14} />, label: isAr ? 'Ø§Ù„Ø´Ø¨ÙƒØ©' : 'Reseau' },
-                    { icon: <Lock size={14} />, label: isAr ? 'Ø§Ù„Ø§Ù…Ø§Ù†' : 'Securite' },
+                    { icon: <Server size={14} />, label: isAr ? 'Ã˜Â§Ã™â€žÃ˜Â®Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¦' : 'Serveurs' },
+                    { icon: <Database size={14} />, label: isAr ? 'Ã™â€šÃ˜Â§Ã˜Â¹Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â¨Ã™Å Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª' : 'Base de donnees' },
+                    { icon: <Wifi size={14} />, label: isAr ? 'Ã˜Â§Ã™â€žÃ˜Â´Ã˜Â¨Ã™Æ’Ã˜Â©' : 'Reseau' },
+                    { icon: <Lock size={14} />, label: isAr ? 'Ã˜Â§Ã™â€žÃ˜Â§Ã™â€¦Ã˜Â§Ã™â€ ' : 'Securite' },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2 text-green-600">{item.icon}<span className="text-sm text-green-700 dark:text-green-300">{item.label}</span></div>
@@ -704,7 +704,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       </div>
     </div>
 
-      {/* ── TOAST ── */}
+      {/* â”€â”€ TOAST â”€â”€ */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-xl text-white font-medium flex items-center gap-2 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
           {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
@@ -712,7 +712,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
         </div>
       )}
 
-      {/* ── MODAL VIEW ── */}
+      {/* â”€â”€ MODAL VIEW â”€â”€ */}
       {modalMode === 'view' && selectedUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700">
@@ -724,15 +724,15 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               {[
                 { label: 'Nom complet', value: selectedUser.nom },
                 { label: 'Email', value: selectedUser.email },
-                { label: 'Rôle', value: ROLE_CONFIG[selectedUser.profession]?.label_fr || selectedUser.profession },
+                { label: 'RÃ´le', value: ROLE_CONFIG[selectedUser.profession]?.label_fr || selectedUser.profession },
                 { label: 'Organisation', value: selectedUser.organisation },
                 { label: 'Plan', value: PLAN_CONFIG[selectedUser.plan]?.label || selectedUser.plan },
-                { label: 'Crédits', value: String(selectedUser.credits) },
+                { label: 'CrÃ©dits', value: String(selectedUser.credits) },
                 { label: 'Statut', value: selectedUser.statut },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
                   <span className="text-sm text-slate-500">{label}</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{value || '—'}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{value || 'â€”'}</span>
                 </div>
               ))}
             </div>
@@ -744,10 +744,10 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                 onClick={() => handleResetPassword(selectedUser.email, selectedUser.nom)}
                 disabled={resetLoading}
                 className="px-4 py-2.5 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                title="Envoyer email de réinitialisation mot de passe"
+                title="Envoyer email de rÃ©initialisation mot de passe"
               >
                 {resetLoading ? <RefreshCw size={15} className="animate-spin" /> : <Mail size={15} />}
-                Réinit. MDP
+                RÃ©init. MDP
               </button>
               <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 Fermer
@@ -757,184 +757,192 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
         </div>
       )}
 
-      {/* ── MODAL EDIT ── */}
+
+      {/* ── MODAL EDIT — système d'onglets, pas de scroll ── */}
       {modalMode === 'edit' && selectedUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 flex flex-col" style={{ maxHeight: 'min(90vh, 660px)' }}>
 
-            {/* Header — sticky top */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
-              <h2 className="font-bold text-lg flex items-center gap-2">
-                <Edit size={18} className="text-amber-500" />
-                Modifier — {selectedUser.nom}
-              </h2>
-              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+            {/* Header avec avatar */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${(ROLE_CONFIG[selectedUser.profession] || ROLE_CONFIG['avocat']).color}`}>
+                  {selectedUser.nom.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-slate-900 dark:text-slate-100">{selectedUser.nom}</p>
+                  <p className="text-xs text-slate-500">{selectedUser.email}</p>
+                </div>
+              </div>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
                 <X size={18} />
               </button>
             </div>
 
-            {/* Body — scrollable */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prénom</label>
-                  <input
-                    value={editForm.firstName}
-                    onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                  />
+            {/* Onglets */}
+            <div className="flex border-b border-slate-200 dark:border-slate-700 shrink-0 px-6">
+              <button
+                onClick={() => setShowForcePassword(false)}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors -mb-px ${
+                  !showForcePassword
+                    ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Edit size={13} className="inline mr-1.5" />
+                Modifier le profil
+              </button>
+              <button
+                onClick={() => setShowForcePassword(true)}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors -mb-px ${
+                  showForcePassword
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Lock size={13} className="inline mr-1.5" />
+                Mot de passe
+              </button>
+            </div>
+
+            {/* Corps — hauteur fixe, pas de scroll */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* ONGLET 1 — Modifier le profil */}
+              {!showForcePassword && (
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Prénom</label>
+                      <input value={editForm.firstName} onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Nom</label>
+                      <input value={editForm.lastName} onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Rôle</label>
+                      <select value={editForm.profession} onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                        {Object.entries(ROLE_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label_fr}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Statut</label>
+                      <select value={editForm.accountStatus} onChange={e => setEditForm(f => ({ ...f, accountStatus: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                        <option value="active">✅ Actif</option>
+                        <option value="trial">⏳ Essai</option>
+                        <option value="suspended">⚠️ Suspendu</option>
+                        <option value="blocked">🚫 Bloqué</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Organisation / Cabinet</label>
+                    <input value={editForm.organisation} onChange={e => setEditForm(f => ({ ...f, organisation: e.target.value }))}
+                      placeholder="Nom du cabinet..."
+                      className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Plan</label>
+                      <select value={editForm.plan} onChange={e => setEditForm(f => ({ ...f, plan: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400">
+                        <option value="free">Gratuit</option>
+                        <option value="pro">Pro</option>
+                        <option value="cabinet">Cabinet</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Crédits</label>
+                      <input type="number" value={editForm.credits} onChange={e => setEditForm(f => ({ ...f, credits: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer p-3 bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800">
+                    <input type="checkbox" checked={editForm.isAdmin} onChange={e => setEditForm(f => ({ ...f, isAdmin: e.target.checked }))} className="w-4 h-4 accent-rose-600" />
+                    <div>
+                      <span className="text-sm font-bold text-rose-700 dark:text-rose-400">Administrateur plateforme</span>
+                      <p className="text-xs text-rose-500">Accès complet à toutes les fonctions admin</p>
+                    </div>
+                  </label>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom</label>
-                  <input
-                    value={editForm.lastName}
-                    onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                </div>
-              </div>
+              )}
 
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rôle / Profession</label>
-                <select
-                  value={editForm.profession}
-                  onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                >
-                  {Object.entries(ROLE_CONFIG).map(([key, cfg]) => (
-                    <option key={key} value={key}>{cfg.label_fr}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Organisation / Cabinet</label>
-                <input
-                  value={editForm.organisation}
-                  onChange={e => setEditForm(f => ({ ...f, organisation: e.target.value }))}
-                  placeholder="Nom du cabinet..."
-                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan</label>
-                  <select
-                    value={editForm.plan}
-                    onChange={e => setEditForm(f => ({ ...f, plan: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                  >
-                    <option value="free">Gratuit</option>
-                    <option value="pro">Pro</option>
-                    <option value="cabinet">Cabinet</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crédits</label>
-                  <input
-                    type="number"
-                    value={editForm.credits}
-                    onChange={e => setEditForm(f => ({ ...f, credits: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Statut du compte</label>
-                <select
-                  value={editForm.accountStatus}
-                  onChange={e => setEditForm(f => ({ ...f, accountStatus: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                >
-                  <option value="active">Actif</option>
-                  <option value="trial">Essai</option>
-                  <option value="suspended">Suspendu</option>
-                  <option value="blocked">Bloqué</option>
-                </select>
-              </div>
-
-              <label className="flex items-center gap-3 cursor-pointer p-3 bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800">
-                <input
-                  type="checkbox"
-                  checked={editForm.isAdmin}
-                  onChange={e => setEditForm(f => ({ ...f, isAdmin: e.target.checked }))}
-                  className="w-4 h-4 accent-rose-600"
-                />
-                <div>
-                  <span className="text-sm font-bold text-rose-700 dark:text-rose-400">Administrateur plateforme</span>
-                  <p className="text-xs text-rose-500">Accès complet à toutes les fonctions admin</p>
-                </div>
-              </label>
-
-              {/* Force password section — inside scrollable body, visible when toggled */}
+              {/* ONGLET 2 — Mot de passe */}
               {showForcePassword && (
-                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 space-y-3">
-                  <p className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
-                    🔐 Forcer un nouveau mot de passe
-                  </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400">
-                    Le mot de passe sera changé immédiatement. Les sessions actives seront invalidées.
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)}
-                      placeholder="Nouveau mot de passe (min. 8 caractères)"
-                      className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-xl bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-purple-400"
-                    />
-                    <button
-                      onClick={handleForcePassword}
-                      disabled={forcePasswordLoading || newPassword.length < 8}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {forcePasswordLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-                      Appliquer
+                <div className="p-6 space-y-5">
+                  {/* Option A — Email */}
+                  <div className="p-5 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-xl shrink-0"><Mail size={18} className="text-blue-600 dark:text-blue-400" /></div>
+                      <div>
+                        <h3 className="font-bold text-sm text-blue-800 dark:text-blue-200">Envoyer un lien de réinitialisation</h3>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">L'utilisateur reçoit un email avec un lien sécurisé pour choisir son nouveau mot de passe.</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleResetPassword(selectedUser.email, selectedUser.nom)} disabled={resetLoading}
+                      className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                      {resetLoading ? <RefreshCw size={15} className="animate-spin" /> : <Mail size={15} />}
+                      Envoyer l'email à {selectedUser.email}
                     </button>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                    <span className="text-xs text-slate-400 font-medium">OU</span>
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                  </div>
+
+                  {/* Option B — Force */}
+                  <div className="p-5 bg-purple-50 dark:bg-purple-900/20 rounded-2xl border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-xl shrink-0"><Lock size={18} className="text-purple-600 dark:text-purple-400" /></div>
+                      <div>
+                        <h3 className="font-bold text-sm text-purple-800 dark:text-purple-200">Forcer un nouveau mot de passe</h3>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">Définissez directement le mot de passe. Les sessions actives seront invalidées.</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                        placeholder="Nouveau mot de passe (min. 8 caractères)"
+                        className="w-full px-4 py-2.5 border border-purple-300 dark:border-purple-700 rounded-xl bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                      {newPassword.length > 0 && newPassword.length < 8 && <p className="text-xs text-red-500">⚠️ Minimum 8 caractères ({newPassword.length}/8)</p>}
+                      {newPassword.length >= 8 && <p className="text-xs text-green-600">✅ Mot de passe valide</p>}
+                      <button onClick={handleForcePassword} disabled={forcePasswordLoading || newPassword.length < 8}
+                        className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {forcePasswordLoading ? <RefreshCw size={15} className="animate-spin" /> : <Lock size={15} />}
+                        Appliquer le nouveau mot de passe
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Footer — sticky bottom */}
-            <div className="p-6 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
-              <button
-                onClick={handleSaveEdit}
-                disabled={actionLoading}
-                className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {actionLoading ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}
-                Enregistrer
-              </button>
-              <button
-                onClick={() => handleResetPassword(selectedUser.email, selectedUser.nom)}
-                disabled={resetLoading}
-                className="px-4 py-2.5 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                title="Envoyer un email de réinitialisation du mot de passe"
-              >
-                {resetLoading ? <RefreshCw size={15} className="animate-spin" /> : <Mail size={15} />}
-                MDP
-              </button>
-              <button
-                onClick={() => setShowForcePassword(v => !v)}
-                className={`px-4 py-2.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${
-                  showForcePassword
-                    ? 'bg-purple-700 text-white hover:bg-purple-800'
-                    : 'bg-purple-600 text-white hover:bg-purple-700'
-                }`}
-                title="Forcer un nouveau mot de passe"
-              >
-                <Lock size={15} />
-                Forcer MDP
-              </button>
-              <button
-                onClick={closeModal}
-                className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                Annuler
-              </button>
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
+              {!showForcePassword ? (
+                <>
+                  <button onClick={handleSaveEdit} disabled={actionLoading}
+                    className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                    {actionLoading ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}
+                    Enregistrer les modifications
+                  </button>
+                  <button onClick={closeModal} className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Annuler
+                  </button>
+                </>
+              ) : (
+                <button onClick={closeModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  Fermer
+                </button>
+              )}
             </div>
           </div>
         </div>
