@@ -491,7 +491,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
       </div>
 
       {toast && (
-        <div className={'fixed bottom-6 right-6 z-[9999] px-5 py-3 rounded-xl shadow-xl text-white font-medium flex items-center gap-2 ' + (toast.type === 'success' ? 'bg-green-600' : 'bg-red-600')}>
+        <div className={'fixed bottom-6 right-6 z-[99999] px-5 py-3 rounded-xl shadow-xl text-white font-medium flex items-center gap-2 ' + (toast.type === 'success' ? 'bg-green-600' : 'bg-red-600')}>
           {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
           {toast.msg}
         </div>
@@ -562,6 +562,12 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
             </div>
 
             <div className="flex-1 overflow-y-auto">
+              {toast && (
+                <div className={'mx-6 mt-4 px-4 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2 ' + (toast.type === 'success' ? 'bg-green-600' : 'bg-red-600')}>
+                  {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
+                  {toast.msg}
+                </div>
+              )}
               {!showForcePassword && (
                 <div className="p-6 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -666,8 +672,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
                         className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                         {forcePasswordLoading ? <RefreshCw size={15} className="animate-spin" /> : <Lock size={15} />}
                         Appliquer le nouveau mot de passe
-                      </button>
-                    </div>
+                      </button>                    </div>
                   </div>
                 </div>
               )}
