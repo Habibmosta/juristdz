@@ -35,7 +35,7 @@ Environment: Production, Preview, Development (cocher les 3)
 #### Variable 2: VITE_SUPABASE_ANON_KEY
 ```
 Name: VITE_SUPABASE_ANON_KEY
-Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdGVsam5tY2RlbGJyYXR1ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTkzMDQsImV4cCI6MjA4NTE5NTMwNH0.jbWM24_1ernpGVHS7i32Jx0W9K7yx8WdCLqq42tzwOo
+Value: your-supabase-anon-key
 Environment: Production, Preview, Development (cocher les 3)
 ```
 
@@ -241,10 +241,10 @@ vercel env add VITE_SUPABASE_ANON_KEY production
 # Coller: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 vercel env add VITE_GROQ_API_KEY production
-# Coller: gsk_txwxctoWUM1i0rBDhztIWGdyb3FY...
+# Coller: your-groq-api-key...
 
 vercel env add VITE_GEMINI_API_KEY production
-# Coller: AIzaSyAvFa1kO9MkT4xZ31_67Cgxv8uJ...
+# Coller: your-google-api-key...
 
 vercel env add VITE_OPENAI_API_KEY production
 # Coller: PLACEHOLDER_API_KEY

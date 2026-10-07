@@ -45,7 +45,7 @@
 │                                                 │
 │ Password:                                       │
 │ ┌─────────────────────────────────────────────┐ │
-│ │ xsmtpsib-xxxxxxxxxxxxxxxxxxxxxxxxxx         │ │
+│ │ your-brevo-smtp-key         │ │
 │ └─────────────────────────────────────────────┘ │
 │ ⚠️ CLÉ SMTP (pas votre mot de passe Brevo)     │
 │                                                 │

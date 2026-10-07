@@ -166,7 +166,7 @@ Variable 1:
 
 Variable 2:
   Name: VITE_SUPABASE_ANON_KEY
-  Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdGVsam5tY2RlbGJyYXR1ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTkzMDQsImV4cCI6MjA4NTE5NTMwNH0.jbWM24_1ernpGVHS7i32Jx0W9K7yx8WdCLqq42tzwOo
+  Value: your-supabase-anon-key
   Environments: ☑ Production ☑ Preview ☑ Development
   → Save
 ```

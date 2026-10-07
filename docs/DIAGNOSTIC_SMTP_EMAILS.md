@@ -210,7 +210,7 @@ Port number: 587
 Minimum interval per user: 60 (secondes)
 
 Username: votre-email@example.com
-Password: xsmtpsib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Password: your-brevo-smtp-key
 
 Secure connection: TLS
 ```

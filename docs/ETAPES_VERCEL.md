@@ -44,13 +44,13 @@ VITE_SUPABASE_URL
 https://fcteljnmcdelbratudnc.supabase.co
 
 VITE_SUPABASE_ANON_KEY
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdGVsam5tY2RlbGJyYXR1ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTkzMDQsImV4cCI6MjA4NTE5NTMwNH0.jbWM24_1ernpGVHS7i32Jx0W9K7yx8WdCLqq42tzwOo
+your-supabase-anon-key
 
 VITE_GEMINI_API_KEY
-AIzaSyDo5SPf1lh_7SU812VwweSHyoqCD1ViOGk
+your-google-api-key
 
 VITE_GROQ_API_KEY
-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
+your-groq-api-key
 ```
 
 **Important:** Pour chaque variable :

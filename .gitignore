@@ -1,5 +1,6 @@
 # Logs
 logs
+server/logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,7 +8,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# Dependencies (jamais versionnees)
+node_modules/
+**/node_modules/
+
+# Dossiers runtime
+server/storage/
+server/backups/
+storage/
+backups/
+
 dist
 dist-ssr
 *.local
