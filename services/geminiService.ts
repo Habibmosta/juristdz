@@ -8,6 +8,23 @@ export interface ChatResponse {
   citations?: { uri: string; title: string }[];
 }
 
+export const GEMINI_MODELS = [
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3.8-flash'
+];
+
+export const GEMINI_MODEL = GEMINI_MODELS[0];
+
+export const GROQ_MODELS = [
+  'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
+  'llama-3.3-70b-versatile'
+];
+
+export const GROQ_MODEL = GROQ_MODELS[0];
+
 export const sendMessageToGemini = async (
   message: string,
   history: { role: string; parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] }[],
@@ -17,38 +34,26 @@ export const sendMessageToGemini = async (
 ): Promise<ChatResponse> => {
   try {
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
     const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-    
-    
-    // Priorité : Groq (gratuit) > OpenAI > Gemini
-    if (groqApiKey && groqApiKey !== 'PLACEHOLDER_API_KEY') {
-      try {
-        return await sendMessageToGroq(message, history, mode, language);
-      } catch (groqError) {
-        console.error('🔥 DEBUG: Groq API failed, trying fallback:', groqError.message);
-        // Continue to fallback options
-      }
-    }
-    
-    if (openaiApiKey && openaiApiKey !== 'PLACEHOLDER_API_KEY') {
-      try {
-        return await sendMessageToOpenAI(message, history, mode, language);
-      } catch (openaiError) {
-        console.error('🔥 DEBUG: OpenAI API failed, trying fallback:', openaiError.message);
-        // Continue to fallback options
-      }
-    }
-    
+
+    // Priorité : Gemini (meilleur pour le juridique) > Groq (rapide)
     if (geminiApiKey && geminiApiKey !== 'PLACEHOLDER_API_KEY') {
       try {
         return await sendMessageToGeminiAPI(message, history, mode, language, imageAttachment);
       } catch (geminiError) {
-        console.error('🔥 DEBUG: Gemini API failed:', geminiError.message);
-        // Continue to demo mode
+        console.error('Gemini API failed, trying Groq fallback:', geminiError.message);
       }
     }
-    
+
+    if (groqApiKey && groqApiKey !== 'PLACEHOLDER_API_KEY') {
+      try {
+        return await sendMessageToGroq(message, history, mode, language);
+      } catch (groqError) {
+        console.error('Groq API failed:', groqError.message);
+      }
+    }
+
+    // Aucune clé configurée ou toutes les API ont échoué → mode démo
     return getDemoResponse(message, language);
     
   } catch (error) {
@@ -57,28 +62,22 @@ export const sendMessageToGemini = async (
     console.error("🔥 DEBUG: Error message:", error instanceof Error ? error.message : 'Unknown error');
     console.error("🔥 DEBUG: Error stack:", error instanceof Error ? error.stack : 'No stack');
     
-    // Return a more specific error message
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    if (errorMessage.includes('rate limit')) {
-      return { text: language === 'ar' 
-        ? "تم تجاوز حد الاستخدام. يرجى المحاولة لاحقاً." 
-        : "Limite d'utilisation dépassée. Veuillez réessayer plus tard." 
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+
+    if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+      return { text: language === 'ar'
+        ? "تم تجاوز حد الاستخدام. يرجى المحاولة لاحقاً."
+        : "Limite d'utilisation dépassée. Réessayez dans quelques secondes."
       };
-    } else if (errorMessage.includes('authentication') || errorMessage.includes('API key')) {
-      return { text: language === 'ar' 
-        ? "خطأ في المصادقة. يرجى التحقق من مفاتيح API." 
-        : "Erreur d'authentification. Vérifiez les clés API." 
-      };
-    } else if (errorMessage.includes('timeout')) {
-      return { text: language === 'ar' 
-        ? "انتهت مهلة الطلب. يرجى المحاولة مرة أخرى." 
-        : "Délai d'attente dépassé. Veuillez réessayer." 
+    } else if (errorMessage.includes('Clé') || errorMessage.includes('API key') || errorMessage.includes('401')) {
+      return { text: language === 'ar'
+        ? "خطأ في المصادقة. يرجى التحقق من مفاتيح API في .env"
+        : "Clé API invalide. Vérifiez VITE_GEMINI_API_KEY ou VITE_GROQ_API_KEY dans .env"
       };
     } else {
-      return { text: language === 'ar' 
-        ? `خطأ في خدمة الذكاء الاصطناعي: ${errorMessage}` 
-        : `Erreur du service IA: ${errorMessage}` 
+      return { text: language === 'ar'
+        ? `خطأ في خدمة الذكاء الاصطناعي: ${errorMessage}`
+        : `Erreur IA: ${errorMessage}`
       };
     }
   }
@@ -92,8 +91,7 @@ const sendMessageToGroq = async (
   language: Language
 ): Promise<ChatResponse> => {
   const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-  
-  
+
   let baseInstruction = SYSTEM_INSTRUCTION_RESEARCH;
   switch (mode) {
     case AppMode.DRAFTING:
@@ -105,130 +103,103 @@ const sendMessageToGroq = async (
   }
 
   // FORCE LANGUAGE INSTRUCTION - CRITICAL FIX
-  const langInstruction = language === 'ar' 
-    ? "\n\nCRITICAL LANGUAGE INSTRUCTION: You MUST respond ONLY in Arabic. Do not mix languages. Use only Arabic legal terminology. If you don't know the Arabic term, use the Arabic equivalent or explain in Arabic. NO FRENCH OR ENGLISH words allowed in your response." 
+  const langInstruction = language === 'ar'
+    ? "\n\nCRITICAL LANGUAGE INSTRUCTION: You MUST respond ONLY in Arabic. Do not mix languages. Use only Arabic legal terminology. If you don't know the Arabic term, use the Arabic equivalent or explain in Arabic. NO FRENCH OR ENGLISH words allowed in your response."
     : "\n\nCRITICAL LANGUAGE INSTRUCTION: You MUST respond ONLY in French. Do not mix languages. Use only French legal terminology. NO ARABIC OR ENGLISH words allowed in your response.";
 
   const systemInstruction = baseInstruction + langInstruction;
 
-  
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: systemInstruction },
-          ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.parts[0]?.text || '' })),
-          { role: 'user', content: message }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
-      signal: controller.signal
-    });
+  const historyMessages = (history ?? [])
+    .map((h) => {
+      const rawParts = Array.isArray(h?.parts) ? h.parts : [];
+      const text = rawParts
+        .map((p: any) => (typeof p?.text === 'string' ? p.text : ''))
+        .filter(Boolean)
+        .join('\n');
+      return {
+        role: h?.role === 'user' ? 'user' : 'assistant',
+        content: text
+      };
+    })
+    .filter((m) => m.content.length > 0);
 
-    clearTimeout(timeoutId);
-    
+  let lastError: unknown = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔥 DEBUG Groq: API Error:', response.status, errorText);
-      
-      // Handle specific error cases
-      if (response.status === 429) {
-        throw new Error(`Groq API rate limit exceeded. Please try again later.`);
-      } else if (response.status === 401) {
-        throw new Error(`Groq API authentication failed. Check your API key.`);
-      } else if (response.status >= 500) {
-        throw new Error(`Groq API server error (${response.status}). Please try again later.`);
-      } else {
-        throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+  for (const model of GROQ_MODELS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: systemInstruction },
+            ...historyMessages,
+            { role: 'user', content: message }
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Groq API Error (${model}):`, response.status, errorText);
+
+        if (response.status === 401) {
+          throw new Error('Clé Groq invalide. Vérifiez VITE_GROQ_API_KEY.');
+        }
+        if (response.status === 429 || response.status === 404 || response.status === 400) {
+          lastError = new Error(
+            response.status === 429
+              ? 'Limite Groq dépassée. Réessayez dans quelques secondes.'
+              : `Modèle Groq ${model} indisponible (${response.status}).`
+          );
+          continue;
+        }
+        throw new Error(`Erreur Groq (${response.status})`);
       }
-    }
 
-    const data = await response.json();
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response format from Groq API');
+      const data = await response.json();
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Réponse Groq invalide - format inattendu');
+      }
+
+      // CLEAN THE RESPONSE - CRITICAL FIX
+      let responseText = data.choices[0].message.content;
+      responseText = cleanMixedLanguageContent(responseText, language);
+
+      return { text: responseText };
+
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Clé Groq')) {
+        throw error;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        lastError = new Error('Délai d\'attente Groq dépassé (30s). Réessayez.');
+        continue;
+      }
+      lastError = error;
+      continue;
     }
-    
-    // CLEAN THE RESPONSE - CRITICAL FIX
-    let responseText = data.choices[0].message.content;
-    responseText = cleanMixedLanguageContent(responseText, language);
-    
-    return { text: responseText };
-    
-  } catch (error) {
-    console.error('🔥 DEBUG Groq: Fetch error:', error);
-    
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout. Please try again.');
-    }
-    
-    throw error;
   }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Tous les modèles Groq ont échoué.');
 };
 
-// Service OpenAI
-const sendMessageToOpenAI = async (
-  message: string,
-  history: any[],
-  mode: AppMode,
-  language: Language
-): Promise<ChatResponse> => {
-  const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  
-  let baseInstruction = SYSTEM_INSTRUCTION_RESEARCH;
-  switch (mode) {
-    case AppMode.DRAFTING:
-      baseInstruction = SYSTEM_INSTRUCTION_DRAFTING;
-      break;
-    case AppMode.ANALYSIS:
-      baseInstruction = SYSTEM_INSTRUCTION_ANALYSIS;
-      break;
-  }
-
-  const langInstruction = language === 'ar' 
-    ? "\nIMPORTANT : Réponds en ARABE JURIDIQUE ALGÉRIEN." 
-    : "\nIMPORTANT : Réponds en FRANÇAIS JURIDIQUE ALGÉRIEN.";
-
-  const systemInstruction = baseInstruction + langInstruction;
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: systemInstruction },
-        ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.parts[0].text })),
-        { role: 'user', content: message }
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return { text: data.choices[0].message.content };
-};
-
-// Service Gemini original
+// Service Gemini
 const sendMessageToGeminiAPI = async (
   message: string,
   history: { role: string; parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] }[],
@@ -237,7 +208,6 @@ const sendMessageToGeminiAPI = async (
   imageAttachment?: { mimeType: string; data: string }
 ): Promise<ChatResponse> => {
   try {
-    const modelId = 'gemini-2.5-flash'; 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
@@ -312,55 +282,70 @@ Selon le droit algérien, je peux vous assister dans :
       { role: 'user', parts: currentParts }
     ];
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
-      model: modelId,
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-        tools: tools,
-        temperature: temperature,
-        thinkingConfig: { thinkingBudget: 4000 }
-      },
-    });
+    let lastError: unknown = null;
 
-    const text = response.text || (language === 'ar' ? "عذراً، لم أتمكن من إنشاء إجابة." : "Désolé, je n'ai pas pu générer de réponse.");
-    
-    const citations: { uri: string; title: string }[] = [];
-    if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
-      response.candidates[0].groundingMetadata.groundingChunks.forEach((chunk: any) => {
-        if (chunk.web?.uri && chunk.web?.title) {
-          citations.push({
-            uri: chunk.web.uri,
-            title: chunk.web.title
+    for (const modelId of GEMINI_MODELS) {
+      try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+          model: modelId,
+          contents: contents,
+          config: {
+            systemInstruction: systemInstruction,
+            tools: tools,
+            temperature: temperature,
+          },
+        });
+
+        const text = response.text || (language === 'ar' ? "عذراً، لم أتمكن من إنشاء إجابة." : "Désolé, je n'ai pas pu générer de réponse.");
+
+        if (!text || text.trim().length === 0) {
+          throw new Error(`Réponse vide du modèle ${modelId}`);
+        }
+
+        const citations: { uri: string; title: string }[] = [];
+        if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+          response.candidates[0].groundingMetadata.groundingChunks.forEach((chunk: any) => {
+            if (chunk.web?.uri && chunk.web?.title) {
+              citations.push({
+                uri: chunk.web.uri,
+                title: chunk.web.title
+              });
+            }
           });
         }
-      });
+
+        return { text, citations };
+
+      } catch (error) {
+        console.warn(`Gemini ${modelId} a échoué, essai du modèle suivant:`,
+          error instanceof Error ? error.message : error);
+        lastError = error;
+        continue;
+      }
     }
 
-    return { text, citations };
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Tous les modèles Gemini ont échoué.');
 
   } catch (error) {
-    console.error("Error calling Gemini:", error);
-    
-    // Gestion spécifique des erreurs de quota
+    console.error("Gemini API error:", error);
+
     if (error instanceof Error && error.message.includes('429')) {
-      return { text: language === 'ar' 
-        ? "تم تجاوز حد الاستخدام اليومي لـ Gemini API. يرجى المحاولة لاحقاً أو ترقية الخطة." 
-        : "Quota API Gemini dépassé. Veuillez réessayer plus tard ou mettre à niveau votre plan API." 
+      return { text: language === 'ar'
+        ? "تم تجاوز حد الاستخدام اليومي لـ Gemini. يرجى المحاولة لاحقاً."
+        : "Quota Gemini dépassé. Réessayez plus tard ou utilisez Groq en fallback."
       };
     }
-    
+
     if (error instanceof Error && error.message.includes('quota')) {
-      return { text: language === 'ar' 
-        ? "حصة API محدودة. يرجى التحقق من إعدادات الفوترة في Google AI Studio." 
-        : "Quota API limité. Vérifiez vos paramètres de facturation dans Google AI Studio." 
+      return { text: language === 'ar'
+        ? "حصة API محدودة. تحقق من Google AI Studio."
+        : "Quota Gemini limité. Vérifiez votre plan sur Google AI Studio."
       };
     }
-    
-    return { text: language === 'ar' 
-      ? "حدث خطأ في الاتصال. يرجى التأكد من أن الجلسة ما زالت نشطة." 
-      : "Erreur de connexion API. Vérifiez votre clé API dans Google AI Studio." 
-    };
+
+    throw error;
   }
 };
 
@@ -504,29 +489,13 @@ function cleanMixedLanguageContent(text: string, language: Language): string {
     cleaned = cleaned.replace(pattern, '');
   });
   
-  // If Arabic mode, remove Latin characters mixed with Arabic
-  if (language === 'ar') {
-    // Remove any Latin words mixed with Arabic
-    cleaned = cleaned.replace(/[أ-ي]+[A-Za-z]+[أ-ي]*/g, '');
-    cleaned = cleaned.replace(/[A-Za-z]+[أ-ي]+[A-Za-z]*/g, '');
-    
-    // Replace common mixed terms with pure Arabic
-    cleaned = cleaned.replace(/JuristDZ/g, '');
-    cleaned = cleaned.replace(/Cabinet/g, '');
-    cleaned = cleaned.replace(/Pro/g, '');
-    cleaned = cleaned.replace(/V2/g, '');
-  } else {
-    // If French mode, remove Arabic characters mixed with Latin
-    cleaned = cleaned.replace(/[A-Za-z]+[أ-ي]+[A-Za-z]*/g, '');
-    cleaned = cleaned.replace(/[أ-ي]+[A-Za-z]+[أ-ي]*/g, '');
-    
-    // Replace common mixed terms with pure French
-    cleaned = cleaned.replace(/محامي دي زاد/g, '');
-    cleaned = cleaned.replace(/النظام القانوني/g, '');
-  }
-  
+  // Supprimer uniquement les mots où les scripts latin et arabe sont collés
+  // (artefacts de traduction). Les mots purs ne sont jamais altérés.
+  cleaned = cleaned.replace(/[A-Za-z]+[أ-ي]+[A-Za-z]*/g, '');
+  cleaned = cleaned.replace(/[أ-ي]+[A-Za-z]+[أ-ي]*/g, '');
+
   // Clean up multiple spaces
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
-  
+
   return cleaned;
 }

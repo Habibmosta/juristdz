@@ -2,6 +2,22 @@ import { config } from '@/config/environment';
 import { logger } from '@/utils/logger';
 import { LegalContext, AIModelConfig } from '@/types/ai';
 
+// Chaînes de modèles gratuites (oct 2026) avec fallback automatique.
+// gemini-2.0-flash (éteint 01/06/2026) et llama-3.1-8b-instant (retiré 16/08/2026)
+// ne sont plus utilisés.
+export const GEMINI_MODELS = [
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3.8-flash'
+];
+
+export const GROQ_MODELS = [
+  'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
+  'llama-3.3-70b-versatile'
+];
+
 export interface AIRequest {
   prompt: string;
   context?: LegalContext;
@@ -30,8 +46,16 @@ export class AIClient {
   constructor() {
     this.geminiApiKey = config.apis.gemini;
     this.groqApiKey = config.apis.groq;
+    const defaultModelSettings = {
+      temperature: 0.3,
+      maxTokens: 4000,
+      specialInstructions: [],
+      terminology: {},
+      examples: []
+    };
+
     this.defaultConfig = {
-      model: 'gemini-pro',
+      model: GEMINI_MODELS[0],
       version: '1.0',
       temperature: 0.3,
       maxTokens: 4000,
@@ -40,7 +64,17 @@ export class AIClient {
       presencePenalty: 0.1,
       stopSequences: [],
       customPrompts: {},
-      domainSpecificSettings: {}
+      domainSpecificSettings: {
+        civil: defaultModelSettings,
+        criminal: defaultModelSettings,
+        commercial: defaultModelSettings,
+        administrative: defaultModelSettings,
+        family: defaultModelSettings,
+        labor: defaultModelSettings,
+        tax: defaultModelSettings,
+        constitutional: defaultModelSettings,
+        international: defaultModelSettings
+      }
     };
   }
 
@@ -51,9 +85,9 @@ export class AIClient {
     const startTime = Date.now();
     
     try {
-      logger.info('Calling Gemini API', { 
+      logger.info('Calling Gemini API', {
         promptLength: request.prompt.length,
-        model: request.model || 'gemini-pro'
+        model: request.model || GEMINI_MODELS[0]
       });
 
       // Prepare the request payload
@@ -90,7 +124,7 @@ export class AIClient {
       };
 
       // Make API call (placeholder - would use actual HTTP client)
-      const response = await this.callGeminiAPI(payload);
+      const response = await this.callGeminiAPI(payload, request.model);
       
       const processingTime = Date.now() - startTime;
 
@@ -102,7 +136,7 @@ export class AIClient {
           completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
           totalTokens: response.usageMetadata?.totalTokenCount || 0
         },
-        model: 'gemini-pro',
+        model: request.model || GEMINI_MODELS[0],
         finishReason: response.candidates[0].finishReason || 'STOP',
         processingTime
       };
@@ -128,9 +162,9 @@ export class AIClient {
     const startTime = Date.now();
     
     try {
-      logger.info('Calling Groq API', { 
+      logger.info('Calling Groq API', {
         promptLength: request.prompt.length,
-        model: request.model || 'mixtral-8x7b-32768'
+        model: request.model || GROQ_MODELS[0]
       });
 
       const payload = {
@@ -144,7 +178,7 @@ export class AIClient {
             content: request.prompt
           }
         ],
-        model: request.model || 'mixtral-8x7b-32768',
+        model: this.isGroqModel(request.model ?? '') ? request.model : GROQ_MODELS[0],
         temperature: request.temperature || this.defaultConfig.temperature,
         max_tokens: request.maxTokens || this.defaultConfig.maxTokens,
         top_p: this.defaultConfig.topP,
@@ -266,51 +300,103 @@ SPÉCIALISATION PAR RÔLE:
   }
 
   /**
-   * Placeholder for actual Gemini API call
+   * Appel réel à l'API Gemini avec fallback sur les modèles suivants
+   * en cas de 404 (modèle éteint), 429 (quota) ou 5xx.
    */
-  private async callGeminiAPI(payload: any): Promise<any> {
-    // In production, this would make an actual HTTP request to Gemini API
-    // For now, return a mock response
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return {
-      candidates: [{
-        content: {
-          parts: [{
-            text: `Réponse générée par Gemini pour: ${JSON.stringify(payload).substring(0, 100)}...`
-          }]
-        },
-        finishReason: 'STOP'
-      }],
-      usageMetadata: {
-        promptTokenCount: 100,
-        candidatesTokenCount: 200,
-        totalTokenCount: 300
+  private async callGeminiAPI(payload: any, preferredModel?: string): Promise<any> {
+    const models = preferredModel && GEMINI_MODELS.includes(preferredModel)
+      ? [preferredModel, ...GEMINI_MODELS.filter((m) => m !== preferredModel)]
+      : GEMINI_MODELS;
+
+    let lastError: Error | null = null;
+
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.geminiApiKey}`;
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(60000)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.error('Gemini API error:', { model, status: response.status, body: errorText });
+
+          // Clé invalide ou accès refusé : inutile de changer de modèle
+          if (response.status === 403) {
+            throw new Error(`Gemini API error: ${response.status}`);
+          }
+
+          lastError = new Error(`Gemini API error (${model}): ${response.status}`);
+          continue;
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Gemini API error:')) {
+          throw error;
+        }
+        lastError = error instanceof Error ? error : new Error(String(error));
+        continue;
       }
-    };
+    }
+
+    throw lastError ?? new Error('Tous les modèles Gemini ont échoué.');
   }
 
   /**
-   * Placeholder for actual Groq API call
+   * Appel réel à l'API Groq (compatible OpenAI) avec fallback entre modèles.
    */
   private async callGroqAPI(payload: any): Promise<any> {
-    // In production, this would make an actual HTTP request to Groq API
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    return {
-      choices: [{
-        message: {
-          content: `Réponse générée par Groq pour: ${payload.messages[1].content.substring(0, 100)}...`
-        },
-        finish_reason: 'stop'
-      }],
-      usage: {
-        prompt_tokens: 80,
-        completion_tokens: 150,
-        total_tokens: 230
-      },
-      model: payload.model
-    };
+    const requestedModel = payload?.model;
+    const modelsToTry = this.isGroqModel(requestedModel)
+      ? [requestedModel, ...GROQ_MODELS.filter((m) => m !== requestedModel)]
+      : GROQ_MODELS;
+
+    let lastError: Error | null = null;
+
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...payload, model }),
+          signal: AbortSignal.timeout(30000)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.error('Groq API error:', { model, status: response.status, body: errorText });
+
+          if (response.status === 401) {
+            throw new Error(`Groq API error: ${response.status}`);
+          }
+
+          lastError = new Error(`Groq API error (${model}): ${response.status}`);
+          continue;
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Groq API error:')) {
+          throw error;
+        }
+        lastError = error instanceof Error ? error : new Error(String(error));
+        continue;
+      }
+    }
+
+    throw lastError ?? new Error('Tous les modèles Groq ont échoué.');
+  }
+
+  private isGroqModel(model: string): boolean {
+    return typeof model === 'string' && GROQ_MODELS.includes(model);
   }
 
   /**

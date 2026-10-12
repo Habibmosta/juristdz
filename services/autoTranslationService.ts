@@ -3,6 +3,14 @@ import { Language } from '../types';
 // import { pureTranslationSystemIntegration } from '../src/pure-translation-system/PureTranslationSystemIntegration';
 // import { TranslationRequest, ContentType, TranslationPriority } from '../src/pure-translation-system/types';
 
+// Modèles Groq gratuits (oct 2026). llama-3.3-70b-versatile a été retiré
+// par Groq le 16/08/2026 ; il n'est conservé qu'en dernier recours.
+const GROQ_MODELS = [
+  'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
+  'llama-3.3-70b-versatile'
+];
+
 /**
  * Auto Translation Service using Pure Translation System
  * Handles automatic content translation with zero tolerance for language mixing
@@ -151,38 +159,60 @@ ${content}
 
 TRADUCTION EN ${targetLangName.toUpperCase()}:`;
 
-    const response = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{
-            role: 'user',
-            content: prompt
-          }],
-          temperature: 0.1,
-          max_tokens: 8192,
-        })
+    let lastError: unknown = null;
+
+    for (const model of GROQ_MODELS) {
+      try {
+        const response = await fetch(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [{
+                role: 'user',
+                content: prompt
+              }],
+              temperature: 0.1,
+              max_tokens: 8192,
+            })
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error(`Groq API error: ${response.statusText}`);
+          }
+          lastError = new Error(
+            `Groq API error (${model}): ${response.status} ${response.statusText}`
+          );
+          continue;
+        }
+
+        const data = await response.json();
+        const translatedText = data.choices?.[0]?.message?.content || '';
+
+        if (!translatedText) {
+          throw new Error('Empty translation response');
+        }
+
+        return translatedText.trim();
+      } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Groq API error:')) {
+          throw error;
+        }
+        lastError = error;
+        continue;
       }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Groq API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const translatedText = data.choices?.[0]?.message?.content || '';
-
-    if (!translatedText) {
-      throw new Error('Empty translation response');
-    }
-
-    return translatedText.trim();
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Tous les modèles Groq ont échoué.');
   }
 
   /**
