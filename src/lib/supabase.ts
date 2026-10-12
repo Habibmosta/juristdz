@@ -1,6 +1,6 @@
 import { API_URL } from '../config/apiConfig';
-(window as any).__SHIM_VER__ = 'v6';
-console.log('[SHIM] supabase.ts LOADED version v6 AT', new Date().toISOString());
+(window as any).__SHIM_VER__ = 'v7';
+console.log('[SHIM] supabase.ts LOADED version v7 AT', new Date().toISOString());
 
 async function apiCall(endpoint, options = {}) {
   const token = localStorage.getItem('juristdz_access_token');
@@ -47,15 +47,40 @@ export const supabase = {
     getUser: async () => {
       const res = await apiCall('/auth/me');
       const data = await res.json();
-      return res.ok && data.success 
+      return res.ok && data.success
         ? { data: { id: data.user?.id, email: data.user?.email }, error: null }
         : { data: null, error: null };
     },
-    get user() { return null; },
-    onAuthStateChange: () => { 
-      return { data: { subscription: { unsubscribe: () => {} } } }; 
+    getSession: async () => {
+      const accessToken = localStorage.getItem('juristdz_access_token');
+      if (!accessToken) {
+        return { data: { session: null }, error: null };
+      }
+      const refreshToken = localStorage.getItem('juristdz_refresh_token');
+      return {
+        data: {
+          session: {
+            access_token: accessToken,
+            refresh_token: refreshToken
+          }
+        },
+        error: null
+      };
     },
-    resetPasswordForEmail: async () => { return { data: { message: 'Email sent' }, error: null }; },
+    get user() { return null; },
+    onAuthStateChange: () => {
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    },
+    resetPasswordForEmail: async (email: string) => {
+      const res = await apiCall('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => ({}));
+      return res.ok && data.success
+        ? { data: { message: 'Email sent' }, error: null }
+        : { data: null, error: data.error || 'reset_failed' };
+    },
     updateUser: async (attributes) => {
       console.log('[SHIM] auth.updateUser called with:', attributes);
       const res = await apiCall('/users/profile', {
