@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 server/logs
 *.log
@@ -82,7 +82,7 @@ TOUS_*.md
 TERMINE.md
 TRAVAIL_*.md
 
-# Scripts de configuration avec clés API
+# Scripts de configuration avec clÃ©s API
 configure-vercel.sh
 configure-*.sh
 
@@ -100,4 +100,3 @@ api/index.js.map
 server/.env
 .env
 
-api/index.cjs
