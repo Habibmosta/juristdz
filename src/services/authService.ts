@@ -275,6 +275,32 @@ async getProfile(): Promise<UserProfile | null> {
     }
   },
 
+  async confirmResetPassword(token: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        return {
+          success: false,
+          error: data.error || 'Lien de réinitialisation invalide ou expiré'
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erreur réseau'
+      };
+    }
+  },
+
   isAuthenticated(): boolean {
     return tokenStorage.hasTokens();
   }

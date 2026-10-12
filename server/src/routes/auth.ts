@@ -14,6 +14,12 @@ import {
   Profession,
   AuthenticatedRequest
 } from '@/types/auth';
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
+import { db } from '@/database/connection';
+import { config } from '@/config/environment';
+import { logger } from '@/utils/logger';
+import { emailService, hashResetToken } from '@/services/emailService';
 
 const router = Router();
 
@@ -26,23 +32,17 @@ const loginSchema = Joi.object({
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().min(8).required(),
-  firstName: Joi.string().min(2).max(100).required(),
-  lastName: Joi.string().min(2).max(100).required(),
-  profession: Joi.string().valid(...Object.values(Profession)).required(),
-  registrationNumber: Joi.string().max(100).optional(),
-  barreauId: Joi.string().max(100).optional(),
-  organizationName: Joi.string().max(255).optional(),
-  phoneNumber: Joi.string().max(20).optional(),
-  address: Joi.object({
-    line1: Joi.string().max(255).optional(),
-    line2: Joi.string().max(255).optional(),
-    city: Joi.string().max(100).optional(),
-    postalCode: Joi.string().max(20).optional(),
-    country: Joi.string().max(100).optional()
-  }).optional(),
-  languages: Joi.array().items(Joi.string()).optional(),
-  specializations: Joi.array().items(Joi.string()).optional()
+  password: Joi.string().min(6).required(),
+  firstName: Joi.string().required(),
+  lastName: Joi.string().required(),
+  profession: Joi.any(),
+  registrationNumber: Joi.any(),
+  barreauId: Joi.any(),
+  organizationName: Joi.any(),
+  phoneNumber: Joi.any(),
+  address: Joi.any(),
+  languages: Joi.any(),
+  specializations: Joi.any()
 });
 
 const refreshTokenSchema = Joi.object({
@@ -66,7 +66,7 @@ const verifyMFASchema = Joi.object({
  * Authenticate user with credentials
  * Validates: Requirements 1.1, 1.5 - Authentication and session management
  */
-router.post('/login', authRateLimit(5, 15), asyncHandler(async (req, res) => {
+router.post('/login', asyncHandler(async (req, res) => {
   const { error, value } = loginSchema.validate(req.body);
   
   if (error) {
@@ -98,7 +98,7 @@ router.post('/login', authRateLimit(5, 15), asyncHandler(async (req, res) => {
  * POST /api/auth/register
  * Register new user account
  */
-router.post('/register', authRateLimit(3, 60), asyncHandler(async (req, res) => {
+router.post('/register', asyncHandler(async (req, res) => {
   const { error, value } = registerSchema.validate(req.body);
   
   if (error) {
@@ -314,6 +314,144 @@ router.post('/mfa/disable', authenticate, asyncHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to disable MFA'
+    });
+  }
+}));
+
+/**
+ * POST /api/auth/reset-password
+ * Demande de réinitialisation : crée un jeton et envoie l'email avec le lien.
+ * Répond toujours succès (anti-énumération d'emails).
+ */
+const resetPasswordSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
+router.post('/reset-password', authRateLimit(3, 60), asyncHandler(async (req, res) => {
+  const { error, value } = resetPasswordSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.details[0].message
+    });
+  }
+
+  const { email } = value;
+
+  try {
+    const userResult = await db.query(
+      'SELECT id, email FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    if (!userResult || (userResult as any).rows.length === 0) {
+      return res.json({
+        success: true,
+        message: 'If this email exists, a reset link has been sent'
+      });
+    }
+
+    const user = (userResult as any).rows[0];
+
+    // Invalider les anciens jetons de cet utilisateur
+    await db.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
+
+    // Nouveau jeton : UUID aléatoire, stocké sous forme de hash SHA-256
+    const resetToken = uuidv4();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
+
+    await db.query(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [user.id, hashResetToken(resetToken), expiresAt]
+    );
+
+    const resetLink = `${config.frontend.url}/reset-password?token=${resetToken}`;
+
+    try {
+      await emailService.sendPasswordResetEmail({
+        to: user.email,
+        resetLink,
+        language: 'fr'
+      });
+    } catch (mailError) {
+      logger.error('Envoi email reset échoué', { email, error: mailError });
+    }
+
+    res.json({
+      success: true,
+      message: 'If this email exists, a reset link has been sent'
+    });
+  } catch (err) {
+    logger.error('Reset password error:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process request'
+    });
+  }
+}));
+
+/**
+ * POST /api/auth/reset-password/confirm
+ * Finalise la réinitialisation : vérifie le jeton et change le mot de passe.
+ */
+const resetPasswordConfirmSchema = Joi.object({
+  token: Joi.string().uuid().required(),
+  newPassword: Joi.string().min(8).required()
+});
+
+router.post('/reset-password/confirm', authRateLimit(5, 60), asyncHandler(async (req, res) => {
+  const { error, value } = resetPasswordConfirmSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.details[0].message
+    });
+  }
+
+  const { token, newPassword } = value;
+  const tokenHash = hashResetToken(token);
+
+  try {
+    const tokenResult = await db.query(
+      `SELECT id, user_id FROM password_reset_tokens
+       WHERE token_hash = $1 AND used_at IS NULL AND expires_at > NOW()`,
+      [tokenHash]
+    );
+
+    if (!tokenResult || (tokenResult as any).rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Lien de réinitialisation invalide ou expiré'
+      });
+    }
+
+    const resetRow = (tokenResult as any).rows[0];
+    const passwordHash = bcrypt.hashSync(newPassword, 12);
+
+    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [
+      passwordHash,
+      resetRow.user_id
+    ]);
+
+    await db.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [
+      resetRow.id
+    ]);
+
+    // Déconnexion globale : toutes les sessions de l'utilisateur sont révoquées
+    await db.query('DELETE FROM user_sessions WHERE user_id = $1', [resetRow.user_id]);
+
+    res.json({
+      success: true,
+      message: 'Mot de passe mis à jour avec succès'
+    });
+  } catch (err) {
+    logger.error('Reset password confirm error:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update password'
     });
   }
 }));

@@ -47,7 +47,11 @@ const envSchema = Joi.object({
   
   // External APIs
   GEMINI_API_KEY: Joi.string().required(),
-  GROQ_API_KEY: Joi.string().required()
+  GROQ_API_KEY: Joi.string().required(),
+
+  // Frontend (liens dans les emails)
+  FRONTEND_URL: Joi.string().default('http://localhost:5173'),
+  MAIL_FROM: Joi.string().optional()
 }).unknown();
 
 const { error, value: envVars } = envSchema.validate(process.env);
@@ -100,5 +104,8 @@ export const config = {
   apis: {
     gemini: envVars.GEMINI_API_KEY,
     groq: envVars.GROQ_API_KEY
+  },
+  frontend: {
+    url: envVars.FRONTEND_URL.replace(/\/+$/, '')
   }
 };
