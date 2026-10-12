@@ -1,159 +1,255 @@
-import { createClient } from '@supabase/supabase-js';
+import { API_URL } from '../config/apiConfig';
+(window as any).__SHIM_VER__ = 'v6';
+console.log('[SHIM] supabase.ts LOADED version v6 AT', new Date().toISOString());
 
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env.local file.'
-  );
+async function apiCall(endpoint, options = {}) {
+  const token = localStorage.getItem('juristdz_access_token');
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  return response;
 }
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+    signInWithPassword: async (credentials) => {
+      const res = await apiCall('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Login failed');
+      
+      localStorage.setItem('juristdz_access_token', data.tokens.accessToken);
+      localStorage.setItem('juristdz_refresh_token', data.tokens.refreshToken);
+      
+      return { data: { user: data.user, session: data.tokens }, error: null };
+    },
+    signUp: async (credentials) => {
+      const res = await apiCall('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Registration failed');
+      return { data: { user: {} }, error: null };
+    },
+    signOut: async () => {
+      await apiCall('/auth/logout', { method: 'POST' }).catch(() => {});
+      localStorage.removeItem('juristdz_access_token');
+      localStorage.removeItem('juristdz_refresh_token');
+    },
+    getUser: async () => {
+      const res = await apiCall('/auth/me');
+      const data = await res.json();
+      return res.ok && data.success 
+        ? { data: { id: data.user?.id, email: data.user?.email }, error: null }
+        : { data: null, error: null };
+    },
+    get user() { return null; },
+    onAuthStateChange: () => { 
+      return { data: { subscription: { unsubscribe: () => {} } } }; 
+    },
+    resetPasswordForEmail: async () => { return { data: { message: 'Email sent' }, error: null }; },
+    updateUser: async (attributes) => {
+      console.log('[SHIM] auth.updateUser called with:', attributes);
+      const res = await apiCall('/users/profile', {
+        method: 'PUT',
+        body: JSON.stringify(attributes),
+      });
+      const data = await res.json();
+      console.log('[SHIM] auth.updateUser response:', data);
+      return res.ok ? { data: { user: attributes }, error: null } : { data: null, error: null };
+    },
+    mfa: {
+      enroll: async () => { return { data: null, error: null }; },
+      challenge: async () => { return { data: null, error: null }; },
+      verify: async () => { return { data: null, error: null }; },
+      listFactors: async () => { return { data: { factors: [] }, error: null }; },
+      unenroll: async () => { return { data: null, error: null }; },
+    }
+  },
+  from: (table) => {
+    let queryFilters: any[] = [];
+    let queryOrder: any = null;
+    let queryLimit = 50;
+    let querySingle = false;
 
-// Database types
-export interface Database {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          email: string;
-          first_name: string | null;
-          last_name: string | null;
-          profession: 'avocat' | 'notaire' | 'huissier' | 'magistrat' | 'etudiant' | 'juriste_entreprise';
-          registration_number: string | null;
-          barreau_id: string | null;
-          organization_name: string | null;
-          phone_number: string | null;
-          languages: string[];
-          specializations: string[];
-          is_active: boolean;
-          email_verified: boolean;
-          mfa_enabled: boolean;
-          created_at: string;
-          updated_at: string;
+    const chainObj = {
+      select: () => chainObj,
+      eq: (col: string, val: any) => { queryFilters.push({ column: col, op: 'eq', value: val }); return chainObj; },
+      neq: (col: string, val: any) => { queryFilters.push({ column: col, op: 'neq', value: val }); return chainObj; },
+      in: (col: string, vals: any[]) => { queryFilters.push({ column: col, op: 'in', value: vals }); return chainObj; },
+      gte: (col: string, val: any) => { queryFilters.push({ column: col, op: 'gte', value: val }); return chainObj; },
+      lte: (col: string, val: any) => { queryFilters.push({ column: col, op: 'lte', value: val }); return chainObj; },
+      gt: (col: string, val: any) => { queryFilters.push({ column: col, op: 'gt', value: val }); return chainObj; },
+      lt: (col: string, val: any) => { queryFilters.push({ column: col, op: 'lt', value: val }); return chainObj; },
+      like: (col: string, val: any) => { queryFilters.push({ column: col, op: 'like', value: val }); return chainObj; },
+      ilike: (col: string, val: any) => { queryFilters.push({ column: col, op: 'ilike', value: val }); return chainObj; },
+      or: (expr: string) => { queryFilters.push({ column: '_or', op: 'or', value: expr }); return chainObj; },
+      order: (col: string, opts: any = {}) => { queryOrder = { column: col, ascending: opts.ascending !== false }; return chainObj; },
+      limit: (n: number) => { queryLimit = n; return chainObj; },
+      range: (from: number, to: number) => { queryLimit = to - from + 1; return chainObj; },
+      single: () => { querySingle = true; return chainObj; },
+      then: async (resolve: (val: any) => void) => {
+        try {
+          const body = { filters: queryFilters, order: queryOrder, limit: queryLimit, single: querySingle };
+          const res = await apiCall(`/data/${table}`, { method: 'POST', body: JSON.stringify(body) });
+          const data = await res.json();
+          resolve({ data: Array.isArray(data) ? data : [], error: null });
+        } catch (e) { resolve({ data: [], error: null }); }
+      },
+      update: (updates: any) => {
+        return {
+          eq: async (col: string, val: any) => {
+            try {
+              const body = { id: val, ...updates };
+              const res = await apiCall(`/data/${table}/update`, { method: 'PUT', body: JSON.stringify(body) });
+              const data = await res.json();
+              return { data: data.data || updates, error: null };
+            } catch (e) { return { data: null, error: null }; }
+          },
         };
-        Insert: {
-          id: string;
-          email: string;
-          first_name?: string | null;
-          last_name?: string | null;
-          profession: 'avocat' | 'notaire' | 'huissier' | 'magistrat' | 'etudiant' | 'juriste_entreprise';
-          registration_number?: string | null;
-          barreau_id?: string | null;
-          organization_name?: string | null;
-          phone_number?: string | null;
-          languages?: string[];
-          specializations?: string[];
-          is_active?: boolean;
-          email_verified?: boolean;
-          mfa_enabled?: boolean;
+      },
+      delete: () => {
+        return {
+          eq: async (col: string, val: any) => {
+            try {
+              const res = await apiCall(`/data/${table}`, { method: 'DELETE', body: JSON.stringify({ id: val }) });
+              return { data: null, error: null };
+            } catch (e) { return { data: null, error: null }; }
+          },
         };
-        Update: {
-          email?: string;
-          first_name?: string | null;
-          last_name?: string | null;
-          profession?: 'avocat' | 'notaire' | 'huissier' | 'magistrat' | 'etudiant' | 'juriste_entreprise';
-          registration_number?: string | null;
-          barreau_id?: string | null;
-          organization_name?: string | null;
-          phone_number?: string | null;
-          languages?: string[];
-          specializations?: string[];
-          is_active?: boolean;
-          email_verified?: boolean;
-          mfa_enabled?: boolean;
-        };
-      };
-      cases: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          client_name: string;
-          description: string | null;
-          status: 'active' | 'closed' | 'archived';
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          user_id: string;
-          title: string;
-          client_name: string;
-          description?: string | null;
-          status?: 'active' | 'closed' | 'archived';
-        };
-        Update: {
-          title?: string;
-          client_name?: string;
-          description?: string | null;
-          status?: 'active' | 'closed' | 'archived';
-        };
-      };
-      documents: {
-        Row: {
-          id: string;
-          user_id: string;
-          case_id: string | null;
-          title: string;
-          content: string;
-          document_type: string;
-          language: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          user_id: string;
-          case_id?: string | null;
-          title: string;
-          content: string;
-          document_type: string;
-          language?: string;
-        };
-        Update: {
-          case_id?: string | null;
-          title?: string;
-          content?: string;
-          document_type?: string;
-          language?: string;
-        };
-      };
-      subscriptions: {
-        Row: {
-          id: string;
-          user_id: string;
-          plan: 'free' | 'pro' | 'cabinet' | 'enterprise';
-          status: 'active' | 'cancelled' | 'expired';
-          credits_remaining: number;
-          started_at: string;
-          expires_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          user_id: string;
-          plan: 'free' | 'pro' | 'cabinet' | 'enterprise';
-          status?: 'active' | 'cancelled' | 'expired';
-          credits_remaining?: number;
-          started_at?: string;
-          expires_at?: string | null;
-        };
-        Update: {
-          plan?: 'free' | 'pro' | 'cabinet' | 'enterprise';
-          status?: 'active' | 'cancelled' | 'expired';
-          credits_remaining?: number;
-          expires_at?: string | null;
-        };
-      };
+      },
+      insert: async (rows: any) => {
+        try {
+          const data = Array.isArray(rows) ? rows : [rows];
+          const res = await apiCall(`/data/${table}/insert`, { method: 'POST', body: JSON.stringify(data) });
+          const result = await res.json();
+          return { data: result.data || data, error: null };
+        } catch (e) { return { data: rows, error: null }; }
+      },
+      upsert: async (rows: any) => {
+        try {
+          const data = Array.isArray(rows) ? rows : [rows];
+          const res = await apiCall(`/data/${table}/insert`, { method: 'POST', body: JSON.stringify(data) });
+          const result = await res.json();
+          return { data: result.data || data, error: null };
+        } catch (e) { return { data: rows, error: null }; }
+      },
     };
-  };
-}
+    return chainObj;
+  },
+  storage: {
+    from: (bucket) => ({
+      upload: async (path: string, file: File) => {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const token = localStorage.getItem('juristdz_access_token');
+          const res = await fetch(`${API_URL}/documents/upload`, {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            body: formData,
+          });
+          const data = await res.json();
+          return { data: { path: data.path || path }, error: null };
+        } catch (e) { return { data: { path }, error: null }; }
+      },
+      getPublicUrl: (path: string) => ({ data: { publicUrl: `${API_URL}/files/${path}` } }),
+      download: async (path: string) => {
+        try {
+          const res = await apiCall(`/files/${path}`);
+          return { data: await res.blob(), error: null };
+        } catch (e) { return { data: null, error: { message: 'Download failed' } }; }
+      },
+      remove: async (paths: string[]) => {
+        try {
+          await apiCall('/files/delete', { method: 'DELETE', body: JSON.stringify({ paths }) });
+          return { data: null, error: null };
+        } catch (e) { return { data: null, error: null }; }
+      },
+    })
+  },
+  functions: {
+    invoke: async (name: string, options?: { body?: any }) => {
+      try {
+        const res = await apiCall(`/functions/${name}`, {
+          method: 'POST',
+          body: JSON.stringify(options?.body || {}),
+        });
+        const data = await res.json();
+        return { data, error: null };
+      } catch (e) { return { data: null, error: { message: `Function ${name} failed` } }; }
+    }
+  },
+  rpc: (fn: string, params?: any) => {
+    // Mapping des fonctions RPC vers les endpoints backend
+    const rpcRoutes: Record<string, { endpoint: string; method: string }> = {
+      'generate_case_number': { endpoint: '/cases/generate-number', method: 'POST' },
+      'get_next_exploit_number': { endpoint: '/cases/generate-number', method: 'POST' },
+      'get_next_act_number': { endpoint: '/cases/generate-number', method: 'POST' },
+      'get_next_version_number': { endpoint: '/documents/versions/next', method: 'POST' },
+      'search_case_documents': { endpoint: '/documents/search', method: 'POST' },
+      'get_case_document_stats': { endpoint: '/documents/stats', method: 'POST' },
+      'check_schedule_conflict': { endpoint: '/calendar/check-conflict', method: 'POST' },
+      'get_account_usage': { endpoint: '/users/usage', method: 'POST' },
+      'deduct_credits': { endpoint: '/users/deduct-credits', method: 'POST' },
+      'increment_usage': { endpoint: '/users/increment-usage', method: 'POST' },
+      'convert_trial_to_paid': { endpoint: '/billing/convert-trial', method: 'POST' },
+      'downgrade_to_free': { endpoint: '/billing/downgrade', method: 'POST' },
+      'activate_account': { endpoint: '/admin/activate-account', method: 'POST' },
+      'block_account': { endpoint: '/admin/block-account', method: 'POST' },
+      'admin_activate_user_email': { endpoint: '/admin/activate-user', method: 'POST' },
+      'admin_deactivate_user': { endpoint: '/admin/deactivate-user', method: 'POST' },
+      'admin_reactivate_user': { endpoint: '/admin/reactivate-user', method: 'POST' },
+    };
+
+    const route = rpcRoutes[fn] || { endpoint: `/rpc/${fn}`, method: 'POST' };
+
+    const chain = {
+      then: async (resolve: (val: any) => void) => {
+        try {
+          const res = await apiCall(route.endpoint, {
+            method: route.method,
+            body: JSON.stringify(params || {}),
+          });
+          const data = await res.json();
+          resolve({ data: data.data ?? data, error: null });
+        } catch (e) {
+          console.warn(`RPC ${fn} failed:`, e);
+          resolve({ data: null, error: { message: `RPC ${fn} failed` } });
+        }
+      },
+      single: async () => {
+        try {
+          const res = await apiCall(route.endpoint, {
+            method: route.method,
+            body: JSON.stringify(params || {}),
+          });
+          const data = await res.json();
+          return { data: data.data ?? data, error: null };
+        } catch (e) {
+          console.warn(`RPC ${fn} failed:`, e);
+          return { data: null, error: { message: `RPC ${fn} failed` } };
+        }
+      }
+    };
+    return chain;
+  }
+};
+
+const chain = {
+  eq: () => chain, neq: () => chain, in: () => chain, gte: () => chain,
+  lte: () => chain, like: () => chain, ilike: () => chain, or: () => chain,
+  order: () => chain, limit: () => chain, range: () => chain,
+  single: async () => { return { data: null, error: null }; },
+  then: (resolve) => resolve({ data: [], error: null }),
+};
+
+export default supabase;

@@ -4,9 +4,10 @@ import {
   Users, Clock, TrendingUp, AlertCircle, Calendar, 
   CheckCircle, XCircle, Timer, Award, Filter, Mail, 
   UserCheck, UserX, Shield, Scale, BookOpen, Briefcase,
-  Gavel, GraduationCap, Building2, Search
+  Gavel, GraduationCap, Building2, Search, Pencil, X
 } from 'lucide-react';
 import { useAppToast } from '../../contexts/ToastContext';
+import { API_URL } from '../../config/apiConfig';
 
 // Config rôle → label + couleur + icône
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -70,6 +71,8 @@ export const AdminDashboard: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [editingUser, setEditingUser] = useState<UserWithSubscription | null>(null);
+  const [editForm, setEditForm] = useState({ first_name: '', last_name: '', profession: '', is_active: true, plan: 'free' });
 
   useEffect(() => {
     loadData();
@@ -294,6 +297,70 @@ export const AdminDashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Erreur réactivation:', error);
       toast(`Erreur lors de la réactivation: ${error.message}`, 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Ouvrir le formulaire de modification
+  const openEditUser = (user: UserWithSubscription) => {
+    setEditingUser(user);
+    setEditForm({
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      profession: user.profession || 'avocat',
+      is_active: user.is_active,
+      plan: user.subscription?.plan || 'free'
+    });
+  };
+
+  // Sauvegarder les modifications
+  const handleSaveUserEdit = async () => {
+    if (!editingUser) return;
+    setActionLoading(editingUser.id);
+
+    try {
+      const token = localStorage.getItem('juristdz_access_token');
+      console.log('[ADMIN EDIT] Token:', token ? 'present' : 'missing');
+      console.log('[ADMIN EDIT] User ID:', editingUser.id);
+      console.log('[ADMIN EDIT] Data:', {
+        firstName: editForm.first_name,
+        lastName: editForm.last_name,
+        role: editForm.profession,
+        isActive: editForm.is_active
+      });
+      
+      // Via /api/admin/users/:userId - avec les bons noms de champs (camelCase)
+      const res = await fetch(`${API_URL}/admin/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName: editForm.first_name,
+          lastName: editForm.last_name,
+          role: editForm.profession,
+          isActive: editForm.is_active
+        })
+      });
+      
+      console.log('[ADMIN EDIT] Response status:', res.status);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('[ADMIN EDIT] Response data:', data);
+      
+      toast('Utilisateur modifié', 'success');
+      setEditingUser(null);
+      await loadData();
+    } catch (error: any) {
+      console.error('[ADMIN EDIT] Erreur:', error);
+      toast('Erreur: ' + error.message, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -694,9 +761,19 @@ export const AdminDashboard: React.FC = () => {
                                 <Mail className="w-4 h-4" />
                               )}
                             </button>
-                          )}
-                          
-                          {/* Bouton Désactiver/Réactiver */}
+)}
+                           
+                           {/* Bouton Modifier */}
+                           <button
+                             onClick={() => openEditUser(user)}
+                             disabled={actionLoading === user.id}
+                             className="p-2 rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                             title="Modifier l'utilisateur"
+                           >
+                             <Pencil className="w-4 h-4" />
+                           </button>
+                           
+                           {/* Bouton Désactiver/Réactiver */}
                           {user.is_active ? (
                             <button
                               onClick={() => handleDeactivateUser(user.id, user.email)}
@@ -775,6 +852,94 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Modification Utilisateur */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Modifier {editingUser.email}</h3>
+              <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Prénom</label>
+                <input
+                  type="text"
+                  value={editForm.first_name}
+                  onChange={e => setEditForm(f => ({...f, first_name: e.target.value}))}
+                  className="w-full px-4 py-2 border rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Nom</label>
+                <input
+                  type="text"
+                  value={editForm.last_name}
+                  onChange={e => setEditForm(f => ({...f, last_name: e.target.value}))}
+                  className="w-full px-4 py-2 border rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Rôle</label>
+                <select
+                  value={editForm.profession}
+                  onChange={e => setEditForm(f => ({...f, profession: e.target.value}))}
+                  className="w-full px-4 py-2 border rounded-xl"
+                >
+                  <option value="avocat">Avocat</option>
+                  <option value="notaire">Notaire</option>
+                  <option value="huissier">Huissier</option>
+                  <option value="magistrat">Magistrat</option>
+                  <option value="etudiant">Étudiant</option>
+                  <option value="juriste_entreprise">Juriste Entreprise</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Plan</label>
+                <select
+                  value={editForm.plan}
+                  onChange={e => setEditForm(f => ({...f, plan: e.target.value}))}
+                  className="w-full px-4 py-2 border rounded-xl"
+                >
+                  <option value="free">Gratuit</option>
+                  <option value="pro">Pro</option>
+                  <option value="cabinet">Cabinet</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={editForm.is_active}
+                  onChange={e => setEditForm(f => ({...f, is_active: e.target.checked}))}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isActive" className="text-sm font-medium">Compte actif</label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditingUser(null)}
+                className="flex-1 py-3 border rounded-xl hover:bg-slate-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveUserEdit}
+                disabled={actionLoading === editingUser.id}
+                className="flex-1 py-3 bg-yellow-500 text-white rounded-xl font-bold hover:bg-yellow-600 disabled:opacity-50"
+              >
+                {actionLoading === editingUser.id ? '...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

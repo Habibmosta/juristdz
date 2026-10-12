@@ -12,6 +12,7 @@ import SubscriptionManagement from './admin/SubscriptionManagement';
 import JurisprudenceValidationPanel from '../jurisprudence/JurisprudenceValidationPanel';
 import AdminPaymentsPanel from '../../src/components/billing/AdminPaymentsPanel';
 import Modal from '../../src/components/common/Modal';
+import { API_URL } from '../../src/config/apiConfig';
 
 interface AdminInterfaceProps {
   user: EnhancedUserProfile;
@@ -155,20 +156,25 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     if (!selectedUser) return;
     setActionLoading(true);
     try {
-      const { supabase } = await import('../../src/lib/supabase');
-      const { data, error } = await supabase.rpc('admin_update_user_profile', {
-        p_user_id: selectedUser.id,
-        p_first_name: editForm.firstName || null,
-        p_last_name: editForm.lastName || null,
-        p_profession: editForm.profession || null,
-        p_organization: editForm.organisation || null,
-        p_account_status: editForm.accountStatus || null,
-        p_subscription_plan: editForm.plan || null,
-        p_credits: editForm.credits ? parseInt(editForm.credits) : null,
-        p_is_admin: editForm.isAdmin,
+      const token = localStorage.getItem('juristdz_access_token');
+      const res = await fetch(`${API_URL}/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          role: editForm.profession,
+          isActive: editForm.accountStatus === 'active',
+          organizationId: null,
+        })
       });
-      if (error) throw error;
-      if ((data as any)?.success === false) throw new Error((data as any).message);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${res.status}`);
+      }
       showToast('Profil mis a jour');
       closeModal();
       loadRealData();
@@ -216,29 +222,28 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const loadRealData = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('juristdz_access_token');
+      const res = await fetch(`${API_URL}/admin/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Erreur chargement');
+      const json = await res.json();
+      const users: any[] = json.data?.users || json.data || json;
+      const mapped: UtilisateurSysteme[] = users.map((u: any) => ({
+        id: u.id,
+        nom: (u.firstName + ' ' + (u.lastName || '')).trim() || u.email,
+        email: u.email,
+        role: u.role || 'avocat',
+        profession: u.role || 'avocat',
+        organisation: u.organizationName || '-',
+        dernierAcces: u.lastLoginAt ? new Date(u.lastLoginAt) : new Date(0),
+        statut: u.isActive === false ? 'inactif' : 'actif',
+        credits: 0,
+        plan: 'free',
+      }));
+      setUtilisateurs(mapped);
+      setStatistiques(s => ({ ...s, total: mapped.length, actifs: mapped.filter(u => u.statut === 'actif').length }));
       const { supabase } = await import('../../src/lib/supabase');
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, profession, organization_name, is_active, subscription_plan, credits_remaining, account_status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) console.error('AdminInterface profiles error:', error);
-      if (profiles) {
-        const mapped: UtilisateurSysteme[] = profiles.map((p: any) => ({
-          id: p.id,
-          nom: (p.first_name + ' ' + (p.last_name || '')).trim() || p.email,
-          email: p.email,
-          role: p.profession || 'avocat',
-          profession: p.profession || 'avocat',
-          organisation: p.organization_name || '-',
-          dernierAcces: new Date(0),
-          statut: p.account_status === 'suspended' ? 'suspendu' : p.is_active === false ? 'inactif' : 'actif',
-          credits: p.credits_remaining || 0,
-          plan: p.subscription_plan || 'free',
-        }));
-        setUtilisateurs(mapped);
-        setStatistiques(s => ({ ...s, total: mapped.length, actifs: mapped.filter(u => u.statut === 'actif').length }));
-      }
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).gte('created_at', today.toISOString());
       setStatistiques(s => ({ ...s, requetes: count || 0 }));
