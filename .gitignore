@@ -94,8 +94,6 @@ components/forms/HuissierForms_Part1.tsx
 components/forms/NotaireForms_Clean.txt
 
 # Artefact de build de la fonction serverless Vercel
-api/index.js
-api/index.js.map
 .env*.local
 server/.env
 .env
