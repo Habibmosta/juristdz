@@ -1,8 +1,8 @@
 // URL de base de l'API backend.
 // En dev : http://localhost:3000 par défaut.
-// En prod (Vercel etc.) : définir la variable d'environnement VITE_API_URL
-// (ex: https://api.juristdz.com). Un slash final est toléré et retiré.
-const rawBaseUrl: string = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// En prod, si VITE_API_URL n'est pas défini : même origine que le front
+// (déploiement Vercel avec la fonction serverless dans /api).
+const rawBaseUrl: string = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD && typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
 export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 

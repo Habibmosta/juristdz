@@ -1,8 +1,11 @@
 import dotenv from 'dotenv';
 import Joi from 'joi';
+import { resolve } from 'path';
 
 // Load environment variables
 dotenv.config();
+// En serverless (Vercel), le cwd est la racine du projet : charger aussi server/.env si présent
+dotenv.config({ path: resolve(process.cwd(), 'server/.env') });
 
 // Environment validation schema
 const envSchema = Joi.object({
@@ -14,7 +17,7 @@ const envSchema = Joi.object({
   DATABASE_SSL: Joi.boolean().default(false),
   
   // Redis
-  REDIS_URL: Joi.string().required(),
+  REDIS_URL: Joi.string().optional(),
   
   // JWT
   JWT_SECRET: Joi.string().min(32).required(),
