@@ -9,7 +9,7 @@ const serverDir = join(root, 'server');
 
 await build({
   entryPoints: [join(serverDir, 'src/vercel.ts')],
-  outfile: join(root, 'api/[[...path]].js'),
+  outfile: join(root, 'api/index.js'),
   bundle: true,
   platform: 'node',
   target: 'node20',
@@ -30,4 +30,4 @@ await build({
   }
 });
 
-console.log('Bundle API généré : api/[[...path]].js');
+console.log('Bundle API généré : api/index.js');

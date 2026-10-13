@@ -2,8 +2,11 @@
   "buildCommand": "yarn install && (cd server && yarn install) && npm run build && npm run build:api",
   "outputDirectory": "dist",
   "framework": "vite",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
   "functions": {
-    "api/[[...path]].js": {
+    "api/index.js": {
       "maxDuration": 60,
       "memory": 1024
     }

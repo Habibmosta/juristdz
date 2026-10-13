@@ -1,7 +1,7 @@
 // Placeholder committé pour que Vercel détecte la fonction serverless.
 // Ce fichier est ÉCRASÉ à chaque build par `npm run build:api` (scripts/build-api.mjs)
-// qui bundle le backend Express (server/src/vercel.ts) et monte TOUTES les routes /api/*.
-// Catch-all optionnel [[...path]] : capture /api ET tous ses sous-chemins profonds.
+// qui bundle le backend Express (server/src/vercel.ts).
+// Toutes les routes /api/* sont redirigées ici par la rewrite de vercel.json.
 // Ne jamais exécuter `npm run build:api` avant `git add` de ce fichier.
 export default async function handler(req, res) {
   res.status(503).json({
