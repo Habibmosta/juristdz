@@ -9,20 +9,25 @@ const serverDir = join(root, 'server');
 
 await build({
   entryPoints: [join(serverDir, 'src/vercel.ts')],
-  outfile: join(root, 'api/index.cjs'),
+  outfile: join(root, 'api/[...path].js'),
   bundle: true,
   platform: 'node',
   target: 'node20',
-  format: 'cjs',
+  format: 'esm',
   tsconfig: join(serverDir, 'tsconfig.json'),
-  sourcemap: process.env.NODE_ENV !== 'production' ? 'inline' : false,
+  sourcemap: false,
   minify: false,
   logLevel: 'info',
   external: [
     // Modules binaires / natifs à conserver en externe
     'pg-native'
   ],
-  loader: { '.sql': 'text' }
+  loader: { '.sql': 'text' },
+  banner: {
+    // Certains modules CJS bundlés font des require() à l'exécution :
+    // on fournit un require fonctionnel dans la sortie ESM.
+    js: "import { createRequire as __createRequire } from 'module'; const require = __createRequire(import.meta.url);"
+  }
 });
 
-console.log('Bundle API généré : api/index.cjs');
+console.log('Bundle API généré : api/[...path].js');
