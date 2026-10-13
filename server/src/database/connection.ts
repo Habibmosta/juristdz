@@ -7,12 +7,15 @@ class DatabaseConnection {
   private static instance: DatabaseConnection;
 
   private constructor() {
+    // Pool configurable par variables d'environnement.
+    // serverless (Vercel) : timeouts longs (le pooler Supabase peut mettre ~10s)
+    // et pool réduit pour ne pas saturer les limites de connexions.
     this.pool = new Pool({
       connectionString: config.database.url,
       ssl: config.database.ssl ? { rejectUnauthorized: false } : false,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      max: Number(process.env.DB_POOL_MAX) || (process.env.VERCEL ? 3 : 20),
+      idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_MS) || 10000,
+      connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS) || 15000
     });
 
     // Handle pool errors
@@ -93,10 +96,15 @@ export function getDb(): Pool {
 
 export async function connectDatabase(): Promise<void> {
   const isConnected = await db.testConnection();
-  
+
   if (!isConnected) {
     throw new Error('Failed to connect to database');
   }
-  
+
   logger.info('Database connection established');
+}
+
+export async function closeDatabase(): Promise<void> {
+  await db.close();
+  logger.info('Database connection closed');
 }
