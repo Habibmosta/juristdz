@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/[...path].js": {
+    "api/[[...path]].js": {
       "maxDuration": 60,
       "memory": 1024
     }
