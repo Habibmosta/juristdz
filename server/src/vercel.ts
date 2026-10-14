@@ -1,3 +1,9 @@
+// Filet de sécurité serverless : un rejet non géré (promesse flottante
+// dans un service initialisé au boot) crasherait la fonction entière.
+process.on('unhandledRejection', (reason: any) => {
+  console.error('unhandledRejection (non fatale):', reason?.message || reason);
+});
+
 import { createApp } from './app';
 
 // L'app Express est initialisée une fois (cold start) puis mise en cache.

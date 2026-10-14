@@ -20,8 +20,10 @@ export class EmbeddingService {
   private readonly apiKey: string;
 
   constructor(apiKey: string) {
+    // Ne pas throw à l'import : la clé peut manquer au boot (serverless).
+    // L'erreur surviendra à l'usage, avec un message explicite.
     if (!apiKey) {
-      throw new Error('GEMINI_API_KEY is required for EmbeddingService');
+      logger.warn('GEMINI_API_KEY absent : embeddings (RAG) indisponibles');
     }
     this.apiKey = apiKey;
   }

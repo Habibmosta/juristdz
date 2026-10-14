@@ -71,8 +71,11 @@ export class BackupService {
   private scheduledBackups: Map<string, NodeJS.Timeout> = new Map();
 
   constructor() {
-    this.initializeBackupDirectory();
-    this.scheduleAutomaticBackups();
+    // Promesses catchées : un rejet non géré crasherait le process (serverless)
+    this.initializeBackupDirectory().catch((err) =>
+      logger.warn('Init répertoire sauvegarde ignorée (serverless ?):', err)
+    );
+    this.scheduleAutomaticBackups().catch(() => {});
   }
 
   /**

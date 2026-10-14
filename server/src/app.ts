@@ -37,8 +37,13 @@ import {
 import { connectDatabase, getDb } from '@/database/connection';
 import { serviceOrchestrator } from '@/services/serviceOrchestrator';
 import { rbacService } from '@/services/rbacService';
+import { config, configValidationError } from '@/config/environment';
 
 export async function createApp(): Promise<express.Express> {
+  if (configValidationError) {
+    throw new Error(`Configuration serveur invalide : ${configValidationError}`);
+  }
+
   const app = express();
 
   // Security middleware

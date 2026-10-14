@@ -38,7 +38,11 @@ export class FileStorageService {
 
   constructor() {
     this.storageBasePath = process.env.DOCUMENT_STORAGE_PATH || './storage/documents';
-    this.ensureStorageDirectories();
+    // Promesse catchée : un rejet non géré crasherait le process (serverless).
+    // Sur Vercel le filesystem est read-only hors /tmp.
+    this.ensureStorageDirectories().catch((err) =>
+      logger.warn('Création répertoire stockage ignorée (serverless ?):', err)
+    );
   }
 
   /**

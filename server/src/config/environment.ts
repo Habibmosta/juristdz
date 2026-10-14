@@ -57,11 +57,15 @@ const envSchema = Joi.object({
   MAIL_FROM: Joi.string().optional()
 }).unknown();
 
-const { error, value: envVars } = envSchema.validate(process.env);
+const { error: configError, value: envVars } = envSchema.validate(process.env, {
+  abortEarly: false
+});
 
-if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
-}
+// On NE throw plus à l'import : l'erreur est exposée et vérifiée dans
+// createApp() (le handler serverless la renvoie alors en JSON diagnostique).
+export const configValidationError = configError
+  ? configError.details.map((d) => d.message).join(' | ')
+  : null;
 
 export const config = {
   env: envVars.NODE_ENV,
@@ -82,11 +86,11 @@ export const config = {
     refreshExpiresIn: envVars.JWT_REFRESH_EXPIRES_IN
   },
   cors: {
-    allowedOrigins: envVars.CORS_ALLOWED_ORIGINS.split(',')
+    allowedOrigins: (envVars.CORS_ALLOWED_ORIGINS || 'http://localhost:5173').split(',')
   },
   upload: {
     maxSize: envVars.UPLOAD_MAX_SIZE,
-    allowedTypes: envVars.UPLOAD_ALLOWED_TYPES.split(',')
+    allowedTypes: (envVars.UPLOAD_ALLOWED_TYPES || 'pdf,doc,docx,txt').split(',')
   },
   email: {
     host: envVars.SMTP_HOST,
