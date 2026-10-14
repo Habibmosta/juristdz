@@ -17,6 +17,7 @@ export default async function handler(req: any, res: any) {
     res.status(503).json({
       error: 'backend_init_failed',
       message: err?.message || String(err),
+      stack: String(err?.stack || '').split('\n').slice(0, 8).join('\n'),
       code: err?.code || null,
       config: {
         DATABASE_URL_set: Boolean(env.DATABASE_URL),
