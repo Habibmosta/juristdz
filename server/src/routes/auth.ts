@@ -338,7 +338,9 @@ router.get('/db-test', async (_req, res) => {
 });
 
 router.post('/reset-password', asyncHandler(async (req, res) => {
+  console.log('[RESET 1] body recu:', JSON.stringify(req.body));
   const { error, value } = resetPasswordSchema.validate(req.body);
+  console.log('[RESET 2] validation:', error ? error.message : 'OK');
 
   if (error) {
     return res.status(400).json({
@@ -348,12 +350,15 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
   }
 
   const { email } = value;
+  console.log('[RESET 3] email extrait:', email, typeof email);
 
   try {
+    console.log('[RESET 4] avant requete DB');
     const userResult = await db.query(
       'SELECT id, email FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
+    console.log('[RESET 5] requete OK, lignes:', (userResult as any).rows.length);
 
     if (!userResult || (userResult as any).rows.length === 0) {
       return res.json({
