@@ -337,7 +337,7 @@ router.get('/db-test', async (_req, res) => {
   }
 });
 
-router.post('/reset-password', authRateLimit(3, 60), asyncHandler(async (req, res) => {
+router.post('/reset-password', asyncHandler(async (req, res) => {
   const { error, value } = resetPasswordSchema.validate(req.body);
 
   if (error) {
