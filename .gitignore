@@ -98,3 +98,7 @@ components/forms/NotaireForms_Clean.txt
 server/.env
 .env
 
+
+# Fichiers SQL de migration generes localement
+_*MIGRATIONS*.sql
+_migrations_all*.sql

@@ -70,35 +70,23 @@ export async function createApp(): Promise<express.Express> {
     });
   });
 
-  // Diagnostic DB (temps réel) : renvoie l'erreur de connexion réelle.
-  // Enregistré aussi bien sous /api/* (rewrite Vercel) qu'à la racine (serveur dédié).
+  // Diagnostic DB (temps réel) : vérifie la connexion à la base.
+  // Enregistré sous /api/* (rewrite Vercel) et à la racine (serveur dédié).
   const dbDiagnostic = async (req: express.Request, res: express.Response) => {
     try {
       const { db } = await import('@/database/connection');
       const result = (await db.query(
         "SELECT current_database() AS db, count(*) AS tables FROM information_schema.tables WHERE table_schema = 'public'"
       )) as { rows: Array<{ db: string; tables: number }> };
-      // Requête identique à celle de la route reset-password
-      const users = (await db.query(
-        'SELECT count(*) AS n FROM users'
-      )) as { rows: Array<{ n: number }> };
       res.json({
-        ok: true,
+        status: 'ok',
         database: result.rows[0]?.db,
-        tables: Number(result.rows[0]?.tables),
-        users_rows: Number(users.rows[0]?.n),
-        DATABASE_URL_host: process.env.DATABASE_URL
-          ? new URL(process.env.DATABASE_URL).host
-          : null
+        timestamp: new Date().toISOString()
       });
     } catch (err: any) {
-      res.json({
-        ok: false,
-        error: err?.message || String(err),
-        code: err?.code || null,
-        DATABASE_URL_host: process.env.DATABASE_URL
-          ? new URL(process.env.DATABASE_URL).host
-          : null
+      res.status(503).json({
+        status: 'error',
+        error: err?.code || 'db_unreachable'
       });
     }
   };

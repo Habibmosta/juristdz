@@ -327,20 +327,8 @@ const resetPasswordSchema = Joi.object({
   email: Joi.string().email().required()
 });
 
-// Diagnostic : même import statique `db` que la route reset-password
-router.get('/db-test', async (_req, res) => {
-  try {
-    const r = (await db.query('SELECT count(*) AS n FROM users')) as { rows: Array<{ n: number }> };
-    res.json({ ok: true, users: Number(r.rows[0]?.n) });
-  } catch (err: any) {
-    res.json({ ok: false, error: err?.message || String(err), code: err?.code || null });
-  }
-});
-
-router.post('/reset-password', asyncHandler(async (req, res) => {
-  console.log('[RESET 1] body recu:', JSON.stringify(req.body));
+router.post('/reset-password', authRateLimit(3, 60), asyncHandler(async (req, res) => {
   const { error, value } = resetPasswordSchema.validate(req.body);
-  console.log('[RESET 2] validation:', error ? error.message : 'OK');
 
   if (error) {
     return res.status(400).json({
@@ -350,15 +338,12 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
   }
 
   const { email } = value;
-  console.log('[RESET 3] email extrait:', email, typeof email);
 
   try {
-    console.log('[RESET 4] avant requete DB');
     const userResult = await db.query(
       'SELECT id, email FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
-    console.log('[RESET 5] requete OK, lignes:', (userResult as any).rows.length);
 
     if (!userResult || (userResult as any).rows.length === 0) {
       return res.json({
@@ -402,9 +387,7 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
     logger.error('Reset password error:', err?.message || err);
     res.status(500).json({
       success: false,
-      error: 'Failed to process request',
-      detail: err?.message || String(err),
-      code: err?.code || null
+      error: 'Failed to process request'
     });
   }
 }));
