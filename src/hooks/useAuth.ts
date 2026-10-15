@@ -1,170 +1,177 @@
-import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { EnhancedUserProfile, UserRole } from '../../types';
+import { useState, useEffect, useCallback } from 'react';
+import { authService, tokenStorage } from '../services/authService';
+import { UserRole } from '../../types';
+
+export interface EnhancedUserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  profession: UserRole;
+  registrationNumber?: string;
+  barreauId?: string;
+  organizationName?: string;
+  phoneNumber?: string;
+  languages: string[];
+  specializations: string[];
+  roles: string[];
+  activeRole: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  mfaEnabled: boolean;
+  professionalInfo?: any;
+  account_status?: string;
+  subscriptionPlan?: string;
+  trial_ends_at?: string;
+  payment_status?: string;
+  created_at?: string;
+}
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<EnhancedUserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Load user profile from API
+  const loadProfile = useCallback(async () => {
+    try {
+      const userProfile = await authService.getProfile();
+
+      if (!userProfile) {
+        setProfile(null);
+        setUser(null);
+        return null;
+      }
+
+      // Convert to EnhancedUserProfile format
+      const enhancedProfile: EnhancedUserProfile = {
+        id: userProfile.id,
+        email: userProfile.email,
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        profession: mapProfessionToRole(userProfile.profession),
+        registrationNumber: userProfile.registrationNumber || '',
+        barreauId: userProfile.barreauId || '',
+        organizationName: userProfile.organizationName || '',
+        phoneNumber: userProfile.phoneNumber || '',
+        languages: userProfile.languages || ['fr'],
+        specializations: userProfile.specializations || [],
+        roles: userProfile.roles || [userProfile.profession],
+        activeRole: userProfile.activeRole || userProfile.profession,
+        isActive: userProfile.isActive ?? true,
+        emailVerified: userProfile.emailVerified ?? false,
+        mfaEnabled: userProfile.mfaEnabled ?? false,
+        account_status: userProfile.account_status,
+        subscriptionPlan: userProfile.subscriptionPlan,
+        trial_ends_at: userProfile.trial_ends_at,
+        payment_status: userProfile.payment_status,
+        created_at: userProfile.created_at,
+      };
+
+      setProfile(enhancedProfile);
+      setUser({ id: userProfile.id, email: userProfile.email });
+      return enhancedProfile;
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Check auth on mount
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
+    const initAuth = async () => {
+      if (tokenStorage.hasTokens()) {
+        await loadProfile();
       } else {
         setLoading(false);
       }
-    });
+    };
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      // Only update on actual auth changes, not on token refresh
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          loadProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        // Just update the session without reloading profile
-        setSession(session);
-      }
-    });
+    initAuth();
+  }, [loadProfile]);
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const loadProfile = async (userId: string, retryCount = 0) => {
+  const login = async (credentials: { email: string; password: string; mfaCode?: string }) => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const result = await authService.login(credentials);
 
-      if (error) {
-        // Si le profil n'existe pas encore (trigger en cours), réessayer
-        if (error.code === 'PGRST116' && retryCount < 3) {
-          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
-          return loadProfile(userId, retryCount + 1);
-        }
-        throw error;
+      if (result.success && result.user) {
+        await loadProfile();
+        return { success: true };
       }
 
-      if (data) {
-        // Convert database profile to EnhancedUserProfile
-        const enhancedProfile: EnhancedUserProfile = {
-          id: data.id,
-          email: data.email,
-          firstName: data.first_name || '',
-          lastName: data.last_name || '',
-          profession: mapProfessionToRole(data.profession),
-          registrationNumber: data.registration_number || '',
-          barreauId: data.barreau_id || '',
-          organizationName: data.organization_name || '',
-          phoneNumber: data.phone_number || '',
-          languages: data.languages || ['fr'],
-          specializations: data.specializations || [],
-          roles: [mapProfessionToRole(data.profession)],
-          activeRole: mapProfessionToRole(data.profession),
-          isActive: data.is_active,
-          emailVerified: data.email_verified,
-          mfaEnabled: data.mfa_enabled,
-          professionalInfo: data.professional_info || undefined,
-          // Subscription & account fields
-          account_status: data.account_status,
-          subscriptionPlan: data.subscription_plan,
-          trial_ends_at: data.trial_ends_at,
-          payment_status: data.payment_status,
-          suspension_reason: data.suspension_reason,
-          created_at: data.created_at,
-        };
-
-        setProfile(enhancedProfile);
-      }
+      return {
+        success: false,
+        error: result.error || 'Erreur de connexion'
+      };
     } catch (error) {
-      console.error('Error loading profile:', error);
+      return {
+        success: false,
+        error: 'Erreur réseau'
+      };
     } finally {
       setLoading(false);
     }
   };
 
+  const register = async (userData: any) => {
+    try {
+      const result = await authService.register(userData);
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erreur réseau'
+      };
+    }
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authService.logout();
     setUser(null);
     setProfile(null);
-    setSession(null);
   };
 
   const updateProfile = async (updates: Partial<EnhancedUserProfile>) => {
-    if (!user) return;
-
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: updates.firstName,
-          last_name: updates.lastName,
-          profession: updates.profession?.toLowerCase(),
-          registration_number: updates.registrationNumber,
-          barreau_id: updates.barreauId,
-          organization_name: updates.organizationName,
-          phone_number: updates.phoneNumber,
-          languages: updates.languages,
-          specializations: updates.specializations
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-      await loadProfile(user.id);
+      const success = await authService.updateProfile(updates);
+      if (success) {
+        await loadProfile();
+      }
+      return success;
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
     }
   };
 
-  const updateProfessionalInfo = async (professionalInfo: import('../../types').ProfessionalInfo) => {
-    if (!user) return;
+  const requireAuth = (): boolean => {
+    return !!profile;
+  };
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ professional_info: professionalInfo })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Mettre à jour le profil local sans recharger
-      setProfile(prev => prev ? { ...prev, professionalInfo } : prev);
-    } catch (error) {
-      console.error('Error updating professional info:', error);
-      throw error;
-    }
+  const requireRole = (requiredRole: UserRole): boolean => {
+    if (!profile) return false;
+    return profile.roles.includes(requiredRole) || profile.activeRole === requiredRole;
   };
 
   return {
     user,
     profile,
-    session,
     loading,
+    login,
+    register,
     signOut,
     updateProfile,
-    updateProfessionalInfo
+    requireAuth,
+    requireRole,
+    isAuthenticated: tokenStorage.hasTokens(),
   };
 };
 
 // Helper function to map profession to UserRole
-function mapProfessionToRole(profession: string): UserRole {
+export function mapProfessionToRole(profession: string): UserRole {
   switch (profession.toLowerCase()) {
     case 'admin':
       return UserRole.ADMIN;
