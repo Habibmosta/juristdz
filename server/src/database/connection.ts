@@ -15,7 +15,9 @@ class DatabaseConnection {
       ssl: config.database.ssl ? { rejectUnauthorized: false } : false,
       max: Number(process.env.DB_POOL_MAX) || (process.env.VERCEL ? 3 : 20),
       idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_MS) || 10000,
-      connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS) || 15000
+      // Le pooler Supabase (mode session) peut mettre 10-30s à établir une
+      // connexion à froid : timeout généreux pour éviter les échecs au boot.
+      connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS) || 30000
     });
 
     // Handle pool errors
