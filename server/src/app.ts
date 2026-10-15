@@ -70,8 +70,9 @@ export async function createApp(): Promise<express.Express> {
     });
   });
 
-  // Diagnostic DB (temps réel) : renvoie l'erreur de connexion réelle
-  app.get('/health/db', async (req, res) => {
+  // Diagnostic DB (temps réel) : renvoie l'erreur de connexion réelle.
+  // Enregistré aussi bien sous /api/* (rewrite Vercel) qu'à la racine (serveur dédié).
+  const dbDiagnostic = async (req: express.Request, res: express.Response) => {
     try {
       const { db } = await import('@/database/connection');
       const result = (await db.query(
@@ -95,7 +96,9 @@ export async function createApp(): Promise<express.Express> {
           : null
       });
     }
-  });
+  };
+  app.get('/health/db', dbDiagnostic);
+  app.get('/api/health/db', dbDiagnostic);
 
   // API routes sans rate limiting (dev)
   app.use('/api/auth', authRouter);
