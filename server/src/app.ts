@@ -93,13 +93,19 @@ export async function createApp(): Promise<express.Express> {
   app.use('/api', translationRouter);
   app.use('/api/improved-translation', improvedTranslationRouter);
 
-  // Connect to database (lazy : le pool pg se connecte à la première requête)
-  await connectDatabase();
-  logger.info('Database connected successfully');
+  // Connect to database (lazy : le pool pg se connecte à la première requête).
+  // On ne bloque pas le boot serveurless sur un test de connexion.
+  connectDatabase().catch((err) =>
+    logger.warn('Connexion DB différée (première requête):', err)
+  );
 
-  // Initialize service orchestrator
-  await serviceOrchestrator.initialize();
-  logger.info('Service orchestrator initialized successfully');
+  // Initialize service orchestrator (non bloquant : tables créées en arrière-plan)
+  serviceOrchestrator
+    .initialize()
+    .then(() => logger.info('Service orchestrator initialized successfully'))
+    .catch((err) =>
+      logger.warn('Service orchestrator initialisation différée:', err)
+    );
 
   // Initialize routes requiring the database connection
   app.use('/api/learning', createLearningRoutes(getDb()));
@@ -114,14 +120,14 @@ export async function createApp(): Promise<express.Express> {
   app.use('/api/moderation', createModerationRoutes(getDb()));
   logger.info('Moderation routes initialized successfully');
 
-  // Initialize RBAC system (idempotent)
-  try {
-    await rbacService.createTablesIfNotExist();
-    await rbacService.initializeDefaultRoles();
-    logger.info('RBAC system initialized successfully');
-  } catch (error) {
-    logger.warn('RBAC initialization failed, continuing without default roles:', error);
-  }
+  // Initialize RBAC system (non bloquant, idempotent)
+  rbacService
+    .createTablesIfNotExist()
+    .then(() => rbacService.initializeDefaultRoles())
+    .then(() => logger.info('RBAC system initialized successfully'))
+    .catch((error) =>
+      logger.warn('RBAC initialization deferred:', error)
+    );
 
   // Error handling middleware (must be last)
   app.use(apiGatewayErrorHandler());
