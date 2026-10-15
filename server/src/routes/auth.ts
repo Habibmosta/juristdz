@@ -383,11 +383,13 @@ router.post('/reset-password', authRateLimit(3, 60), asyncHandler(async (req, re
       success: true,
       message: 'If this email exists, a reset link has been sent'
     });
-  } catch (err) {
-    logger.error('Reset password error:', err);
+  } catch (err: any) {
+    logger.error('Reset password error:', err?.message || err);
     res.status(500).json({
       success: false,
-      error: 'Failed to process request'
+      error: 'Failed to process request',
+      detail: err?.message || String(err),
+      code: err?.code || null
     });
   }
 }));
