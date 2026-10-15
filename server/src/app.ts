@@ -78,10 +78,15 @@ export async function createApp(): Promise<express.Express> {
       const result = (await db.query(
         "SELECT current_database() AS db, count(*) AS tables FROM information_schema.tables WHERE table_schema = 'public'"
       )) as { rows: Array<{ db: string; tables: number }> };
+      // Requête identique à celle de la route reset-password
+      const users = (await db.query(
+        'SELECT count(*) AS n FROM users'
+      )) as { rows: Array<{ n: number }> };
       res.json({
         ok: true,
         database: result.rows[0]?.db,
         tables: Number(result.rows[0]?.tables),
+        users_rows: Number(users.rows[0]?.n),
         DATABASE_URL_host: process.env.DATABASE_URL
           ? new URL(process.env.DATABASE_URL).host
           : null
