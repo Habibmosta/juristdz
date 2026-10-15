@@ -70,6 +70,33 @@ export async function createApp(): Promise<express.Express> {
     });
   });
 
+  // Diagnostic DB (temps réel) : renvoie l'erreur de connexion réelle
+  app.get('/health/db', async (req, res) => {
+    try {
+      const { db } = await import('@/database/connection');
+      const result = (await db.query(
+        "SELECT current_database() AS db, count(*) AS tables FROM information_schema.tables WHERE table_schema = 'public'"
+      )) as { rows: Array<{ db: string; tables: number }> };
+      res.json({
+        ok: true,
+        database: result.rows[0]?.db,
+        tables: Number(result.rows[0]?.tables),
+        DATABASE_URL_host: process.env.DATABASE_URL
+          ? new URL(process.env.DATABASE_URL).host
+          : null
+      });
+    } catch (err: any) {
+      res.json({
+        ok: false,
+        error: err?.message || String(err),
+        code: err?.code || null,
+        DATABASE_URL_host: process.env.DATABASE_URL
+          ? new URL(process.env.DATABASE_URL).host
+          : null
+      });
+    }
+  });
+
   // API routes sans rate limiting (dev)
   app.use('/api/auth', authRouter);
   app.use('/api/users', userRouter);
