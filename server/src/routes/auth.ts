@@ -327,6 +327,16 @@ const resetPasswordSchema = Joi.object({
   email: Joi.string().email().required()
 });
 
+// Diagnostic : même import statique `db` que la route reset-password
+router.get('/db-test', async (_req, res) => {
+  try {
+    const r = (await db.query('SELECT count(*) AS n FROM users')) as { rows: Array<{ n: number }> };
+    res.json({ ok: true, users: Number(r.rows[0]?.n) });
+  } catch (err: any) {
+    res.json({ ok: false, error: err?.message || String(err), code: err?.code || null });
+  }
+});
+
 router.post('/reset-password', authRateLimit(3, 60), asyncHandler(async (req, res) => {
   const { error, value } = resetPasswordSchema.validate(req.body);
 
