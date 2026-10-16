@@ -143,16 +143,21 @@ export async function createApp(): Promise<express.Express> {
   app.use('/api/moderation', createModerationRoutes(getDb()));
   logger.info('Moderation routes initialized successfully');
 
-  // Initialize RBAC system (non bloquant, tolérant aux methodes absentes)
-  (async () => {
-    try {
-      await (rbacService as any).createTablesIfNotExist?.();
-      await (rbacService as any).initializeDefaultRoles?.();
-      logger.info('RBAC system initialized successfully');
-    } catch (error) {
-      logger.warn('RBAC initialization deferred:', error);
-    }
-  })().catch(() => {});
+  // Initialize RBAC system (non bloquant, tolérant aux methodes absentes).
+  // En serverless, les tables RBAC viennent des migrations : on évite une salve
+  // de requêtes au cold start qui sature le pool (max 3) et provoquait des
+  // "Connection terminated due to connection timeout". Conservé hors Vercel.
+  if (!process.env.VERCEL) {
+    (async () => {
+      try {
+        await (rbacService as any).createTablesIfNotExist?.();
+        await (rbacService as any).initializeDefaultRoles?.();
+        logger.info('RBAC system initialized successfully');
+      } catch (error) {
+        logger.warn('RBAC initialization deferred:', error);
+      }
+    })().catch(() => {});
+  }
 
   // Error handling middleware (must be last)
   app.use(apiGatewayErrorHandler());
