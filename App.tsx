@@ -44,7 +44,6 @@ import { useAuth } from './src/hooks/useAuth';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 const App: React.FC = () => {
-  // Use Supabase authentication
   const { user, profile, loading: authLoading, signOut } = useAuth();
   
   const [currentMode, setMode] = useState<AppMode>(AppMode.DASHBOARD);
@@ -155,7 +154,7 @@ const App: React.FC = () => {
 
   // Show auth form if not authenticated
   if (!user || !profile) {
-    return <AuthForm onSuccess={() => {}} />;
+    return <AuthForm onSuccess={() => { window.location.reload(); }} />;
   }
 
   // Error state

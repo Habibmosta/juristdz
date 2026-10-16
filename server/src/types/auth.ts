@@ -9,6 +9,7 @@ export interface AuthResult {
   user?: UserProfile;
   tokens?: TokenPair;
   mfaRequired?: boolean;
+  emailNotVerified?: boolean;
   error?: string;
 }
 

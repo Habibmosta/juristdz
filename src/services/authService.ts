@@ -31,6 +31,7 @@ export interface AuthResponse {
   tokens?: TokenPair;
   error?: string;
   mfaRequired?: boolean;
+  emailNotVerified?: boolean;
 }
 
 export interface TokenPair {
@@ -102,7 +103,8 @@ export const authService = {
       if (!response.ok || !data.success) {
         return {
           success: false,
-          error: data.error || 'Erreur de connexion'
+          error: data.error || 'Erreur de connexion',
+          emailNotVerified: !!data.emailNotVerified
         };
       }
 
@@ -289,6 +291,58 @@ async getProfile(): Promise<UserProfile | null> {
         return {
           success: false,
           error: data.error || 'Lien de réinitialisation invalide ou expiré'
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erreur réseau'
+      };
+    }
+  },
+
+  async verifyEmail(token: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        return {
+          success: false,
+          error: data.error || 'Lien de vérification invalide ou expiré'
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erreur réseau'
+      };
+    }
+  },
+
+  async resendVerification(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        return {
+          success: false,
+          error: data.error || "Erreur lors de l'envoi"
         };
       }
 

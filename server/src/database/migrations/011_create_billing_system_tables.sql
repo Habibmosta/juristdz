@@ -297,7 +297,7 @@ CREATE OR REPLACE FUNCTION generate_invoice_number(
   lawyer_id UUID,
   invoice_date DATE DEFAULT CURRENT_DATE
 )
-RETURNS VARCHAR(50) AS $
+RETURNS VARCHAR(50) AS $$
 DECLARE
   year_part VARCHAR(4);
   sequence_number INTEGER;
@@ -349,7 +349,7 @@ RETURNS TABLE(
   urgency_multiplier DECIMAL,
   court_multiplier DECIMAL,
   total_fee DECIMAL
-) AS $
+) AS $$
 DECLARE
   schedule_record RECORD;
   base_fee_amount DECIMAL := 0;
@@ -434,7 +434,7 @@ RETURNS TABLE(
   percentage_fee DECIMAL,
   document_fee DECIMAL,
   total_fee DECIMAL
-) AS $
+) AS $$
 DECLARE
   schedule_record RECORD;
   base_fee_amount DECIMAL := 0;
@@ -492,7 +492,7 @@ RETURNS TABLE(
   distance_fee DECIMAL,
   urgency_multiplier DECIMAL,
   total_fee DECIMAL
-) AS $
+) AS $$
 DECLARE
   schedule_record RECORD;
   base_fee_amount DECIMAL := 0;
@@ -554,7 +554,7 @@ RETURNS TABLE(
   tax_type VARCHAR(50),
   tax_rate DECIMAL,
   tax_amount DECIMAL
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT 

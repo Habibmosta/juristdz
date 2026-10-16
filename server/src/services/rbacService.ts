@@ -22,6 +22,98 @@ export class RBACService {
   private readonly cacheExpiryMinutes = 15;
 
   /**
+   * Create RBAC tables if they don't exist
+   */
+  async createTablesIfNotExist(): Promise<void> {
+    try {
+      logger.info('Creating RBAC tables if not exist...');
+      
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS roles (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          name VARCHAR(255) NOT NULL,
+          profession VARCHAR(50) NOT NULL,
+          description TEXT,
+          organization_id UUID,
+          is_custom BOOLEAN DEFAULT false,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(name, profession, organization_id)
+        );
+      `);
+      
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS permissions (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          resource VARCHAR(100) NOT NULL,
+          actions TEXT[] NOT NULL,
+          conditions JSONB,
+          scope VARCHAR(50) NOT NULL,
+          description TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(resource, scope, actions)
+        );
+      `);
+      
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS role_permissions (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          role_id UUID NOT NULL,
+          permission_id UUID NOT NULL,
+          conditions JSONB,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(role_id, permission_id)
+        );
+      `);
+      
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS user_roles (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID NOT NULL,
+          role_id UUID NOT NULL,
+          organization_id UUID,
+          assigned_by UUID,
+          assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          expires_at TIMESTAMP,
+          is_active BOOLEAN DEFAULT true,
+          UNIQUE(user_id, role_id, organization_id)
+        );
+      `);
+      
+      await db.query(`
+        INSERT INTO roles (name, profession, description, is_custom) VALUES
+          ('Avocat Standard', 'avocat', 'Rôle standard pour les avocats', false),
+          ('Notaire Standard', 'notaire', 'Rôle standard pour les notaires', false),
+          ('Huissier Standard', 'huissier', 'Rôle standard pour les huissiers', false),
+          ('Magistrat Standard', 'magistrat', 'Rôle standard pour les magistrats', false),
+          ('Étudiant Standard', 'etudiant', 'Rôle standard pour les étudiants', false),
+          ('Juriste Entreprise Standard', 'juriste_entreprise', 'Rôle standard pour les juristes', false),
+          ('Administrateur Système', 'admin', 'Rôle administrateur', false)
+        ON CONFLICT DO NOTHING;
+      `);
+      
+      await db.query(`
+        INSERT INTO permissions (resource, actions, scope, description) VALUES
+          ('user', ARRAY['create', 'read', 'update', 'delete'], 'global', 'User management'),
+          ('user', ARRAY['read'], 'organization', 'Read users in organization'),
+          ('document', ARRAY['create', 'read', 'update', 'delete'], 'global', 'Document management'),
+          ('document', ARRAY['read'], 'personal', 'Read own documents'),
+          ('case', ARRAY['create', 'read', 'update', 'delete'], 'global', 'Case management'),
+          ('case', ARRAY['read'], 'personal', 'Read own cases'),
+          ('admin', ARRAY['read', 'update'], 'global', 'Admin operations')
+        ON CONFLICT DO NOTHING;
+      `);
+      
+      logger.info('RBAC tables created successfully');
+    } catch (error) {
+      logger.error('Error creating RBAC tables:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Check if user has permission for a specific resource and action
    * Validates: Requirements 1.3 - Role-based access control with permission verification
    */

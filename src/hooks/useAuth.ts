@@ -104,7 +104,8 @@ export const useAuth = () => {
 
       return {
         success: false,
-        error: result.error || 'Erreur de connexion'
+        error: result.error || 'Erreur de connexion',
+        emailNotVerified: result.emailNotVerified
       };
     } catch (error) {
       return {

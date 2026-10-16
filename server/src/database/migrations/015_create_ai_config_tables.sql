@@ -150,7 +150,7 @@ CREATE TRIGGER update_ai_config_presets_updated_at BEFORE UPDATE ON ai_config_pr
 
 -- Function to get default AI model for domain
 CREATE OR REPLACE FUNCTION get_default_ai_model(p_domain_juridique domaine_juridique)
-RETURNS UUID AS $
+RETURNS UUID AS $$
 DECLARE
     model_id UUID;
 BEGIN
@@ -184,7 +184,7 @@ CREATE OR REPLACE FUNCTION update_ai_performance_metrics(
     p_response_time INTEGER,
     p_cost DECIMAL
 )
-RETURNS VOID AS $
+RETURNS VOID AS $$
 DECLARE
     metric_date DATE := CURRENT_DATE;
 BEGIN
@@ -211,7 +211,7 @@ $ LANGUAGE plpgsql;
 
 -- Function to calculate AI model efficiency score
 CREATE OR REPLACE FUNCTION calculate_ai_efficiency_score(p_model_id UUID, p_days INTEGER DEFAULT 30)
-RETURNS DECIMAL AS $
+RETURNS DECIMAL AS $$
 DECLARE
     efficiency_score DECIMAL;
     success_rate DECIMAL;
@@ -256,7 +256,7 @@ RETURNS TABLE (
     total_tokens BIGINT,
     total_cost DECIMAL,
     efficiency_score DECIMAL
-) AS $
+) AS $$
 BEGIN
     RETURN QUERY
     SELECT 

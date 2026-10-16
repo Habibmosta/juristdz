@@ -750,3 +750,17 @@ export class AuditService {
 }
 
 export const auditService = new AuditService();
+
+// Also attach logSecurityEvent to auditService object for compatibility
+(auditService as any).logSecurityEvent = logSecurityEvent;
+
+export async function logSecurityEvent(params: any): Promise<void> {
+  await auditService.logSecurityThreat({
+    threatType: params.event || 'security_event',
+    severity: params.severity || 'medium',
+    description: JSON.stringify(params),
+    tenantId: params.tenantId || 'default',
+    userId: params.userId,
+    detectedAt: new Date()
+  });
+}

@@ -263,7 +263,7 @@ CREATE OR REPLACE FUNCTION calculate_procedural_deadline(
   calculation_value INTEGER,
   exclude_weekends BOOLEAN DEFAULT true
 )
-RETURNS DATE AS $
+RETURNS DATE AS $$
 DECLARE
   result_date DATE;
   days_to_add INTEGER;
@@ -318,7 +318,7 @@ $ LANGUAGE plpgsql;
 
 -- Create function to generate deadline notifications
 CREATE OR REPLACE FUNCTION generate_deadline_notifications()
-RETURNS INTEGER AS $
+RETURNS INTEGER AS $$
 DECLARE
   deadline_record RECORD;
   notification_days INTEGER;
@@ -375,7 +375,7 @@ $ LANGUAGE plpgsql;
 
 -- Create function to send pending notifications
 CREATE OR REPLACE FUNCTION process_pending_notifications()
-RETURNS INTEGER AS $
+RETURNS INTEGER AS $$
 DECLARE
   notification_record RECORD;
   notifications_processed INTEGER := 0;

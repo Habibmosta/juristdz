@@ -17,7 +17,8 @@
     "format:check": "prettier --check src/**/*.ts",
     "db:migrate": "tsx src/database/migrate.ts",
     "db:seed": "tsx src/database/seed.ts",
-    "db:reset": "tsx src/database/reset.ts"
+    "db:reset": "tsx src/database/reset.ts",
+    "rag:ingest": "tsx src/scripts/ingestRag.ts"
   },
   "dependencies": {
     "@types/express-rate-limit": "^6.0.2",

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/database/connection';
 import { logger } from '@/utils/logger';
+import { hashResetToken } from '@/services/emailService';
 import { RegisterRequest, UserProfile, Profession } from '@/types/auth';
 
 export class UserService {
@@ -17,7 +18,7 @@ export class UserService {
         password,
         firstName,
         lastName,
-        profession,
+        profession = 'etudiant',
         registrationNumber,
         barreauId,
         organizationName,
@@ -47,10 +48,10 @@ export class UserService {
       const result = await db.transaction(async (client) => {
         // Create user
         const userResult = await client.query(
-          `INSERT INTO users (email, password_hash, first_name, last_name, phone_number, email_verified)
-           VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING id`,
-          [email.toLowerCase(), passwordHash, firstName, lastName, phoneNumber, false]
+`INSERT INTO users (email, password_hash, first_name, last_name, phone_number, created_at, updated_at, is_active)
+            VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), true)
+            RETURNING id`,
+          [email.toLowerCase(), passwordHash, firstName, lastName, phoneNumber]
         );
 
         const userId = userResult.rows[0].id;
@@ -103,13 +104,9 @@ export class UserService {
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
+      // Get user basic info
       const userResult = await db.query(
-        `SELECT u.*, up.profession, up.registration_number, up.barreau_id, up.organization_name,
-                up.address_line1, up.address_line2, up.city, up.postal_code, up.country,
-                up.languages, up.specializations, up.is_primary
-         FROM users u
-         JOIN user_profiles up ON u.id = up.user_id
-         WHERE u.id = $1 AND up.is_primary = true`,
+        'SELECT * FROM users WHERE id = $1',
         [userId]
       );
 
@@ -118,6 +115,14 @@ export class UserService {
       }
 
       const user = (userResult as any).rows[0];
+
+      // Get primary profile
+      const profileResult = await db.query(
+        'SELECT * FROM user_profiles WHERE user_id = $1 LIMIT 1',
+        [userId]
+      );
+
+      const profile = (profileResult as any).rows[0] || {};
 
       // Get all roles for this user
       const rolesResult = await db.query(
@@ -132,20 +137,20 @@ export class UserService {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        profession: user.profession,
-        registrationNumber: user.registration_number,
-        barreauId: user.barreau_id,
-        organizationName: user.organization_name,
+        profession: profile.profession || 'avocat',
+        registrationNumber: profile.registration_number,
+        barreauId: profile.barreau_id,
+        organizationName: profile.organization_name,
         phoneNumber: user.phone_number,
         address: {
-          line1: user.address_line1,
-          line2: user.address_line2,
-          city: user.city,
-          postalCode: user.postal_code,
-          country: user.country
+          line1: profile.address_line1,
+          line2: profile.address_line2,
+          city: profile.city,
+          postalCode: profile.postal_code,
+          country: profile.country || 'Algeria'
         },
-        languages: user.languages || ['fr'],
-        specializations: user.specializations || [],
+        languages: profile.languages || ['fr'],
+        specializations: profile.specializations || [],
         roles,
         activeRole: user.profession,
         isActive: user.is_active,
@@ -309,6 +314,58 @@ export class UserService {
     } catch (error) {
       logger.error('Email verification error:', error);
       return false;
+    }
+  }
+
+  /**
+   * Create a single-use email verification token (valid 24h) for a user.
+   * Returns the raw token to embed in the verification link.
+   */
+  async createEmailVerificationToken(userId: string): Promise<string> {
+    await db.query('DELETE FROM email_verification_tokens WHERE user_id = $1', [userId]);
+
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await db.query(
+      `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, hashResetToken(token), expiresAt]
+    );
+
+    return token;
+  }
+
+  /**
+   * Verify an email by its single-use token and mark the account as verified.
+   */
+  async verifyEmailByToken(token: string): Promise<{ success: boolean; userId?: string; error?: string }> {
+    try {
+      const tokenResult = await db.query(
+        `SELECT id, user_id FROM email_verification_tokens
+         WHERE token_hash = $1 AND used_at IS NULL AND expires_at > NOW()`,
+        [hashResetToken(token)]
+      );
+
+      if (!tokenResult || (tokenResult as any).rows.length === 0) {
+        return { success: false, error: 'Lien de vérification invalide ou expiré' };
+      }
+
+      const row = (tokenResult as any).rows[0];
+
+      await db.query(
+        'UPDATE users SET email_verified = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+        [row.user_id]
+      );
+
+      await db.query('UPDATE email_verification_tokens SET used_at = NOW() WHERE id = $1', [row.id]);
+
+      logger.info(`Email verified via token for user: ${row.user_id}`);
+      return { success: true, userId: row.user_id };
+
+    } catch (error) {
+      logger.error('Email verification (token) error:', error);
+      return { success: false, error: 'Verification failed' };
     }
   }
 

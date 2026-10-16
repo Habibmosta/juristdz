@@ -170,7 +170,7 @@ export const ROLE_ROUTING_CONFIG: Record<UserRole, RoleRouteConfig> = {
       AppMode.SETTINGS,
       AppMode.PROFILE
     ],
-    defaultMode: AppMode.ADMIN,
+    defaultMode: AppMode.DASHBOARD,
     restrictedFeatures: []
   }
 };

@@ -61,6 +61,24 @@ const verifyMFASchema = Joi.object({
   token: Joi.string().length(6).required()
 });
 
+const verifyEmailSchema = Joi.object({
+  token: Joi.string().uuid().required()
+});
+
+const resendVerificationSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
+/**
+ * Crée un jeton de vérification et envoie l'email correspondant.
+ * Lève une exception si l'envoi échoue (à l'appelant de décider).
+ */
+async function sendVerificationEmail(userId: string, email: string): Promise<void> {
+  const token = await userService.createEmailVerificationToken(userId);
+  const verifyLink = `${config.frontend.url}/verify-email?token=${token}`;
+  await emailService.sendVerificationEmail({ to: email, verifyLink, language: 'fr' });
+}
+
 /**
  * POST /api/auth/login
  * Authenticate user with credentials
@@ -84,7 +102,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   });
 
   if (!result.success) {
-    return res.status(401).json(result);
+    return res.status(result.emailNotVerified ? 403 : 401).json(result);
   }
 
   res.json({
@@ -115,10 +133,93 @@ router.post('/register', asyncHandler(async (req, res) => {
     return res.status(400).json(result);
   }
 
+  // Envoyer l'email de vérification (best-effort : ne fait pas échouer l'inscription)
+  try {
+    await sendVerificationEmail(result.userId!, registerData.email);
+  } catch (mailError) {
+    logger.error("Envoi email de vérification échoué à l'inscription", {
+      email: registerData.email,
+      error: mailError
+    });
+  }
+
   res.status(201).json({
     success: true,
     message: 'User registered successfully',
     userId: result.userId
+  });
+}));
+
+/**
+ * POST /api/auth/verify-email
+ * Confirme l'adresse email à partir du jeton reçu par email.
+ */
+router.post('/verify-email', authRateLimit(10, 60), asyncHandler(async (req, res) => {
+  const { error, value } = verifyEmailSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.details[0].message
+    });
+  }
+
+  const { token } = value;
+  const result = await userService.verifyEmailByToken(token);
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      error: result.error || 'Lien de vérification invalide ou expiré'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Adresse email vérifiée avec succès'
+  });
+}));
+
+/**
+ * POST /api/auth/resend-verification
+ * Renvoie un email de vérification. Répond toujours succès (anti-énumération).
+ */
+router.post('/resend-verification', authRateLimit(3, 60), asyncHandler(async (req, res) => {
+  const { error, value } = resendVerificationSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.details[0].message
+    });
+  }
+
+  const { email } = value;
+
+  try {
+    const userResult = await db.query(
+      'SELECT id, email, email_verified FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    if (userResult && (userResult as any).rows.length > 0) {
+      const user = (userResult as any).rows[0];
+
+      if (!user.email_verified) {
+        try {
+          await sendVerificationEmail(user.id, user.email);
+        } catch (mailError) {
+          logger.error('Renvoi email de vérification échoué', { email, error: mailError });
+        }
+      }
+    }
+  } catch (err: any) {
+    logger.error('Resend verification error:', err?.message || err);
+  }
+
+  res.json({
+    success: true,
+    message: 'If this email exists and is not verified, a verification link has been sent'
   });
 }));
 

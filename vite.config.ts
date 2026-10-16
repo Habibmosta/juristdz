@@ -39,8 +39,6 @@ export default defineConfig(({ mode }) => {
             manualChunks: {
               // React core
               'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-              // Supabase
-              'vendor-supabase': ['@supabase/supabase-js'],
               // UI icons
               'vendor-lucide': ['lucide-react'],
               // PDF / document generation

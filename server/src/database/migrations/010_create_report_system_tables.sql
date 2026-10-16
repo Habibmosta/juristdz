@@ -260,7 +260,7 @@ CREATE OR REPLACE FUNCTION calculate_next_report_generation(
   timezone VARCHAR(50),
   last_generated TIMESTAMP
 )
-RETURNS TIMESTAMP AS $
+RETURNS TIMESTAMP AS $$
 DECLARE
   next_date TIMESTAMP;
   base_date TIMESTAMP;
@@ -322,7 +322,7 @@ $ LANGUAGE plpgsql;
 
 -- Create function to process scheduled reports
 CREATE OR REPLACE FUNCTION process_scheduled_reports()
-RETURNS INTEGER AS $
+RETURNS INTEGER AS $$
 DECLARE
   scheduled_record RECORD;
   reports_processed INTEGER := 0;
@@ -382,7 +382,7 @@ $ LANGUAGE plpgsql;
 
 -- Create function to cleanup expired reports
 CREATE OR REPLACE FUNCTION cleanup_expired_reports()
-RETURNS INTEGER AS $
+RETURNS INTEGER AS $$
 DECLARE
   reports_cleaned INTEGER := 0;
 BEGIN
@@ -412,7 +412,7 @@ RETURNS TABLE(
   total_hours DECIMAL,
   total_revenue DECIMAL,
   avg_case_duration DECIMAL
-) AS $
+) AS $$
 DECLARE
   date_filter TEXT := '';
 BEGIN

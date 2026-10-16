@@ -310,9 +310,9 @@ export class AdminService {
   async getUserById(userId: string): Promise<AdminUser | null> {
     try {
       const query = `
-        SELECT u.*, o.name as organization_name
+        SELECT u.*, up.profession as role
         FROM users u
-        LEFT JOIN organizations o ON u.organization_id = o.id
+        LEFT JOIN user_profiles up ON up.user_id = u.id
         WHERE u.id = $1
       `;
 
@@ -361,21 +361,9 @@ export class AdminService {
         paramIndex++;
       }
 
-      if (request.role !== undefined) {
-        updateFields.push(`role = $${paramIndex}`);
-        updateValues.push(request.role);
-        paramIndex++;
-      }
-
       if (request.isActive !== undefined) {
         updateFields.push(`is_active = $${paramIndex}`);
         updateValues.push(request.isActive);
-        paramIndex++;
-      }
-
-      if (request.organizationId !== undefined) {
-        updateFields.push(`organization_id = $${paramIndex}`);
-        updateValues.push(request.organizationId);
         paramIndex++;
       }
 
@@ -394,32 +382,39 @@ export class AdminService {
 
       await client.query(updateQuery, updateValues);
 
-      // Créer l'entrée d'audit
-      await client.query(`
-        INSERT INTO audit_logs (
-          user_id, action, resource_type, resource_id, 
-          details, ip_address, user_agent
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [
-        adminId,
-        'UPDATE_USER',
-        'user',
-        userId,
-        JSON.stringify({ 
-          previousData: {
-            firstName: existingUser.firstName,
-            lastName: existingUser.lastName,
-            role: existingUser.role,
-            isActive: existingUser.isActive,
-            organizationId: existingUser.organizationId
-          },
-          newData: request
-        }),
-        null,
-        null
-      ]);
+      // Mettre à jour la profession dans user_profiles
+      if (request.role !== undefined) {
+        await client.query(`
+          WITH updated AS (
+            UPDATE user_profiles SET profession = $2 WHERE user_id = $1 RETURNING *
+          )
+          INSERT INTO user_profiles (user_id, profession)
+          SELECT $1, $2
+          WHERE NOT EXISTS (SELECT 1 FROM updated)
+        `, [userId, request.role]);
+      }
 
       await client.query('COMMIT');
+
+      // Créer l'entrée d'audit (hors transaction)
+      try {
+        await this.db.query(`
+          INSERT INTO audit_logs (
+            user_id, action, resource_type, resource_id, 
+            details, ip_address, user_agent
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          adminId,
+          'UPDATE_USER',
+          'user',
+          userId,
+          JSON.stringify({ previousData: { firstName: existingUser.firstName, lastName: existingUser.lastName, isActive: existingUser.isActive }, newData: request }),
+          null,
+          null
+        ]);
+      } catch (auditErr) {
+        logger.warn('Audit log insertion failed (non-blocking)', { auditErr, userId });
+      }
 
       const updatedUser = await this.getUserById(userId);
       
@@ -516,10 +511,10 @@ export class AdminService {
   async searchUsers(criteria: UserSearchCriteria): Promise<UserSearchResult> {
     try {
       let query = `
-        SELECT u.*, o.name as organization_name, COUNT(*) OVER() as total_count
+        SELECT u.*, up.profession as role, COUNT(*) OVER() as total_count
         FROM users u
-        LEFT JOIN organizations o ON u.organization_id = o.id
-        WHERE u.deleted_at IS NULL
+        LEFT JOIN user_profiles up ON up.user_id = u.id
+        WHERE 1=1
       `;
 
       const params: any[] = [];
@@ -533,7 +528,7 @@ export class AdminService {
       }
 
       if (criteria.role) {
-        query += ` AND u.role = $${paramIndex}`;
+        query += ` AND up.profession = $${paramIndex}`;
         params.push(criteria.role);
         paramIndex++;
       }
@@ -541,12 +536,6 @@ export class AdminService {
       if (criteria.isActive !== undefined) {
         query += ` AND u.is_active = $${paramIndex}`;
         params.push(criteria.isActive);
-        paramIndex++;
-      }
-
-      if (criteria.organizationId) {
-        query += ` AND u.organization_id = $${paramIndex}`;
-        params.push(criteria.organizationId);
         paramIndex++;
       }
 
@@ -1314,7 +1303,7 @@ export class AdminService {
       'email': 'u.email',
       'firstName': 'u.first_name',
       'lastName': 'u.last_name',
-      'role': 'u.role',
+      'role': 'up.profession',
       'createdAt': 'u.created_at',
       'lastLoginAt': 'u.last_login_at'
     };

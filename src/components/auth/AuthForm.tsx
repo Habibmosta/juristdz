@@ -23,6 +23,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [showPlanSelection, setShowPlanSelection] = useState(false);
   const [showLegalAcceptance, setShowLegalAcceptance] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'cabinet'>('free');
   const [language, setLanguage] = useState<'fr' | 'ar'>('fr');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -114,12 +117,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setUnverifiedEmail(null);
+    setResendDone(false);
 
     try {
       const result = await login({ email, password });
 
       if (!result.success) {
         setError(result.error || 'Erreur de connexion');
+        if (result.emailNotVerified) {
+          setUnverifiedEmail(email);
+        }
         return;
       }
 
@@ -129,6 +137,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       setError(err.message || 'Erreur de connexion');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail || resending) return;
+    setResending(true);
+    try {
+      await authService.resendVerification(unverifiedEmail);
+      setResendDone(true);
+    } finally {
+      setResending(false);
     }
   };
 
@@ -330,6 +349,21 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <p className="text-red-200 text-sm">{error}</p>
               </div>
+            )}
+
+            {unverifiedEmail && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resending || resendDone}
+                className="mb-4 w-full py-2.5 rounded-lg text-sm font-semibold bg-legal-gold text-white hover:bg-legal-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resending
+                  ? t.sending
+                  : resendDone
+                  ? (isAr ? 'تم إرسال البريد ✓' : 'Email de vérification envoyé ✓')
+                  : (isAr ? 'إعادة إرسال بريد التحقق' : 'Renvoyer l\'email de vérification')}
+              </button>
             )}
 
             {success && (

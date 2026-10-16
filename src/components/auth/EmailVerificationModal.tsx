@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, CheckCircle, X } from 'lucide-react';
 import type { Language } from '@/types';
+import { authService } from '../../services/authService';
 
 interface EmailVerificationModalProps {
   email: string;
@@ -10,6 +11,21 @@ interface EmailVerificationModalProps {
 
 export const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({ email, language, onClose }) => {
   const isAr = language === 'ar';
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  const handleResend = async () => {
+    if (resending) return;
+    setResending(true);
+    try {
+      await authService.resendVerification(email);
+      setResent(true);
+    } catch {
+      setResent(false);
+    } finally {
+      setResending(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
@@ -119,6 +135,17 @@ export const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({ 
                 ? 'تحقق من مجلد البريد العشوائي (Spam) أو اتصل بنا على contact@juristdz.com'
                 : 'Vérifiez vos spams ou contactez-nous à contact@juristdz.com'}
             </p>
+            <button
+              onClick={handleResend}
+              disabled={resending}
+              className="mt-3 w-full py-2.5 rounded-lg text-sm font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {resending
+                ? (isAr ? 'جارٍ الإرسال...' : 'Envoi en cours...')
+                : resent
+                ? (isAr ? 'تم إرسال رسالة جديدة ✓' : 'Nouvel email envoyé ✓')
+                : (isAr ? 'إعادة إرسال البريد' : "Renvoyer l'email")}
+            </button>
           </div>
 
           {/* Close Button */}

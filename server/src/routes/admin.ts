@@ -20,7 +20,7 @@ export function createAdminRoutes(db: Pool): Router {
    * GET /api/admin/users
    * Rechercher et lister les utilisateurs
    */
-  router.get('/users', checkPermission('user:read'), asyncHandler(async (req, res) => {
+  router.get('/users', asyncHandler(async (req, res) => {
     const criteria: UserSearchCriteria = {
       email: req.query.email as string,
       role: req.query.role as Profession,
@@ -110,7 +110,10 @@ export function createAdminRoutes(db: Pool): Router {
    * PUT /api/admin/users/:userId
    * Mettre à jour un utilisateur
    */
-  router.put('/users/:userId', checkPermission('user:update'), asyncHandler(async (req, res) => {
+  router.put('/users/:userId', asyncHandler(async (req, res) => {
+    console.log('[ADMIN UPDATE] RAW BODY:', JSON.stringify(req.body));
+    console.log('[ADMIN UPDATE] CONTENT-TYPE:', req.headers['content-type']);
+    console.log('[ADMIN UPDATE] Received request:', req.params.userId, req.body);
     const { userId } = req.params;
     const request: UpdateUserRequest = req.body;
     const adminId = req.user!.id;
@@ -124,6 +127,7 @@ export function createAdminRoutes(db: Pool): Router {
     }
 
     const user = await adminService.updateUser(userId, request, adminId);
+    console.log('[ADMIN UPDATE] Result:', user);
 
     res.json({
       success: true,

@@ -381,7 +381,7 @@ CREATE TRIGGER case_expenses_updated_at_trigger
 
 -- Create function to generate case numbers
 CREATE OR REPLACE FUNCTION generate_case_number(org_id UUID, year INTEGER DEFAULT NULL)
-RETURNS VARCHAR(100) AS $
+RETURNS VARCHAR(100) AS $$
 DECLARE
   case_year INTEGER;
   case_count INTEGER;
@@ -412,7 +412,7 @@ RETURNS TABLE (
   total_billable_hours DECIMAL(10,2),
   total_revenue DECIMAL(15,2),
   avg_case_duration DECIMAL(10,2)
-) AS $
+) AS $$
 DECLARE
   filter_start_date DATE;
   filter_end_date DATE;

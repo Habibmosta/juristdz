@@ -264,7 +264,7 @@ CREATE INDEX idx_documents_content_search ON documents USING GIN(to_tsvector('fr
 
 -- Create triggers for automatic timestamp updates
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = CURRENT_TIMESTAMP;
   RETURN NEW;
@@ -281,7 +281,7 @@ CREATE TRIGGER document_templates_updated_at_trigger
 
 -- Create trigger for document activity logging
 CREATE OR REPLACE FUNCTION log_document_activity()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 DECLARE
   action_name VARCHAR(50);
 BEGIN
@@ -332,7 +332,7 @@ RETURNS TABLE (
   created_at TIMESTAMP,
   updated_at TIMESTAMP,
   rank REAL
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -366,7 +366,7 @@ $ LANGUAGE plpgsql;
 
 -- Create function for document cleanup (remove old versions, expired permissions)
 CREATE OR REPLACE FUNCTION cleanup_document_data()
-RETURNS void AS $
+RETURNS void AS $$
 BEGIN
   -- Remove expired permissions
   DELETE FROM document_permissions 

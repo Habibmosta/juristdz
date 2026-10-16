@@ -9,6 +9,12 @@ export interface ResetEmailParams {
   language?: 'fr' | 'ar';
 }
 
+export interface VerificationEmailParams {
+  to: string;
+  verifyLink: string;
+  language?: 'fr' | 'ar';
+}
+
 export class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private readonly from: string;
@@ -66,6 +72,73 @@ export class EmailService {
       logger.error("Échec de l'envoi de l'email de réinitialisation", { to, error });
       throw error;
     }
+  }
+
+  async sendVerificationEmail({ to, verifyLink, language = 'fr' }: VerificationEmailParams): Promise<boolean> {
+    const { subject, text, html } = this.buildVerificationTemplate(verifyLink, language);
+
+    if (!this.transporter) {
+      logger.warn("Email de vérification non envoyé (SMTP absent)", { to });
+      logger.info(`[DEV] Lien de vérification pour ${to} : ${verifyLink}`);
+      return false;
+    }
+
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject,
+        text,
+        html
+      });
+      logger.info('Email de vérification envoyé', { to });
+      return true;
+    } catch (error) {
+      logger.error("Échec de l'envoi de l'email de vérification", { to, error });
+      throw error;
+    }
+  }
+
+  private buildVerificationTemplate(verifyLink: string, language: 'fr' | 'ar'): {
+    subject: string;
+    text: string;
+    html: string;
+  } {
+    if (language === 'ar') {
+      return {
+        subject: 'JuristDZ — تأكيد بريدك الإلكتروني',
+        text:
+          `مرحباً،\n\n` +
+          `لتأكيد بريدك الإلكتروني وتفعيل حسابك على JuristDZ، اضغط على الرابط التالي (صالح لمدة 24 ساعة):\n\n` +
+          `${verifyLink}\n\n` +
+          `إذا لم تنشئ هذا الحساب، تجاهل هذه الرسالة.\n\n` +
+          `فريق JuristDZ`,
+        html: `<!doctype html><html dir="rtl" lang="ar"><body style="font-family:sans-serif;background:#0f172a;color:#e2e8f0;padding:32px">` +
+          `<div style="max-width:480px;margin:auto;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px">` +
+          `<h2 style="color:#f59e0b;margin-top:0">JuristDZ</h2>` +
+          `<p>لتأكيد بريدك الإلكتروني وتفعيل حسابك، اضغط على الزر أدناه (صالح لمدة 24 ساعة):</p>` +
+          `<p style="text-align:center"><a href="${verifyLink}" style="display:inline-block;background:#d97706;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:bold">تأكيد البريد الإلكتروني</a></p>` +
+          `<p style="font-size:12px;color:#94a3b8">إذا لم تنشئ هذا الحساب، تجاهل هذه الرسالة.<br><a href="${verifyLink}" style="color:#94a3b8">${verifyLink}</a></p>` +
+          `</div></body></html>`
+      };
+    }
+
+    return {
+      subject: 'JuristDZ — Confirmez votre adresse email',
+      text:
+        `Bonjour,\n\n` +
+        `Pour confirmer votre adresse email et activer votre compte JuristDZ, cliquez sur le lien ci-dessous (valable 24 heures) :\n\n` +
+        `${verifyLink}\n\n` +
+        `Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.\n\n` +
+        `L'équipe JuristDZ`,
+      html: `<!doctype html><html lang="fr"><body style="font-family:sans-serif;background:#0f172a;color:#e2e8f0;padding:32px">` +
+        `<div style="max-width:480px;margin:auto;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px">` +
+        `<h2 style="color:#f59e0b;margin-top:0">JuristDZ</h2>` +
+        `<p>Pour confirmer votre adresse email et activer votre compte, cliquez sur le bouton ci-dessous (lien valable 24 heures) :</p>` +
+        `<p style="text-align:center"><a href="${verifyLink}" style="display:inline-block;background:#d97706;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:bold">Confirmer mon email</a></p>` +
+        `<p style="font-size:12px;color:#94a3b8">Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.<br><a href="${verifyLink}" style="color:#94a3b8">${verifyLink}</a></p>` +
+        `</div></body></html>`
+    };
   }
 
   private buildResetTemplate(resetLink: string, language: 'fr' | 'ar'): {
