@@ -121,6 +121,7 @@ export enum ResourceType {
   ACTE_AUTHENTIQUE = 'acte_authentique',
   
   // Administration
+  ADMIN = 'admin',
   USER = 'user',
   ORGANIZATION = 'organization',
   ROLE = 'role',
@@ -330,6 +331,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Profession, PermissionDefinition[]
   
   [Profession.ADMIN]: [
     // Full system access
+    { resource: ResourceType.ADMIN, actions: [ActionType.READ, ActionType.UPDATE], scope: PermissionScope.GLOBAL },
     { resource: ResourceType.USER, actions: [ActionType.CREATE, ActionType.READ, ActionType.UPDATE, ActionType.DELETE], scope: PermissionScope.GLOBAL },
     { resource: ResourceType.ORGANIZATION, actions: [ActionType.CREATE, ActionType.READ, ActionType.UPDATE, ActionType.DELETE], scope: PermissionScope.GLOBAL },
     { resource: ResourceType.ROLE, actions: [ActionType.CREATE, ActionType.READ, ActionType.UPDATE, ActionType.DELETE], scope: PermissionScope.GLOBAL },

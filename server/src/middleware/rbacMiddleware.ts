@@ -8,10 +8,21 @@ import { AccessContext, Permission } from '@/types/rbac';
  * RBAC middleware factory for protecting routes with specific permissions
  * Validates: Requirements 1.3 - Role-based access control with permission verification
  */
-export function requirePermission(resource: string, action: string, options?: {
+export function requirePermission(resource: string, action?: string, options?: {
   getContext?: (req: AuthenticatedRequest) => Partial<AccessContext>;
   onDenied?: (req: AuthenticatedRequest, res: Response) => void;
 }) {
+  // Support both call styles: requirePermission('user', 'create')
+  // and requirePermission('user:create').
+  let resolvedResource = resource;
+  let resolvedAction = action;
+
+  if (!resolvedAction && resource.includes(':')) {
+    const separatorIndex = resource.indexOf(':');
+    resolvedResource = resource.slice(0, separatorIndex);
+    resolvedAction = resource.slice(separatorIndex + 1);
+  }
+
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Check if user is authenticated
@@ -27,7 +38,7 @@ export function requirePermission(resource: string, action: string, options?: {
         activeRole: req.user.activeRole,
         organizationId: req.headers['x-organization-id'] as string,
         resourceId: req.params.id || req.body.id,
-        resourceType: resource
+        resourceType: resolvedResource
       };
 
       // Merge with custom context if provided
@@ -38,16 +49,16 @@ export function requirePermission(resource: string, action: string, options?: {
       // Check permission
       const hasPermission = await rbacService.checkPermission(
         req.user.userId,
-        resource,
-        action,
+        resolvedResource,
+        resolvedAction as string,
         context
       );
 
       if (!hasPermission) {
-        logger.warn(`Access denied for user ${req.user.userId} to ${resource}:${action}`, {
+        logger.warn(`Access denied for user ${req.user.userId} to ${resolvedResource}:${resolvedAction}`, {
           userId: req.user.userId,
-          resource,
-          action,
+          resource: resolvedResource,
+          action: resolvedAction,
           context
         });
 
@@ -59,8 +70,8 @@ export function requirePermission(resource: string, action: string, options?: {
           success: false,
           error: 'Insufficient permissions',
           required: {
-            resource,
-            action
+            resource: resolvedResource,
+            action: resolvedAction
           }
         });
       }
