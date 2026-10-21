@@ -23,7 +23,7 @@ export class AuthenticationService {
 
       // Find user by email
       const userResult = await db.query(
-        'SELECT id, email, password_hash, is_active, email_verified, mfa_enabled, mfa_secret FROM users WHERE email = $1',
+        'SELECT id, email, password_hash, first_name, last_name, phone_number, is_active, email_verified, mfa_enabled, mfa_secret FROM users WHERE email = $1',
         [email.toLowerCase()]
       );
 

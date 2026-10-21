@@ -28,6 +28,14 @@ export class UserService {
         specializations = []
       } = userData;
 
+      // Defense in depth : l'auto-inscription ne peut jamais créer un admin.
+      if (profession === 'admin') {
+        return {
+          success: false,
+          error: 'Invalid profession'
+        };
+      }
+
       // Check if user already exists
       const existingUser = await db.query(
         'SELECT id FROM users WHERE email = $1',

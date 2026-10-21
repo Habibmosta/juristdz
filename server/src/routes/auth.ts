@@ -30,12 +30,23 @@ const loginSchema = Joi.object({
   mfaCode: Joi.string().length(6).optional()
 });
 
+// L'auto-inscription ne doit jamais permettre d'obtenir le rôle admin
+// (élévation de privilèges). Le rôle admin est créé côté serveur.
+const SELF_REGISTRABLE_PROFESSIONS = [
+  'avocat',
+  'notaire',
+  'huissier',
+  'magistrat',
+  'etudiant',
+  'juriste_entreprise'
+];
+
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   firstName: Joi.string().required(),
   lastName: Joi.string().required(),
-  profession: Joi.any(),
+  profession: Joi.string().valid(...SELF_REGISTRABLE_PROFESSIONS).optional(),
   registrationNumber: Joi.any(),
   barreauId: Joi.any(),
   organizationName: Joi.any(),
