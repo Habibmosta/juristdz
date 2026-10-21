@@ -171,14 +171,47 @@ export class AuthenticationService {
     try {
       // Verify JWT token
       const decoded = jwt.verify(token, config.jwt.secret) as any;
-      
-      // Skip session check in database for development - just verify JWT
+
+      if (decoded.type && decoded.type !== 'access') {
+        return {
+          valid: false,
+          error: 'Invalid token type'
+        };
+      }
+
+      // Resolve the active role from the database. The JWT payload only
+      // carries the token type ("access"), never the user role.
+      const result = await db.query(
+        `SELECT u.id, u.email, u.is_active, up.profession
+         FROM users u
+         LEFT JOIN user_profiles up ON up.user_id = u.id AND up.is_primary = true
+         WHERE u.id = $1
+         LIMIT 1`,
+        [decoded.userId]
+      );
+
+      const row = (result as any)?.rows?.[0];
+
+      if (!row) {
+        return {
+          valid: false,
+          error: 'User not found'
+        };
+      }
+
+      if (row.is_active === false) {
+        return {
+          valid: false,
+          error: 'Account is deactivated'
+        };
+      }
+
       return {
         valid: true,
-        userId: decoded.userId,
-        email: decoded.email || '',
-        activeRole: decoded.type || 'avocat',
-        sessionId: 'dev-session',
+        userId: row.id,
+        email: row.email || decoded.email || '',
+        activeRole: row.profession || 'avocat',
+        sessionId: decoded.sessionId || 'stateless',
         expiresAt: decoded.exp
       };
 

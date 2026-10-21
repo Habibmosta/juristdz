@@ -390,16 +390,18 @@ export class RBACService {
       await db.transaction(async (client) => {
         // Create default permissions for each profession
         for (const [profession, permissions] of Object.entries(DEFAULT_ROLE_PERMISSIONS)) {
-          const roleName = `${profession.charAt(0).toUpperCase() + profession.slice(1)} Standard`;
-          
-          // Get role ID
+          // Resolve the default role by profession: display names vary
+          // ("Administrateur Système", "Étudiant Standard", ...).
           const roleResult = await client.query(
-            'SELECT id FROM roles WHERE name = $1 AND profession = $2',
-            [roleName, profession]
+            `SELECT id FROM roles
+             WHERE profession = $1 AND is_custom = false
+             ORDER BY organization_id NULLS FIRST, created_at
+             LIMIT 1`,
+            [profession]
           );
 
           if (roleResult.rows.length === 0) {
-            logger.warn(`Default role not found: ${roleName}`);
+            logger.warn(`Default role not found for profession: ${profession}`);
             continue;
           }
 

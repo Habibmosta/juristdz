@@ -225,10 +225,12 @@ export class AdminService {
     try {
       await client.query('BEGIN');
 
+      const email = request.email.trim().toLowerCase();
+
       // Vérifier si l'email existe déjà
       const existingUser = await client.query(
-        'SELECT id FROM users WHERE email = $1',
-        [request.email]
+        'SELECT id FROM users WHERE lower(email) = $1',
+        [email]
       );
 
       if (existingUser.rows.length > 0) {
@@ -238,50 +240,67 @@ export class AdminService {
       // Hasher le mot de passe
       const hashedPassword = await bcrypt.hash(request.password, 12);
 
-      // Créer l'utilisateur
-      const userQuery = `
-        INSERT INTO users (
-          email, password_hash, first_name, last_name, role, 
-          is_active, is_email_verified, organization_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
-      `;
-
-      const userResult = await client.query(userQuery, [
-        request.email,
-        hashedPassword,
-        request.firstName,
-        request.lastName,
-        request.role,
-        request.isActive ?? true,
-        false, // Email non vérifié par défaut
-        request.organizationId
-      ]);
+      // Créer l'utilisateur. Un compte créé par un administrateur est
+      // considéré comme vérifié (le mot de passe est communiqué par l'admin).
+      const userResult = await client.query(
+        `INSERT INTO users (
+           email, password_hash, first_name, last_name,
+           is_active, email_verified, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+         RETURNING id`,
+        [email, hashedPassword, request.firstName, request.lastName, request.isActive ?? true]
+      );
 
       const userId = userResult.rows[0].id;
 
-      // Créer l'entrée d'audit
-      await client.query(`
-        INSERT INTO audit_logs (
-          user_id, action, resource_type, resource_id, 
-          details, ip_address, user_agent
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [
-        adminId,
-        'CREATE_USER',
-        'user',
-        userId,
-        JSON.stringify({ 
-          createdUser: { 
-            email: request.email, 
-            role: request.role,
-            firstName: request.firstName,
-            lastName: request.lastName
-          }
-        }),
-        null, // IP sera ajoutée par le middleware
-        null  // User agent sera ajouté par le middleware
-      ]);
+      // Créer le profil principal (détermine le rôle actif)
+      await client.query(
+        `INSERT INTO user_profiles (
+           user_id, profession, languages, specializations, is_primary
+         ) VALUES ($1, $2, ARRAY['fr'], ARRAY[]::text[], true)`,
+        [userId, request.role]
+      );
+
+      // Attribuer le rôle RBAC par défaut correspondant à la profession
+      await client.query(
+        `INSERT INTO user_role_assignments (user_id, role_id, assigned_by)
+         SELECT $1, r.id, $2
+         FROM roles r
+         WHERE r.profession = $3 AND r.organization_id IS NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM user_role_assignments ura
+             WHERE ura.user_id = $1 AND ura.role_id = r.id
+           )
+         ORDER BY r.is_custom, r.created_at
+         LIMIT 1`,
+        [userId, adminId, request.role]
+      );
+
+      // Journal d'audit (best effort : ne doit jamais bloquer la création)
+      try {
+        await client.query(
+          `INSERT INTO audit_log (
+             user_id, action, resource_type, resource_id, success, additional_data
+           ) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            adminId,
+            'CREATE_USER',
+            'user',
+            userId,
+            true,
+            JSON.stringify({
+              createdUser: {
+                email,
+                role: request.role,
+                firstName: request.firstName,
+                lastName: request.lastName
+              }
+            })
+          ]
+        );
+      } catch (auditError) {
+        logger.warn('Audit log CREATE_USER ignoré', { error: auditError, userId });
+      }
 
       await client.query('COMMIT');
 
@@ -289,7 +308,7 @@ export class AdminService {
       
       logger.info('Utilisateur créé par admin', { 
         userId, 
-        email: request.email,
+        email,
         role: request.role,
         adminId 
       });
@@ -1283,7 +1302,7 @@ export class AdminService {
       lastName: row.last_name,
       role: row.role,
       isActive: row.is_active,
-      isEmailVerified: row.is_email_verified,
+      isEmailVerified: row.email_verified,
       lastLoginAt: row.last_login_at ? new Date(row.last_login_at) : undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),

@@ -81,6 +81,11 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
   const [showForcePassword, setShowForcePassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [forcePasswordLoading, setForcePasswordLoading] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    firstName: '', lastName: '', email: '', password: '', profession: 'avocat',
+  });
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -200,6 +205,56 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
     } finally { setActionLoading(false); }
   };
 
+  const openCreateUser = () => {
+    document.body.style.overflow = 'hidden';
+    setCreateForm({ firstName: '', lastName: '', email: '', password: '', profession: 'avocat' });
+    setShowCreateUser(true);
+  };
+
+  const closeCreateUser = () => {
+    setShowCreateUser(false);
+    document.body.style.overflow = '';
+  };
+
+  const handleCreateUser = async () => {
+    const { firstName, lastName, email, password, profession } = createForm;
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
+      showToast('Tous les champs sont obligatoires', 'error');
+      return;
+    }
+    if (password.length < 8) {
+      showToast('Le mot de passe doit contenir au moins 8 caracteres', 'error');
+      return;
+    }
+    setCreateLoading(true);
+    try {
+      const token = localStorage.getItem('juristdz_access_token');
+      const res = await fetch(`${API_URL}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          role: profession,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || json.error || `Erreur ${res.status}`);
+      showToast('Utilisateur cree');
+      closeCreateUser();
+      loadRealData();
+    } catch (e: any) {
+      showToast(e.message || 'Erreur', 'error');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const roleCount = utilisateurs.reduce<Record<string, number>>((acc, u) => {
     const r = u.profession || 'avocat';
     acc[r] = (acc[r] || 0) + 1;
@@ -280,7 +335,7 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
               <button className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium hover:border-red-600 transition-colors">
                 <Download size={16} className="inline mr-2" />Export Donnees
               </button>
-              <button className="px-6 py-2 bg-red-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg">
+              <button onClick={openCreateUser} className="px-6 py-2 bg-red-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-red-700 transition-colors">
                 <Plus size={18} />Nouvel Utilisateur
               </button>
             </div>
@@ -500,6 +555,80 @@ const AdminInterface: React.FC<AdminInterfaceProps> = ({ user, language, theme =
           {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
           {toast.msg}
         </div>
+      )}
+
+      {showCreateUser && (
+        <Modal onClose={closeCreateUser}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xl border border-slate-200 dark:border-slate-700 flex flex-col" style={{ maxHeight: 'min(90vh, 680px)' }}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                  <Plus size={18} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-sm text-slate-900 dark:text-slate-100">Nouvel utilisateur</h2>
+                  <p className="text-xs text-slate-500">Creer un compte et definir son role</p>
+                </div>
+              </div>
+              <button onClick={closeCreateUser} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><X size={18} /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Prenom</label>
+                  <input value={createForm.firstName} onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))}
+                    placeholder="Prenom"
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-red-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Nom</label>
+                  <input value={createForm.lastName} onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))}
+                    placeholder="Nom"
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-red-400" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Adresse email</label>
+                <input type="email" value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="utilisateur@exemple.com"
+                  className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-red-400" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Role</label>
+                  <select value={createForm.profession} onChange={e => setCreateForm(f => ({ ...f, profession: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-red-400">
+                    {Object.entries(ROLE_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Mot de passe</label>
+                  <input type="password" value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                    placeholder="Min. 8 caracteres"
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-red-400" />
+                </div>
+              </div>
+              {createForm.password.length > 0 && createForm.password.length < 8 && (
+                <p className="text-xs text-red-500">Minimum 8 caracteres ({createForm.password.length}/8)</p>
+              )}
+              <p className="text-xs text-slate-500 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+                Le compte est cree actif et verifie. Communiquez le mot de passe a l utilisateur ; il pourra le changer ensuite.
+              </p>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
+              <button onClick={handleCreateUser} disabled={createLoading}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {createLoading ? <RefreshCw size={15} className="animate-spin" /> : <Plus size={15} />}
+                Creer l utilisateur
+              </button>
+              <button onClick={closeCreateUser} className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {modalMode === 'view' && selectedUser && (
