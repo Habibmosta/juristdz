@@ -332,14 +332,26 @@ export class RBACService {
         [userId, context.activeRole, context.organizationId]
       );
 
-      return (result as any).rows.map((row: any) => ({
-        id: row.id,
-        resource: row.resource,
-        actions: row.actions,
-        conditions: row.conditions ? JSON.parse(row.conditions) : undefined,
-        scope: row.scope,
-        description: row.description
-      }));
+      return (result as any).rows.map((row: any) => {
+        // pg renvoie déjà les colonnes JSONB sous forme d'objet.
+        const rawConditions = row.conditions;
+        const parsedConditions = rawConditions
+          ? (typeof rawConditions === 'string' ? JSON.parse(rawConditions) : rawConditions)
+          : undefined;
+
+        return {
+          id: row.id,
+          resource: row.resource,
+          actions: row.actions,
+          // `conditions` est censé être une liste : un objet JSONB vide ({})
+          // ne doit pas être interprété comme des conditions.
+          conditions: Array.isArray(parsedConditions) && parsedConditions.length > 0
+            ? parsedConditions
+            : undefined,
+          scope: row.scope,
+          description: row.description
+        };
+      });
 
     } catch (error) {
       logger.error('Get effective permissions error:', error);
