@@ -151,12 +151,25 @@ $$ LANGUAGE plpgsql;
 -- Function to invalidate user cache on role changes
 CREATE OR REPLACE FUNCTION invalidate_user_cache()
 RETURNS TRIGGER AS $$
+DECLARE
+  affected_user UUID;
 BEGIN
-  -- Invalidate cache for affected user
-  DELETE FROM access_control_cache 
-  WHERE user_id = COALESCE(NEW.user_id, OLD.user_id);
-  
-  RETURN COALESCE(NEW, OLD);
+  -- role_permissions n'a pas de colonne user_id : on vide le cache global
+  IF TG_TABLE_NAME = 'user_role_assignments' THEN
+    IF TG_OP = 'DELETE' THEN
+      affected_user := OLD.user_id;
+    ELSE
+      affected_user := NEW.user_id;
+    END IF;
+    DELETE FROM access_control_cache WHERE user_id = affected_user;
+  ELSE
+    DELETE FROM access_control_cache;
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
